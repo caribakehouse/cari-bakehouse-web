@@ -1,10 +1,30 @@
 import type { Metadata } from "next";
+import { Lato, Nunito_Sans } from "next/font/google";
 import "./globals.css";
+import Topbar from "@/components/layout/Topbar";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import BottomNav from "@/components/layout/BottomNav";
+import FloatingContact from "@/components/layout/FloatingContact";
+
+const lato = Lato({
+  weight: ["400", "700", "900"],
+  subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap",
+});
+
+const nunitoSans = Nunito_Sans({
+  weight: ["400", "600", "700"],
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Cari Bakehouse — Bánh Ngọt Thủ Công",
+  title: "Cari Bakehouse — Indulgence In Every Bite",
   description:
-    "Cari Bakehouse — Tiệm bánh thủ công với những chiếc bánh được làm từ nguyên liệu tự nhiên, tươi ngon mỗi ngày.",
+    "Cari Bakehouse — Tiệm bánh thủ công tại Hà Nội với những chiếc bánh tươi ngon, làm từ nguyên liệu tự nhiên mỗi ngày.",
 };
 
 export default function RootLayout({
@@ -13,21 +33,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi">
-      <head>
-        {/* Google Fonts — Inter */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>{children}</body>
+    <html
+      lang="vi"
+      className={`${lato.variable} ${nunitoSans.variable}`}
+    >
+      <body className="flex min-h-screen flex-col bg-cream text-text-dark antialiased">
+        <Topbar />
+        <Header />
+        <main className="flex-1 pb-16 md:pb-0">{children}</main>
+        <Footer />
+        <BottomNav />
+        <FloatingContact />
+      </body>
     </html>
   );
 }
