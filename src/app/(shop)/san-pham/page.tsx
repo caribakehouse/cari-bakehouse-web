@@ -7,13 +7,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import {
   Star,
   ShoppingBag,
-  Cake,
-  Coffee,
   Check,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
 import { getProductGroups, Product } from "@/lib/mock-data";
+import RibbonIcon from "@/components/ui/RibbonIcon";
 
 function formatPrice(p: number) {
   return p.toLocaleString("vi-VN") + "đ";
@@ -21,6 +20,144 @@ function formatPrice(p: number) {
 
 type MainCategory = "Bánh" | "Đồ uống";
 
+// ─── Badge huy hiệu con dấu răng cưa (tái sử dụng phong cách Hero Slider) ───
+interface SealBadgeProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+function SealBadge({ label, active, onClick }: SealBadgeProps) {
+  // SVG path con dấu răng cưa 12 đỉnh, bán kính ngoài ~100, trong ~86
+  // Tạo bằng cách xen kẽ điểm ngoài/trong theo góc
+  const teeth = 12;
+  const outerR = 100;
+  const innerR = 84;
+  const cx = 110;
+  const cy = 105;
+  const points: string[] = [];
+  for (let i = 0; i < teeth * 2; i++) {
+    const angle = (Math.PI * i) / teeth - Math.PI / 2;
+    const r = i % 2 === 0 ? outerR : innerR;
+    points.push(`${(cx + r * Math.cos(angle)).toFixed(2)},${(cy + r * Math.sin(angle)).toFixed(2)}`);
+  }
+  const polygonPoints = points.join(" ");
+
+  const bgFill = active ? "#1B4B5A" : "#EDE0C8";
+  const textColor = active ? "#F6CE8B" : "#1B4B5A";
+  const strokeColor = active ? "#F6CE8B" : "#C97B3D";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`Xem danh mục ${label}`}
+      className={`group relative flex flex-col items-center cursor-pointer transition-all duration-300 ${
+        active ? "scale-105 drop-shadow-xl" : "scale-100 opacity-80 hover:opacity-100 hover:scale-103"
+      }`}
+    >
+      <svg
+        width="140"
+        height="150"
+        viewBox="0 0 220 210"
+        xmlns="http://www.w3.org/2000/svg"
+        className="overflow-visible"
+      >
+        {/* Bóng đổ khi active */}
+        {active && (
+          <polygon
+            points={polygonPoints}
+            fill="#1B4B5A"
+            opacity="0.18"
+            transform="translate(4, 6)"
+          />
+        )}
+
+        {/* Thân badge răng cưa */}
+        <polygon
+          points={polygonPoints}
+          fill={bgFill}
+          stroke={strokeColor}
+          strokeWidth={active ? "3.5" : "2.5"}
+          strokeLinejoin="round"
+          className="transition-all duration-300"
+        />
+
+        {/* Vòng trang trí bên trong badge */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r="72"
+          fill="none"
+          stroke={active ? "#F6CE8B" : "#C97B3D"}
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+          opacity="0.6"
+        />
+
+        {/* Chữ tên danh mục — VIẾT HOA, font Lato bold */}
+        <text
+          x={cx}
+          y={cy - 6}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontFamily="var(--font-heading), Lato, sans-serif"
+          fontWeight="900"
+          fontSize={label.length > 4 ? "19" : "23"}
+          letterSpacing="2"
+          fill={textColor}
+          className="select-none uppercase transition-all duration-300"
+        >
+          {label.toUpperCase()}
+        </text>
+
+        {/* Nơ RibbonIcon — nhúng SVG bên trong badge ở vị trí thấp hơn tâm chữ */}
+        {/* Scale + translate để thu nhỏ và đặt vào vùng phía dưới */}
+        <g transform={`translate(${cx - 38}, ${cy + 14}) scale(0.345)`}>
+          {/* Cánh nơ trái */}
+          <path
+            d="M108 88 C 90 52, 48 40, 30 62 C 14 82, 24 110, 52 114 C 74 117, 96 104, 108 88 Z"
+            fill="none"
+            stroke={active ? "#F6CE8B" : "#C97B3D"}
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Cánh nơ phải */}
+          <path
+            d="M112 86 C 128 60, 160 52, 178 68 C 193 82, 188 104, 166 108 C 148 111, 128 100, 112 86 Z"
+            fill="none"
+            stroke={active ? "#F6CE8B" : "#C97B3D"}
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Dải nơ trái thõng xuống */}
+          <path
+            d="M98 94 C 90 106, 84 116, 90 130"
+            fill="none"
+            stroke={active ? "#F6CE8B" : "#C97B3D"}
+            strokeWidth="8"
+            strokeLinecap="round"
+          />
+          {/* Dải nơ phải thõng xuống */}
+          <path
+            d="M122 92 C 134 112, 146 132, 138 160"
+            fill="none"
+            stroke={active ? "#F6CE8B" : "#C97B3D"}
+            strokeWidth="8"
+            strokeLinecap="round"
+          />
+          {/* Nút nơ giữa */}
+          <circle cx="111" cy="88" r="11" fill={active ? "#F6CE8B" : "#C97B3D"} />
+        </g>
+      </svg>
+    </button>
+  );
+}
+
+// ─── Nội dung chính ──────────────────────────────────────────────────────────
 function ProductsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -35,7 +172,7 @@ function ProductsContent() {
   const [activeTab, setActiveTab] = useState<MainCategory>(initialCategory);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Đồng bộ khi query param thay đổi (ví dụ khi bấm link điều hướng từ trang khác)
+  // Đồng bộ khi query param thay đổi (khi bấm link từ trang khác điều hướng sang)
   useEffect(() => {
     const currentParam = searchParams.get("danh-muc");
     if (currentParam === "do-uong" || currentParam === "douong") {
@@ -84,7 +221,7 @@ function ProductsContent() {
       )}
 
       {/* ============================================================
-          1. BREADCRUMB & TIÊU ĐỀ TRANG (Bám sát wireframe)
+          1. BREADCRUMB & TIÊU ĐỀ TRANG
           ============================================================ */}
       <section className="border-b border-[#E5D9C3]/70 bg-white/70 backdrop-blur-xs py-5 sm:py-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -116,40 +253,25 @@ function ProductsContent() {
       </section>
 
       {/* ============================================================
-          2. TAB DANH MỤC LỚN (2 Tab: "Bánh" & "Đồ uống" — Bám sát Wireframe)
+          2. BADGE CON DẤU RĂng cưa — Chọn danh mục (tái sử dụng phong cách Hero Slider)
           ============================================================ */}
-      <section className="py-7 sm:py-9">
+      <section className="py-6 sm:py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center gap-4 sm:gap-6">
-            {/* Tab: Bánh */}
-            <button
-              type="button"
+          {/* Nhãn hướng dẫn nhỏ phía trên */}
+          <p className="text-center text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-[#C97B3D]/80 mb-4">
+            Chọn danh mục
+          </p>
+          <div className="flex justify-center items-end gap-8 sm:gap-14">
+            <SealBadge
+              label="Bánh"
+              active={activeTab === "Bánh"}
               onClick={() => handleTabChange("Bánh")}
-              className={`group flex items-center justify-center gap-2.5 rounded-xl sm:rounded-2xl px-6 sm:px-10 py-3 sm:py-3.5 text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer ${
-                activeTab === "Bánh"
-                  ? "bg-[#1B4B5A] text-white shadow-lg shadow-[#1B4B5A]/20 scale-102 ring-2 ring-[#1B4B5A]"
-                  : "bg-white text-[#5B5B5B] border border-[#E5D9C3] hover:border-[#1B4B5A]/40 hover:bg-[#FFF8EF] hover:text-[#1B4B5A]"
-              }`}
-              style={{ width: "220px", maxWidth: "48%" }}
-            >
-              <Cake className={`h-5 w-5 transition-transform group-hover:scale-110 ${activeTab === "Bánh" ? "text-[#F6CE8B]" : "text-[#C97B3D]"}`} />
-              <span>Bánh</span>
-            </button>
-
-            {/* Tab: Đồ uống */}
-            <button
-              type="button"
+            />
+            <SealBadge
+              label="Đồ uống"
+              active={activeTab === "Đồ uống"}
               onClick={() => handleTabChange("Đồ uống")}
-              className={`group flex items-center justify-center gap-2.5 rounded-xl sm:rounded-2xl px-6 sm:px-10 py-3 sm:py-3.5 text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer ${
-                activeTab === "Đồ uống"
-                  ? "bg-[#1B4B5A] text-white shadow-lg shadow-[#1B4B5A]/20 scale-102 ring-2 ring-[#1B4B5A]"
-                  : "bg-white text-[#5B5B5B] border border-[#E5D9C3] hover:border-[#1B4B5A]/40 hover:bg-[#FFF8EF] hover:text-[#1B4B5A]"
-              }`}
-              style={{ width: "220px", maxWidth: "48%" }}
-            >
-              <Coffee className={`h-5 w-5 transition-transform group-hover:scale-110 ${activeTab === "Đồ uống" ? "text-[#F6CE8B]" : "text-[#C97B3D]"}`} />
-              <span>Đồ uống</span>
-            </button>
+            />
           </div>
         </div>
       </section>
@@ -253,9 +375,9 @@ function ProductsContent() {
                       )}
                     </div>
 
-                    {/* 2 Nút: "Đặt ngay" (solid) và "Thêm vào giỏ" (outline) đồng bộ TopOrder & Thực đơn */}
+                    {/* 2 Nút: "Đặt ngay" (solid) và "Thêm vào giỏ" (outline) */}
                     <div className="mt-4 flex items-center gap-2 pt-3 border-t border-[#F5EFE6]">
-                      {/* Nút Đặt ngay (Mua ngay - Solid) */}
+                      {/* Nút Đặt ngay */}
                       <button
                         type="button"
                         onClick={(e) => handleBuyNow(e, product)}
@@ -264,7 +386,7 @@ function ProductsContent() {
                         <span>Đặt ngay</span>
                       </button>
 
-                      {/* Nút Thêm vào giỏ (Outline) */}
+                      {/* Nút Thêm vào giỏ */}
                       <button
                         type="button"
                         onClick={(e) => handleAddToCart(e, product)}
