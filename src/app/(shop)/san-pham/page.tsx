@@ -12,7 +12,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { getProductGroups, Product } from "@/lib/mock-data";
-import RibbonIcon from "@/components/ui/RibbonIcon";
 
 function formatPrice(p: number) {
   return p.toLocaleString("vi-VN") + "đ";
