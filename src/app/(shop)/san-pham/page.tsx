@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { getProductGroups, Product } from "@/lib/mock-data";
+import RibbonIcon from "@/components/ui/RibbonIcon";
 
 function formatPrice(p: number) {
   return p.toLocaleString("vi-VN") + "đ";
@@ -27,11 +28,10 @@ interface SealBadgeProps {
 }
 
 function SealBadge({ label, active, onClick }: SealBadgeProps) {
-  // SVG path con dấu răng cưa 12 đỉnh, bán kính ngoài ~100, trong ~86
-  // Tạo bằng cách xen kẽ điểm ngoài/trong theo góc
+  // SVG path con dấu răng cưa 12 đỉnh, bán kính ngoài ~98, trong ~82 trên viewBox 220x220
   const teeth = 12;
-  const outerR = 100;
-  const innerR = 84;
+  const outerR = 98;
+  const innerR = 82;
   const cx = 110;
   const cy = 105;
   const points: string[] = [];
@@ -52,14 +52,18 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
       onClick={onClick}
       aria-pressed={active}
       aria-label={`Xem danh mục ${label}`}
-      className={`group relative flex flex-col items-center cursor-pointer transition-all duration-300 ${
-        active ? "scale-105 drop-shadow-xl" : "scale-100 opacity-80 hover:opacity-100 hover:scale-103"
+      className={`group relative flex flex-col items-center cursor-pointer transition-all duration-300 select-none focus:outline-none ${
+        active
+          ? "scale-105 drop-shadow-[0_12px_24px_rgba(27,75,90,0.25)]"
+          : "scale-100 opacity-85 hover:opacity-100 hover:scale-103 drop-shadow-md"
       }`}
+      style={{ width: "155px" }}
     >
+      {/* 1. Lớp nền: Con dấu răng cưa */}
       <svg
-        width="140"
-        height="150"
-        viewBox="0 0 220 210"
+        width="145"
+        height="145"
+        viewBox="0 0 220 220"
         xmlns="http://www.w3.org/2000/svg"
         className="overflow-visible"
       >
@@ -68,8 +72,8 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
           <polygon
             points={polygonPoints}
             fill="#1B4B5A"
-            opacity="0.18"
-            transform="translate(4, 6)"
+            opacity="0.22"
+            transform="translate(3, 5)"
           />
         )}
 
@@ -83,11 +87,11 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
           className="transition-all duration-300"
         />
 
-        {/* Vòng trang trí bên trong badge */}
+        {/* Vòng trang trí chấm gạch bên trong badge */}
         <circle
           cx={cx}
           cy={cy}
-          r="72"
+          r="70"
           fill="none"
           stroke={active ? "#F6CE8B" : "#C97B3D"}
           strokeWidth="1.5"
@@ -95,63 +99,35 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
           opacity="0.6"
         />
 
-        {/* Chữ tên danh mục — VIẾT HOA, font Lato bold */}
+        {/* Chữ tên danh mục — VIẾT HOA, đặt phía trên nơ */}
         <text
           x={cx}
-          y={cy - 6}
+          y={cy - 22}
           textAnchor="middle"
           dominantBaseline="middle"
           fontFamily="var(--font-heading), Lato, sans-serif"
           fontWeight="900"
-          fontSize={label.length > 4 ? "19" : "23"}
-          letterSpacing="2"
+          fontSize={label.length > 4 ? "20" : "24"}
+          letterSpacing="2.5"
           fill={textColor}
           className="select-none uppercase transition-all duration-300"
         >
           {label.toUpperCase()}
         </text>
-
-        {/* Nơ RibbonIcon — nhúng SVG bên trong badge ở vị trí thấp hơn tâm chữ */}
-        {/* Scale + translate để thu nhỏ và đặt vào vùng phía dưới */}
-        <g transform={`translate(${cx - 38}, ${cy + 14}) scale(0.345)`}>
-          {/* Cánh nơ trái */}
-          <path
-            d="M108 88 C 90 52, 48 40, 30 62 C 14 82, 24 110, 52 114 C 74 117, 96 104, 108 88 Z"
-            fill="none"
-            stroke={active ? "#F6CE8B" : "#C97B3D"}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Cánh nơ phải */}
-          <path
-            d="M112 86 C 128 60, 160 52, 178 68 C 193 82, 188 104, 166 108 C 148 111, 128 100, 112 86 Z"
-            fill="none"
-            stroke={active ? "#F6CE8B" : "#C97B3D"}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Dải nơ trái thõng xuống */}
-          <path
-            d="M98 94 C 90 106, 84 116, 90 130"
-            fill="none"
-            stroke={active ? "#F6CE8B" : "#C97B3D"}
-            strokeWidth="8"
-            strokeLinecap="round"
-          />
-          {/* Dải nơ phải thõng xuống */}
-          <path
-            d="M122 92 C 134 112, 146 132, 138 160"
-            fill="none"
-            stroke={active ? "#F6CE8B" : "#C97B3D"}
-            strokeWidth="8"
-            strokeLinecap="round"
-          />
-          {/* Nút nơ giữa */}
-          <circle cx="111" cy="88" r="11" fill={active ? "#F6CE8B" : "#C97B3D"} />
-        </g>
       </svg>
+
+      {/* 2. Lớp nơ ruy băng to nổi bật (Layer trên cùng):
+          - Dùng component RibbonIcon
+          - Kích thước phóng to đáng kể (160px), tràn ra ngoài mép răng cưa và thõng đuôi qua mép dưới badge
+          - Vị trí dưới chữ nhưng đè lên viền dưới của badge
+          - Đổ bóng nhẹ để nơ nổi hẳn lên trên con dấu */}
+      <div className="absolute top-[52px] sm:top-[54px] left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.22)] transition-transform duration-300 group-hover:scale-106">
+        <RibbonIcon
+          width={160}
+          height={160}
+          className="w-[150px] h-[150px] sm:w-[160px] sm:h-[160px]"
+        />
+      </div>
     </button>
   );
 }
@@ -252,15 +228,15 @@ function ProductsContent() {
       </section>
 
       {/* ============================================================
-          2. BADGE CON DẤU RĂng cưa — Chọn danh mục (tái sử dụng phong cách Hero Slider)
+          2. BADGE CON DẤU RĂNG CƯA — Chọn danh mục (tái sử dụng phong cách Hero Slider)
           ============================================================ */}
-      <section className="py-6 sm:py-8">
+      <section className="pt-6 pb-12 sm:pt-8 sm:pb-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Nhãn hướng dẫn nhỏ phía trên */}
-          <p className="text-center text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-[#C97B3D]/80 mb-4">
+          <p className="text-center text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-[#C97B3D]/80 mb-5">
             Chọn danh mục
           </p>
-          <div className="flex justify-center items-end gap-8 sm:gap-14">
+          <div className="flex justify-center items-end gap-10 sm:gap-16">
             <SealBadge
               label="Bánh"
               active={activeTab === "Bánh"}
