@@ -1,40 +1,47 @@
-import { Award, Truck, Cake } from "lucide-react";
+import RibbonIcon from "@/components/ui/RibbonIcon";
 
-const badges = [
+const giftBoxes = [
   {
-    icon: Award,
+    id: "points",
     title: "Chương trình tích điểm",
   },
   {
-    icon: Truck,
+    id: "delivery",
     title: "Giao hàng tận nơi",
   },
   {
-    icon: Cake,
-    title: "Nhận đặt bánh theo yêu cầu",
+    id: "preorder",
+    title: "Đặt trước",
   },
 ];
 
 export default function FeatureStrip() {
   return (
-    <section className="relative z-20 -mt-5 sm:-mt-6 lg:-mt-7 px-4">
+    <section className="relative z-20 -mt-10 sm:-mt-14 lg:-mt-16 px-4">
       <div className="mx-auto max-w-5xl">
-        {/* Badges container: horizontal scroll on mobile, centered on desktop */}
-        <div className="flex items-center justify-start sm:justify-center gap-2.5 sm:gap-4 lg:gap-6 overflow-x-auto no-scrollbar py-1 px-2">
-          {badges.map((b) => {
-            const Icon = b.icon;
-            return (
-              <div
-                key={b.title}
-                className="flex shrink-0 items-center gap-2 sm:gap-2.5 rounded-full bg-[#1B4B5A] px-4 py-2 sm:px-5 sm:py-2.5 text-white shadow-xl border border-white/10 transition-all duration-300 hover:bg-[#123640] hover:scale-105"
-              >
-                <Icon className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-[#F6CE8B] shrink-0" />
-                <span className="font-heading text-xs sm:text-sm font-semibold tracking-wide text-white whitespace-nowrap">
-                  {b.title}
+        {/* 3 hộp quà: kích thước bằng nhau, khoảng cách đều, cuộn ngang mượt mà trên mobile, căn giữa trên desktop */}
+        <div className="flex items-center justify-start sm:justify-center gap-4 sm:gap-6 lg:gap-8 overflow-x-auto no-scrollbar pt-10 pb-7 px-2">
+          {giftBoxes.map((box) => (
+            <div
+              key={box.id}
+              className="group relative flex shrink-0 w-[210px] sm:w-[240px] md:w-[260px] h-[92px] sm:h-[104px] flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-[#225564] to-[#153D4A] shadow-xl border border-white/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-default"
+            >
+              {/* Dải ruy băng dọc nhẹ trên thân hộp quà */}
+              <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-4 sm:w-5 bg-gradient-to-b from-[#F6CE8B]/25 to-[#F6CE8B]/10 pointer-events-none" />
+
+              {/* Nơ SVG đè lên cạnh trên của hộp */}
+              <div className="absolute -top-7 sm:-top-8 left-1/2 -translate-x-1/2 z-10 transition-transform duration-300 group-hover:scale-105 pointer-events-none drop-shadow-md">
+                <RibbonIcon width={72} height={65} className="sm:w-[80px] sm:h-[72px]" />
+              </div>
+
+              {/* Pill nhỏ nền kem-vàng nhạt (#FCE9C6) đè lên cạnh dưới của khối tối */}
+              <div className="absolute -bottom-3.5 sm:-bottom-4 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap shadow-md rounded-full bg-[#FCE9C6] px-4 py-1.5 sm:px-5 sm:py-2 border border-[#F6CE8B]/70 transition-transform duration-300 group-hover:scale-102">
+                <span className="font-heading text-xs sm:text-sm font-bold text-[#1B4B5A] tracking-wide block text-center">
+                  {box.title}
                 </span>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     </section>
