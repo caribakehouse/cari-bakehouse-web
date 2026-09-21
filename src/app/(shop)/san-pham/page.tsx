@@ -116,8 +116,8 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
       </svg>
 
       {/* 2. Lớp nơ ruy băng — Giữ nguyên kích thước (96px), 
-          dịch chuyển lên cao hơn, tiến gần sát chữ BÁNH/ĐỒ UỐNG nhưng vẫn có khoảng cách rõ ràng */}
-      <div className="absolute top-[72px] sm:top-[74px] left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-[0_2px_5px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:scale-105">
+          dịch chuyển lên cao hơn, tiến sát ngay dưới chữ BÁNH/ĐỒ UỐNG mà không đè/che lên chữ */}
+      <div className="absolute top-[66px] sm:top-[67px] left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-[0_2px_5px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:scale-105">
         <RibbonIcon
           width={96}
           height={96}
