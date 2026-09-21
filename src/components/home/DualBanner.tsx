@@ -4,13 +4,13 @@ import Image from "next/image";
 const banners = [
   {
     label: "Bánh",
-    href: "/danh-muc/banh",
+    href: "/san-pham?danh-muc=banh",
     image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&auto=format&fit=crop&q=80",
     gradient: "from-[#1B4B5A]/85 via-[#1B4B5A]/70 to-[#123640]/90",
   },
   {
     label: "Đồ uống",
-    href: "/danh-muc/do-uong",
+    href: "/san-pham?danh-muc=do-uong",
     image: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=800&auto=format&fit=crop&q=80",
     gradient: "from-[#C97B3D]/85 via-[#C97B3D]/70 to-[#8C4A18]/90",
   },

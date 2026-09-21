@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Star,
   ShoppingBag,
@@ -20,9 +21,36 @@ function formatPrice(p: number) {
 
 type MainCategory = "Bánh" | "Đồ uống";
 
-export default function ProductsPage() {
-  const [activeTab, setActiveTab] = useState<MainCategory>("Bánh");
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Đọc query param ?danh-muc=banh hoặc ?danh-muc=do-uong từ URL
+  const paramCategory = searchParams.get("danh-muc");
+  const initialCategory: MainCategory =
+    paramCategory === "do-uong" || paramCategory === "douong"
+      ? "Đồ uống"
+      : "Bánh";
+
+  const [activeTab, setActiveTab] = useState<MainCategory>(initialCategory);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Đồng bộ khi query param thay đổi (ví dụ khi bấm link điều hướng từ trang khác)
+  useEffect(() => {
+    const currentParam = searchParams.get("danh-muc");
+    if (currentParam === "do-uong" || currentParam === "douong") {
+      setActiveTab("Đồ uống");
+    } else if (currentParam === "banh") {
+      setActiveTab("Bánh");
+    }
+  }, [searchParams]);
+
+  // Xử lý chuyển tab & cập nhật URL query param
+  const handleTabChange = (tab: MainCategory) => {
+    setActiveTab(tab);
+    const slug = tab === "Bánh" ? "banh" : "do-uong";
+    router.replace(`/san-pham?danh-muc=${slug}`, { scroll: false });
+  };
 
   const productGroups = getProductGroups(activeTab);
 
@@ -88,21 +116,21 @@ export default function ProductsPage() {
       </section>
 
       {/* ============================================================
-          2. TAB DANH MỤC LỚN (2 Tab: "Bánh" & "Đồ uống")
+          2. TAB DANH MỤC LỚN (2 Tab: "Bánh" & "Đồ uống" — Bám sát Wireframe)
           ============================================================ */}
-      <section className="py-8 sm:py-10">
+      <section className="py-7 sm:py-9">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center gap-3 sm:gap-6">
+          <div className="flex justify-center items-center gap-4 sm:gap-6">
             {/* Tab: Bánh */}
             <button
               type="button"
-              onClick={() => setActiveTab("Bánh")}
-              className={`group flex items-center justify-center gap-2.5 rounded-2xl px-6 sm:px-10 py-3 sm:py-3.5 text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer ${
+              onClick={() => handleTabChange("Bánh")}
+              className={`group flex items-center justify-center gap-2.5 rounded-xl sm:rounded-2xl px-6 sm:px-10 py-3 sm:py-3.5 text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer ${
                 activeTab === "Bánh"
                   ? "bg-[#1B4B5A] text-white shadow-lg shadow-[#1B4B5A]/20 scale-102 ring-2 ring-[#1B4B5A]"
                   : "bg-white text-[#5B5B5B] border border-[#E5D9C3] hover:border-[#1B4B5A]/40 hover:bg-[#FFF8EF] hover:text-[#1B4B5A]"
               }`}
-              style={{ minWidth: "160px" }}
+              style={{ width: "220px", maxWidth: "48%" }}
             >
               <Cake className={`h-5 w-5 transition-transform group-hover:scale-110 ${activeTab === "Bánh" ? "text-[#F6CE8B]" : "text-[#C97B3D]"}`} />
               <span>Bánh</span>
@@ -111,13 +139,13 @@ export default function ProductsPage() {
             {/* Tab: Đồ uống */}
             <button
               type="button"
-              onClick={() => setActiveTab("Đồ uống")}
-              className={`group flex items-center justify-center gap-2.5 rounded-2xl px-6 sm:px-10 py-3 sm:py-3.5 text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer ${
+              onClick={() => handleTabChange("Đồ uống")}
+              className={`group flex items-center justify-center gap-2.5 rounded-xl sm:rounded-2xl px-6 sm:px-10 py-3 sm:py-3.5 text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer ${
                 activeTab === "Đồ uống"
                   ? "bg-[#1B4B5A] text-white shadow-lg shadow-[#1B4B5A]/20 scale-102 ring-2 ring-[#1B4B5A]"
                   : "bg-white text-[#5B5B5B] border border-[#E5D9C3] hover:border-[#1B4B5A]/40 hover:bg-[#FFF8EF] hover:text-[#1B4B5A]"
               }`}
-              style={{ minWidth: "160px" }}
+              style={{ width: "220px", maxWidth: "48%" }}
             >
               <Coffee className={`h-5 w-5 transition-transform group-hover:scale-110 ${activeTab === "Đồ uống" ? "text-[#F6CE8B]" : "text-[#C97B3D]"}`} />
               <span>Đồ uống</span>
@@ -256,5 +284,19 @@ export default function ProductsPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1B4B5A] border-t-transparent" />
+        </div>
+      }
+    >
+      <ProductsContent />
+    </Suspense>
   );
 }
