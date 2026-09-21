@@ -1,4 +1,8 @@
-import { Phone } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Phone, Mail, Heart } from "lucide-react";
+import LetterModal from "@/components/ui/LetterModal";
 
 interface FloatingAction {
   name: string;
@@ -11,6 +15,8 @@ interface FloatingAction {
 }
 
 export default function FloatingContact() {
+  const [isOpenLetter, setIsOpenLetter] = useState(false);
+
   const actions: FloatingAction[] = [
     // 1. TikTok
     {
@@ -64,33 +70,68 @@ export default function FloatingContact() {
   ];
 
   return (
-    <aside
-      aria-label="Liên hệ nhanh"
-      className="fixed right-3.5 sm:right-5 bottom-20 md:bottom-6 z-40 flex flex-col items-center gap-2.5 sm:gap-3"
-    >
-      {actions.map((item) => (
-        <div key={item.name} className="group relative flex items-center">
+    <>
+      <aside
+        aria-label="Liên hệ và quà tặng nhanh"
+        className="fixed right-3.5 sm:right-5 bottom-20 md:bottom-6 z-40 flex flex-col items-center gap-2.5 sm:gap-3"
+      >
+        {/* Nút mới: Lá thư ngẫu nhiên */}
+        <div className="group relative flex items-center">
           {/* Tooltip hiển thị khi hover trên desktop */}
-          <span className="pointer-events-none absolute right-full mr-2.5 hidden whitespace-nowrap rounded-md bg-primary-dark/95 px-2.5 py-1 text-xs font-medium text-cream shadow-md opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-x-1 lg:block">
-            {item.name}
+          <span className="pointer-events-none absolute right-full mr-2.5 hidden whitespace-nowrap rounded-md bg-[#1B4B5A]/95 px-2.5 py-1 text-xs font-medium text-[#FFF8EF] shadow-md opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-x-1 lg:block">
+            Lá thư ngẫu nhiên 💌
           </span>
 
-          {/* Nút tròn */}
-          <a
-            href={item.href}
-            target={item.href.startsWith("http") ? "_blank" : undefined}
-            rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-            aria-label={item.ariaLabel}
-            className={`relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full ${item.bgColor} ${item.textColor} shadow-lg ring-2 ring-cream/80 transition-all duration-300 hover:scale-110 active:scale-95`}
+          {/* Nút tròn màu hồng pastel nổi bật */}
+          <button
+            type="button"
+            onClick={() => setIsOpenLetter(true)}
+            aria-label="Mở lá thư ngẫu nhiên từ Cari Bakehouse"
+            className="relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gradient-to-tr from-[#FF5E8E] via-[#FF7597] to-[#FFA2B8] text-white shadow-lg shadow-pink-500/25 ring-2 ring-pink-200/90 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
           >
-            {/* Hiệu ứng pulse sóng nhẹ cho nút hotline */}
-            {item.pulse && (
-              <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-caramel/40 opacity-75 duration-1000" />
-            )}
-            {item.icon}
-          </a>
+            {/* Hiệu ứng pulse sóng nhẹ màu hồng pastel */}
+            <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-pink-400/40 opacity-75 duration-1000" />
+
+            <Mail className="h-5 w-5 text-white" />
+
+            {/* Trái tim nhỏ xinh đính kèm góc nút */}
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-white shadow-sm ring-1 ring-white">
+              <Heart className="h-2.5 w-2.5 fill-current" />
+            </span>
+          </button>
         </div>
-      ))}
-    </aside>
+
+        {/* Các nút liên hệ hiện có */}
+        {actions.map((item) => (
+          <div key={item.name} className="group relative flex items-center">
+            {/* Tooltip hiển thị khi hover trên desktop */}
+            <span className="pointer-events-none absolute right-full mr-2.5 hidden whitespace-nowrap rounded-md bg-primary-dark/95 px-2.5 py-1 text-xs font-medium text-cream shadow-md opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:-translate-x-1 lg:block">
+              {item.name}
+            </span>
+
+            {/* Nút tròn */}
+            <a
+              href={item.href}
+              target={item.href.startsWith("http") ? "_blank" : undefined}
+              rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
+              aria-label={item.ariaLabel}
+              className={`relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full ${item.bgColor} ${item.textColor} shadow-lg ring-2 ring-cream/80 transition-all duration-300 hover:scale-110 active:scale-95`}
+            >
+              {/* Hiệu ứng pulse sóng nhẹ cho nút hotline */}
+              {item.pulse && (
+                <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-caramel/40 opacity-75 duration-1000" />
+              )}
+              {item.icon}
+            </a>
+          </div>
+        ))}
+      </aside>
+
+      {/* Modal lá thư ngẫu nhiên */}
+      <LetterModal
+        isOpen={isOpenLetter}
+        onClose={() => setIsOpenLetter(false)}
+      />
+    </>
   );
 }
