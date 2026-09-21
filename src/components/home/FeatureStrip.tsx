@@ -1,21 +1,13 @@
+"use client";
+
+import { useHomeContent } from "@/lib/db";
 import RibbonIcon from "@/components/ui/RibbonIcon";
 
-const giftBoxes = [
-  {
-    id: "points",
-    title: "Chương trình tích điểm",
-  },
-  {
-    id: "delivery",
-    title: "Giao hàng tận nơi",
-  },
-  {
-    id: "preorder",
-    title: "Đặt trước",
-  },
-];
 
 export default function FeatureStrip() {
+  // 3 ô tính năng do admin chỉnh ở /admin/noi-dung-trang-chu
+  const { features: giftBoxes } = useHomeContent();
+
   return (
     <section className="relative z-20 -mt-12 sm:-mt-16 lg:-mt-18 px-4">
       <div className="mx-auto max-w-5xl">

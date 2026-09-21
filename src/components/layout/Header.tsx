@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth, logout } from "@/lib/auth";
+import { useCart } from "@/lib/cart";
+import { useSiteSettings } from "@/lib/db";
+import { formatHotline } from "@/lib/utils";
 import {
   Search,
   ShoppingBag,
@@ -33,6 +37,14 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useAuth();
+  const { count: cartCount } = useCart();
+  const settings = useSiteSettings();
+
+  // Tài khoản mock có vai trò admin thấy thêm mục "Quản trị" ở cuối menu
+  const navItems: NavItem[] =
+    user?.role === "admin" ? [...NAV_ITEMS, { label: "Quản trị", href: "/admin" }] : NAV_ITEMS;
 
   // Đóng menu khi chuyển trang
   useEffect(() => {
@@ -79,7 +91,7 @@ export default function Header() {
 
         {/* ================= 2. Ở giữa: Menu điều hướng Desktop ================= */}
         <nav className="hidden items-center gap-1 lg:flex xl:gap-2">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
@@ -120,17 +132,17 @@ export default function Header() {
           >
             <ShoppingBag className="h-5 w-5" />
             <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-caramel px-1 text-[10px] font-bold text-white shadow-xs">
-              0
+              {cartCount > 99 ? "99+" : cartCount}
             </span>
           </Link>
 
-          {/* Nút Đăng nhập (Desktop) */}
+          {/* Nút Đăng nhập / Tài khoản (Desktop) */}
           <Link
-            href="/dang-nhap"
+            href={user ? "/tai-khoan" : "/dang-nhap"}
             className="hidden items-center gap-1.5 rounded-full border border-primary/20 bg-primary px-4 py-2 text-sm font-medium text-cream shadow-xs transition-all hover:bg-primary-dark hover:shadow-md md:inline-flex"
           >
             <User className="h-4 w-4 text-accent" />
-            <span>Đăng nhập</span>
+            <span>{user ? "Tài khoản" : "Đăng nhập"}</span>
           </Link>
 
           {/* Nút Hamburger (Mobile / Tablet) */}
@@ -227,7 +239,7 @@ export default function Header() {
             {/* Drawer Menu Links */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
               <nav className="flex flex-col space-y-1">
-                {NAV_ITEMS.map((item) => {
+                {navItems.map((item) => {
                   const isActive = pathname === item.href;
                   return (
                     <Link
@@ -246,21 +258,46 @@ export default function Header() {
                 })}
               </nav>
 
-              {/* Phím Đăng nhập / Đăng ký trên Mobile */}
+              {/* Phím Đăng nhập / Đăng ký (hoặc Tài khoản / Đăng xuất) trên Mobile */}
               <div className="mt-6 flex flex-col gap-2.5 pt-4 border-t border-border">
-                <Link
-                  href="/dang-nhap"
-                  className="flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-cream shadow-xs transition-colors hover:bg-primary-dark"
-                >
-                  <User className="h-4 w-4 text-accent" />
-                  <span>Đăng nhập</span>
-                </Link>
-                <Link
-                  href="/dang-ky"
-                  className="flex items-center justify-center rounded-lg border border-border bg-white py-2.5 text-sm font-medium text-text-dark transition-colors hover:bg-accent/10"
-                >
-                  Đăng ký tài khoản
-                </Link>
+                {user ? (
+                  <>
+                    <Link
+                      href="/tai-khoan"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-cream shadow-xs transition-colors hover:bg-primary-dark"
+                    >
+                      <User className="h-4 w-4 text-accent" />
+                      <span>Tài khoản của tôi</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        logout();
+                        setIsMobileMenuOpen(false);
+                        router.push("/");
+                      }}
+                      className="flex items-center justify-center rounded-lg border border-border bg-white py-2.5 text-sm font-medium text-text-dark transition-colors hover:bg-accent/10"
+                    >
+                      Đăng xuất
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/dang-nhap"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-cream shadow-xs transition-colors hover:bg-primary-dark"
+                    >
+                      <User className="h-4 w-4 text-accent" />
+                      <span>Đăng nhập</span>
+                    </Link>
+                    <Link
+                      href="/dang-ky"
+                      className="flex items-center justify-center rounded-lg border border-border bg-white py-2.5 text-sm font-medium text-text-dark transition-colors hover:bg-accent/10"
+                    >
+                      Đăng ký tài khoản
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 
@@ -268,14 +305,14 @@ export default function Header() {
             <div className="border-t border-border bg-cream/60 p-4 text-xs text-text-muted">
               <div className="flex items-center gap-2">
                 <Phone className="h-3.5 w-3.5 text-caramel" />
-                <a href="tel:0338975925" className="hover:text-primary">
-                  Hotline: <strong className="text-text-dark">0338 975 925</strong>
+                <a href={`tel:${settings.hotline}`} className="hover:text-primary">
+                  Hotline: <strong className="text-text-dark">{formatHotline(settings.hotline)}</strong>
                 </a>
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <Mail className="h-3.5 w-3.5 text-caramel" />
-                <a href="mailto:cari.bakehouse07@gmail.com" className="hover:text-primary truncate">
-                  cari.bakehouse07@gmail.com
+                <a href={`mailto:${settings.email}`} className="hover:text-primary truncate">
+                  {settings.email}
                 </a>
               </div>
             </div>

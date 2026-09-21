@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Award,
   Coins,
-  Sparkles,
   ChevronDown,
   Gift,
   History,
@@ -15,6 +14,11 @@ import {
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
+import PointCard from "@/components/account/PointCard";
+import { useAuth } from "@/lib/auth";
+import { pointBalance, pointHistory, usePointLogs } from "@/lib/db";
+import { MOCK_USER } from "@/lib/mock-data";
+import { formatDateVN } from "@/lib/utils";
 
 // =============================================================================
 // FAQ DỮ LIỆU THẬT
@@ -23,7 +27,7 @@ const FAQ_ITEMS = [
   {
     question: "Làm sao để tích điểm?",
     answer:
-      "Cứ mỗi 1.000đ chi tiêu, bạn nhận được 1 điểm. Điểm được cộng tự động khi đơn hàng chuyển sang trạng thái \"hoàn tất\".",
+      "Cứ mỗi 1.000đ chi tiêu, bạn nhận được 1 điểm. Điểm được cộng tự động khi đơn hàng chuyển sang trạng thái \"đã giao\".",
   },
   {
     question: "Điểm dùng để làm gì?",
@@ -37,48 +41,28 @@ const FAQ_ITEMS = [
   },
 ];
 
-// =============================================================================
-// MOCK DATA DEMO
-// =============================================================================
-// TODO: thay bằng dữ liệu điểm thật của user khi nối database
-const MOCK_USER_POINT = {
-  currentPoints: 2450,
-  tier: "Thành viên mới",
-  nextTier: "Thân thiết",
-  pointsNeeded: 550,
-  progressPercentage: 65,
-};
-
-// TODO: thay bằng dữ liệu thật từ database
-const MOCK_POINT_HISTORY = [
-  {
-    date: "18/09/2026",
-    orderId: "#CB1024",
-    title: "Đơn hàng #CB1024 hoàn tất",
-    points: "+120",
-    isPositive: true,
-    balance: "2.450",
-  },
-  {
-    date: "10/09/2026",
-    orderId: "VOUCHER-20K",
-    title: "Đổi voucher giảm 20.000đ",
-    points: "-500",
-    isPositive: false,
-    balance: "2.330",
-  },
-  {
-    date: "02/09/2026",
-    orderId: "#CB0998",
-    title: "Đơn hàng #CB0998 hoàn tất",
-    points: "+85",
-    isPositive: true,
-    balance: "2.830",
-  },
-];
+// Điểm và lịch sử điểm lấy từ dữ liệu chung (src/lib/db.ts); admin cộng/trừ điểm ở /admin/khach-hang.
 
 export default function TichDiemPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  // Chưa đăng nhập: hiện dữ liệu demo của khách mẫu (trang vẫn ghi "Dữ liệu mẫu demo")
+  const { user } = useAuth();
+  const email = user?.email ?? MOCK_USER.email;
+  const logs = usePointLogs();
+  const currentPoints = useMemo(() => pointBalance(logs, email), [logs, email]);
+  const history = useMemo(
+    () =>
+      pointHistory(logs, email).map((l) => ({
+        id: l.id,
+        date: formatDateVN(l.date),
+        title: l.reason ? `${l.title}: ${l.reason}` : l.title,
+        points: `${l.points > 0 ? "+" : ""}${l.points.toLocaleString("vi-VN")}`,
+        isPositive: l.points > 0,
+        balance: l.balance.toLocaleString("vi-VN"),
+      })),
+    [logs, email],
+  );
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex((prev) => (prev === index ? null : index));
@@ -148,54 +132,7 @@ export default function TichDiemPage() {
             <span className="text-xs text-muted italic">(Dữ liệu mẫu demo)</span>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl bg-[#1B4B5A] text-white p-6 sm:p-8 shadow-md">
-            {/* Pattern trang trí nền */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 h-44 w-44 rounded-full bg-[#F6CE8B]/10 blur-xl" />
-            <div className="absolute bottom-0 right-20 -mb-10 h-32 w-32 rounded-full bg-white/5 blur-lg" />
-
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-4 max-w-lg">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-[#F6CE8B] border border-white/10">
-                  <Sparkles className="h-3 w-3" />
-                  Cari Member Card
-                </div>
-                <div>
-                  <div className="font-heading text-4xl sm:text-5xl font-black tracking-tight text-[#F6CE8B]">
-                    {MOCK_USER_POINT.currentPoints.toLocaleString("vi-VN")}{" "}
-                    <span className="text-xl sm:text-2xl font-normal text-white/90">điểm</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-white/70 mt-1">Số điểm khả dụng hiện có</p>
-                </div>
-
-                {/* Progress bar */}
-                <div className="space-y-2 pt-2">
-                  <div className="flex justify-between text-xs text-white/80">
-                    <span>Hạng hiện tại: <strong className="text-white">{MOCK_USER_POINT.tier}</strong></span>
-                    <span>Cần thêm <strong className="text-[#F6CE8B]">{MOCK_USER_POINT.pointsNeeded} điểm</strong></span>
-                  </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/25">
-                    <div
-                      className="h-full rounded-full bg-[#F6CE8B] transition-all duration-500"
-                      style={{ width: `${MOCK_USER_POINT.progressPercentage}%` }}
-                    />
-                  </div>
-                  <p className="text-[11px] text-white/60">
-                    Còn {MOCK_USER_POINT.pointsNeeded} điểm nữa để nâng hạng lên {MOCK_USER_POINT.nextTier}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-start md:items-end justify-between border-t md:border-t-0 border-white/15 pt-4 md:pt-0">
-                <div className="rounded-xl bg-white/10 px-4 py-2 text-center border border-white/10 backdrop-blur-xs">
-                  <div className="text-[11px] text-white/70">Hạng tài khoản</div>
-                  <div className="font-heading text-sm font-bold text-[#F6CE8B]">{MOCK_USER_POINT.tier}</div>
-                </div>
-                <div className="mt-4 text-xs text-white/60">
-                  Cari Bakehouse • Since 2023
-                </div>
-              </div>
-            </div>
-          </div>
+          <PointCard data={{ currentPoints, tier: "Thành viên mới" }} />
         </section>
 
         {/* 4. BẢNG QUY ĐỔI ĐIỂM VÀ HẠNG THÀNH VIÊN */}
@@ -390,8 +327,15 @@ export default function TichDiemPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 text-[#2b2b2b]">
-                {MOCK_POINT_HISTORY.map((item, index) => (
-                  <tr key={index} className="hover:bg-[#FFF8EF]/50 transition-colors">
+                {history.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-6 px-6 text-center text-sm text-muted">
+                      Chưa có lịch sử điểm.
+                    </td>
+                  </tr>
+                )}
+                {history.map((item) => (
+                  <tr key={item.id} className="hover:bg-[#FFF8EF]/50 transition-colors">
                     <td className="py-3.5 px-4 sm:px-6 text-muted">{item.date}</td>
                     <td className="py-3.5 px-4 sm:px-6 font-medium text-[#1B4B5A]">{item.title}</td>
                     <td

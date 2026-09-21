@@ -3,23 +3,40 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { useCart } from "@/lib/cart";
 
 interface BottomNavItem {
   label: string;
   href: string;
   icon: typeof Home;
   badge?: number;
+  /** Các đường dẫn khác cũng được tính là "đang ở mục này" */
+  activePaths?: string[];
 }
-
-const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
-  { label: "Trang chủ", href: "/", icon: Home },
-  { label: "Danh mục", href: "/san-pham", icon: LayoutGrid },
-  { label: "Giỏ hàng", href: "/gio-hang", icon: ShoppingBag, badge: 0 },
-  { label: "Tài khoản", href: "/dang-nhap", icon: User },
-];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const { count } = useCart();
+
+  const items: BottomNavItem[] = [
+    { label: "Trang chủ", href: "/", icon: Home },
+    { label: "Danh mục", href: "/san-pham", icon: LayoutGrid },
+    {
+      label: "Giỏ hàng",
+      href: "/gio-hang",
+      icon: ShoppingBag,
+      badge: count,
+      activePaths: ["/dat-hang"],
+    },
+    {
+      label: "Tài khoản",
+      href: user ? "/tai-khoan" : "/dang-nhap",
+      icon: User,
+      activePaths: ["/tai-khoan", "/dang-nhap", "/dang-ky"],
+    },
+  ];
 
   return (
     <nav
@@ -27,16 +44,16 @@ export default function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/80 bg-cream/95 backdrop-blur-lg shadow-[0_-4px_16px_rgba(0,0,0,0.06)] md:hidden"
     >
       <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
-        {BOTTOM_NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const isActive =
             item.href === "/"
               ? pathname === "/"
-              : pathname.startsWith(item.href);
+              : [item.href, ...(item.activePaths ?? [])].some((p) => pathname.startsWith(p));
           const Icon = item.icon;
 
           return (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
               className={`relative flex flex-1 flex-col items-center justify-center py-1 transition-all ${
                 isActive ? "text-primary" : "text-text-muted hover:text-text-dark"
@@ -50,7 +67,7 @@ export default function BottomNav() {
                 />
                 {item.badge !== undefined && (
                   <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-caramel px-1 text-[9px] font-bold text-white shadow-xs">
-                    {item.badge}
+                    {item.badge > 99 ? "99+" : item.badge}
                   </span>
                 )}
               </div>

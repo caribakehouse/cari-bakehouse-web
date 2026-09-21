@@ -12,6 +12,10 @@ import {
   CheckCircle2,
   Sparkles,
 } from "lucide-react";
+import { useSiteSettings } from "@/lib/db";
+import { formatHotline, handleFromUrl } from "@/lib/utils";
+
+const MAP_QUERY = "34 ngõ 40 Tô Vĩnh Diện, Khương Trung, Thanh Xuân, Hà Nội";
 
 // Inline Instagram SVG (lucide-react version in this project does not export Instagram)
 function InstagramIcon({ className }: { className?: string }) {
@@ -35,6 +39,7 @@ function InstagramIcon({ className }: { className?: string }) {
 }
 
 export default function LienHePage() {
+  const settings = useSiteSettings();
   const [formData, setFormData] = useState({
     fullName: "",
     contact: "",
@@ -111,27 +116,31 @@ export default function LienHePage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-muted">Hotline</span>
                   <p>
                     <a
-                      href="tel:0338975925"
+                      href={`tel:${settings.hotline}`}
                       className="font-heading text-base font-bold text-[#1B4B5A] hover:underline"
                     >
-                      0338.975.925
+                      {formatHotline(settings.hotline, ".")}
                     </a>
                   </p>
                 </div>
               </div>
 
-              {/* Email */}
-              {/* TODO: chưa có email chính thức từ shop */}
+              {/* Email (lấy từ Cài đặt chung trong admin) */}
               <div className="flex items-start gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FCE9C6] text-[#1B4B5A] border border-[#F6CE8B]/60">
                   <Mail className="h-5 w-5" />
                 </div>
                 <div className="space-y-1 text-sm">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted">Email</span>
-                  <p className="text-muted italic text-xs">
-                    {/* Để trống email theo yêu cầu */}
-                    (Đang cập nhật)
-                  </p>
+                  {settings.email ? (
+                    <p>
+                      <a href={`mailto:${settings.email}`} className="font-medium text-[#2b2b2b] hover:underline break-all">
+                        {settings.email}
+                      </a>
+                    </p>
+                  ) : (
+                    <p className="text-muted italic text-xs">(Đang cập nhật)</p>
+                  )}
                 </div>
               </div>
 
@@ -157,28 +166,53 @@ export default function LienHePage() {
                 <div className="flex flex-wrap items-center gap-3">
                   {/* Zalo */}
                   <a
-                    href="https://zalo.me/0338975925"
+                    href={settings.zalo}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-[#FFF8EF] px-3.5 py-2 text-xs font-bold text-[#1B4B5A] hover:bg-[#FCE9C6] hover:border-[#F6CE8B] transition-all shadow-2xs"
                   >
                     <MessageCircle className="h-4 w-4 text-blue-600" />
-                    Zalo: 0338.975.925
+                    Zalo: {formatHotline(settings.hotline, ".")}
                   </a>
 
                   {/* Instagram */}
-                  <a
-                    href="https://www.instagram.com/cari.bakehouse.hn/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-[#FFF8EF] px-3.5 py-2 text-xs font-bold text-[#1B4B5A] hover:bg-[#FCE9C6] hover:border-[#F6CE8B] transition-all shadow-2xs"
-                  >
-                    <InstagramIcon className="h-4 w-4 text-pink-600" />
-                    Cari.bakehouse.hn
-                  </a>
+                  {settings.instagram && (
+                    <a
+                      href={settings.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-[#FFF8EF] px-3.5 py-2 text-xs font-bold text-[#1B4B5A] hover:bg-[#FCE9C6] hover:border-[#F6CE8B] transition-all shadow-2xs"
+                    >
+                      <InstagramIcon className="h-4 w-4 text-pink-600" />
+                      {handleFromUrl(settings.instagram) || "Instagram"}
+                    </a>
+                  )}
 
-                  {/* Facebook tạm ẩn */}
-                  {/* TODO: chưa có link Facebook chính thức */}
+                  {/* Facebook (chỉ hiện khi đã có link trong Cài đặt chung) */}
+                  {settings.facebook && (
+                    <a
+                      href={settings.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-[#FFF8EF] px-3.5 py-2 text-xs font-bold text-[#1B4B5A] hover:bg-[#FCE9C6] hover:border-[#F6CE8B] transition-all shadow-2xs"
+                    >
+                      <MessageCircle className="h-4 w-4 text-blue-700" />
+                      Facebook
+                    </a>
+                  )}
+
+                  {/* TikTok (chỉ hiện khi đã có link trong Cài đặt chung) */}
+                  {settings.tiktok && (
+                    <a
+                      href={settings.tiktok}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-[#FFF8EF] px-3.5 py-2 text-xs font-bold text-[#1B4B5A] hover:bg-[#FCE9C6] hover:border-[#F6CE8B] transition-all shadow-2xs"
+                    >
+                      <Sparkles className="h-4 w-4 text-neutral-800" />
+                      TikTok
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -188,37 +222,31 @@ export default function LienHePage() {
             </div>
           </div>
 
-          {/* Cột phải: Khối bản đồ */}
-          {/* TODO: nhúng Google Maps thật khi có tọa độ chính xác. */}
-          <div className="lg:col-span-7 relative min-h-[340px] sm:min-h-[420px] rounded-2xl border-2 border-dashed border-[#1B4B5A]/25 bg-[#FCE9C6]/40 p-6 flex flex-col items-center justify-center text-center shadow-xs overflow-hidden">
-            {/* Pattern trang trí bản đồ */}
-            <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#1B4B5A_1px,transparent_1px)] [background-size:16px_16px]" />
-
-            <div className="relative z-10 max-w-md space-y-4">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#1B4B5A] text-white shadow-md">
-                <MapPin className="h-8 w-8 text-[#F6CE8B] animate-bounce" />
+          {/* Cột phải: Bản đồ Google Maps nhúng trực tiếp */}
+          {/* TODO: đang tìm theo địa chỉ; thay bằng link nhúng ghim đúng tọa độ khi shop cung cấp (Google Maps → Chia sẻ → Nhúng bản đồ). */}
+          <div className="lg:col-span-7 flex min-h-[380px] flex-col overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs sm:min-h-[460px]">
+            <iframe
+              title="Bản đồ vị trí Cari Bakehouse"
+              src={`https://www.google.com/maps?q=${encodeURIComponent(MAP_QUERY)}&hl=vi&z=17&output=embed`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+              className="min-h-[300px] w-full flex-1 border-0"
+            />
+            <div className="flex flex-col items-start justify-between gap-3 border-t border-border/60 bg-[#FFF8EF] p-4 sm:flex-row sm:items-center">
+              <div className="flex items-start gap-2.5 text-xs text-[#2b2b2b]/80 sm:text-sm">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#1B4B5A]" />
+                <span>34 ngõ 40 Tô Vĩnh Diện, P. Khương Trung, Q. Thanh Xuân, Hà Nội</span>
               </div>
-              <h3 className="font-heading text-lg font-bold text-[#1B4B5A]">
-                Vị trí Cari Bakehouse trên bản đồ
-              </h3>
-              <p className="text-xs sm:text-sm text-[#2b2b2b]/80 leading-relaxed">
-                34 ngõ 40 Tô Vĩnh Diện, P. Khương Trung, Q. Thanh Xuân, Hà Nội
-              </p>
-              <div className="pt-2">
-                <a
-                  href="https://maps.google.com/?q=34+ngõ+40+Tô+Vĩnh+Diện+Khương+Trung+Thanh+Xuân+Hà+Nội"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#1B4B5A] px-5 py-2 text-xs font-bold text-white hover:bg-[#1B4B5A]/90 transition-all shadow-xs"
-                >
-                  <MapPin className="h-3.5 w-3.5 text-[#F6CE8B]" />
-                  Mở chỉ đường trên Google Maps
-                </a>
-              </div>
-              <p className="text-[11px] text-muted italic">
-                {/* TODO: nhúng Google Maps thật khi có tọa độ chính xác. */}
-                Bản đồ iframe nhúng trực tiếp sẽ được cập nhật khi có tọa độ chính xác từ shop.
-              </p>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#1B4B5A] px-5 py-2 text-xs font-bold text-white shadow-xs transition-all hover:bg-[#1B4B5A]/90"
+              >
+                <MapPin className="h-3.5 w-3.5 text-[#F6CE8B]" />
+                Mở chỉ đường trên Google Maps
+              </a>
             </div>
           </div>
         </section>

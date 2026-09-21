@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import {
-  Sparkles,
-  Calendar,
-  Clock,
   CheckCircle2,
   AlertCircle,
   UploadCloud,
@@ -15,10 +10,12 @@ import {
   Cake,
   HelpCircle,
   FileCheck,
-  PhoneCall,
   Send,
   X,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { addCustomRequest } from "@/lib/db";
+import { readImageFile } from "@/lib/utils";
 
 // =============================================================================
 // FAQ DỮ LIỆU THẬT
@@ -101,6 +98,7 @@ const MOCK_GALLERY = [
 ];
 
 export default function BanhDatTheoYeuCauPage() {
+  const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useState("Tất cả");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
@@ -115,6 +113,8 @@ export default function BanhDatTheoYeuCauPage() {
     notes: "",
   });
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  // Ảnh tham khảo đã thu nhỏ (data URL) để admin xem ở /admin/dat-theo-yeu-cau
+  const [referenceImage, setReferenceImage] = useState<string | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
@@ -127,9 +127,14 @@ export default function BanhDatTheoYeuCauPage() {
     setOpenFaqIndex((prev) => (prev === index ? null : index));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFileName(e.target.files[0].name);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFileName(file.name);
+    try {
+      setReferenceImage(await readImageFile(file, 640));
+    } catch {
+      setReferenceImage(undefined);
     }
   };
 
@@ -143,6 +148,19 @@ export default function BanhDatTheoYeuCauPage() {
     setIsSubmitting(true);
     // Đây là form gửi yêu cầu tư vấn (không thanh toán trên web)
     // Sau khi gửi, tiệm chủ động liên hệ báo giá qua Zalo trong vòng 24 giờ
+    // Yêu cầu được lưu vào dữ liệu chung → hiện ở /admin/dat-theo-yeu-cau với trạng thái "Mới"
+    addCustomRequest({
+      customerName: user?.fullName ?? "Khách chưa đăng nhập",
+      customerEmail: user?.email,
+      phone: formState.phoneZalo.trim(),
+      occasion: formState.occasion,
+      deliveryDate: formState.deliveryDate,
+      sizeGuestCount: formState.sizeGuestCount.trim(),
+      flavor: formState.flavor.trim(),
+      budget: formState.budget.trim(),
+      notes: formState.notes.trim(),
+      referenceImage,
+    });
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSuccessModalOpen(true);
@@ -157,6 +175,7 @@ export default function BanhDatTheoYeuCauPage() {
         notes: "",
       });
       setSelectedFileName(null);
+      setReferenceImage(undefined);
     }, 700);
   };
 
@@ -181,7 +200,7 @@ export default function BanhDatTheoYeuCauPage() {
           </div>
 
           <h1 className="font-heading text-3xl font-black text-[#1B4B5A] sm:text-4xl md:text-5xl leading-tight">
-            Bánh đặt theo yêu cầu — theo đúng ý bạn
+            Cari.Bakehouse nhận đặt bánh theo yêu cầu
           </h1>
 
           <p className="mx-auto max-w-2xl text-sm sm:text-base text-[#1B4B5A]/80 leading-relaxed">

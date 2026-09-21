@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Phone, Mail, Heart } from "lucide-react";
 import LetterModal from "@/components/ui/LetterModal";
+import { useSiteSettings } from "@/lib/db";
+import { formatHotline } from "@/lib/utils";
 
 interface FloatingAction {
   name: string;
@@ -16,12 +18,13 @@ interface FloatingAction {
 
 export default function FloatingContact() {
   const [isOpenLetter, setIsOpenLetter] = useState(false);
+  const settings = useSiteSettings();
 
   const actions: FloatingAction[] = [
     // 1. TikTok
     {
       name: "TikTok",
-      href: "#",
+      href: settings.tiktok || "#",
       ariaLabel: "Kênh TikTok Cari Bakehouse",
       bgColor: "bg-black hover:bg-neutral-800",
       textColor: "text-white",
@@ -34,7 +37,7 @@ export default function FloatingContact() {
     // 2. Facebook / Messenger
     {
       name: "Facebook",
-      href: "#",
+      href: settings.facebook || "#",
       ariaLabel: "Fanpage Facebook Cari Bakehouse",
       bgColor: "bg-[#1877F2] hover:bg-[#166fe5]",
       textColor: "text-white",
@@ -47,8 +50,8 @@ export default function FloatingContact() {
     // 3. Zalo
     {
       name: "Zalo",
-      href: "https://zalo.me/0338975925",
-      ariaLabel: "Chat Zalo tiệm bánh 0338975925",
+      href: settings.zalo,
+      ariaLabel: `Chat Zalo tiệm bánh ${settings.hotline}`,
       bgColor: "bg-[#0068FF] hover:bg-[#0057d6]",
       textColor: "text-white",
       icon: (
@@ -59,9 +62,9 @@ export default function FloatingContact() {
     },
     // 4. Hotline gọi điện
     {
-      name: "0338 975 925",
-      href: "tel:0338975925",
-      ariaLabel: "Gọi hotline 0338975925",
+      name: formatHotline(settings.hotline),
+      href: `tel:${settings.hotline}`,
+      ariaLabel: `Gọi hotline ${settings.hotline}`,
       bgColor: "bg-caramel hover:bg-caramel/90",
       textColor: "text-white",
       pulse: true,

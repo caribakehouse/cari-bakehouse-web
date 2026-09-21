@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import Image from "next/image";
+import Image from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -10,8 +10,10 @@ import {
   Check,
   Sparkles,
 } from "lucide-react";
-import { getProductGroups, Product } from "@/lib/mock-data";
+import type { Product } from "@/lib/mock-data";
+import { defaultSize, getProductStatus, priceForSize, useProductGroups } from "@/lib/db";
 import RibbonIcon from "@/components/ui/RibbonIcon";
+import { addToCart } from "@/lib/cart";
 
 function formatPrice(p: number) {
   return p.toLocaleString("vi-VN") + "đ";
@@ -160,7 +162,10 @@ function ProductsContent() {
     router.replace(`/san-pham?danh-muc=${slug}`, { scroll: false });
   };
 
-  const productGroups = getProductGroups(activeTab);
+  // Danh sách sản phẩm lấy từ dữ liệu chung (admin chỉnh ở /admin/san-pham); sản phẩm ẩn không hiện
+  const productGroups = useProductGroups(activeTab);
+  const [sizeChoice, setSizeChoice] = useState<Record<string, string>>({});
+  const chosenSize = (p: Product) => sizeChoice[p.slug] ?? defaultSize(p);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -172,13 +177,15 @@ function ProductsContent() {
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
+    addToCart(product, 1, chosenSize(product));
     showToast(`Đã thêm "${product.name}" vào giỏ hàng! 🛒`);
   };
 
   const handleBuyNow = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
-    showToast(`Đang chuyển đến thanh toán cho "${product.name}"... ✨`);
+    addToCart(product, 1, chosenSize(product));
+    router.push("/gio-hang");
   };
 
   return (
@@ -254,6 +261,11 @@ function ProductsContent() {
                     href={`/san-pham/${product.slug}`}
                     className="relative aspect-4/3 sm:aspect-square w-full overflow-hidden bg-[#FCE9C6] block"
                   >
+                    {getProductStatus(product) === "soldout" && (
+                      <span className="absolute right-3 top-3 z-10 rounded-full bg-rose-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                        Hết hàng
+                      </span>
+                    )}
                     {product.badge && (
                       <span className="absolute left-3 top-3 z-10 rounded-full bg-[#1B4B5A] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#F6CE8B] shadow-sm">
                         {product.badge}
@@ -302,12 +314,37 @@ function ProductsContent() {
                       <span className="ml-1 text-xs text-[#7A7A7A]">({product.reviews})</span>
                     </div>
 
+                    {/* Chọn cỡ bánh (chỉ khi sản phẩm có nhiều cỡ) */}
+                    {product.sizes && product.sizes.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label={`Chọn cỡ ${product.name}`}>
+                        {product.sizes.map((size) => {
+                          const active = chosenSize(product) === size.label;
+                          return (
+                            <button
+                              key={size.label}
+                              type="button"
+                              role="radio"
+                              aria-checked={active}
+                              onClick={() => setSizeChoice((prev) => ({ ...prev, [product.slug]: size.label }))}
+                              className={`cursor-pointer rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                                active
+                                  ? "border-[#1B4B5A] bg-[#1B4B5A] text-white"
+                                  : "border-[#E5D9C3] bg-white text-[#1B4B5A] hover:border-[#1B4B5A]/50"
+                              }`}
+                            >
+                              {size.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     {/* Giá tiền */}
                     <div className="mt-3 flex items-baseline gap-2">
                       <span className="font-heading text-lg font-black text-[#1B4B5A]">
-                        {formatPrice(product.price)}
+                        {formatPrice(priceForSize(product, chosenSize(product)))}
                       </span>
-                      {product.originalPrice && (
+                      {product.originalPrice && !product.sizes?.length && (
                         <span className="text-xs text-[#7A7A7A] line-through">
                           {formatPrice(product.originalPrice)}
                         </span>
@@ -320,7 +357,8 @@ function ProductsContent() {
                       <button
                         type="button"
                         onClick={(e) => handleBuyNow(e, product)}
-                        className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#123640] hover:shadow-md active:scale-95 cursor-pointer"
+                        disabled={getProductStatus(product) === "soldout"}
+                        className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#123640] hover:shadow-md active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <span>Đặt ngay</span>
                       </button>
@@ -329,8 +367,9 @@ function ProductsContent() {
                       <button
                         type="button"
                         onClick={(e) => handleAddToCart(e, product)}
+                        disabled={getProductStatus(product) === "soldout"}
                         aria-label={`Thêm ${product.name} vào giỏ`}
-                        className="flex items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-3.5 py-2.5 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95 cursor-pointer"
+                        className="flex items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-3.5 py-2.5 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <ShoppingBag className="h-4 w-4 shrink-0" />
                         <span className="hidden sm:inline">Thêm vào giỏ</span>

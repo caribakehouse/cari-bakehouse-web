@@ -1,8 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import { Star } from "lucide-react";
-import { reviews } from "@/lib/mock-data";
+import { allReviews, useHomeContent } from "@/lib/db";
 
 export default function Reviews() {
+  // Đánh giá nổi bật do admin chọn ở /admin/noi-dung-trang-chu
+  const { featuredReviewIds } = useHomeContent();
+  const reviews = featuredReviewIds
+    .map((id) => allReviews.find((r) => r.id === id))
+    .filter((r): r is (typeof allReviews)[number] => !!r);
+  if (reviews.length === 0) return null;
+
   return (
     <section className="border-t border-[#E5D9C3] bg-white py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

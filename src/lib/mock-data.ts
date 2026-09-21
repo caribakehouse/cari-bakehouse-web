@@ -1,7 +1,31 @@
 // ============================================================
 //  Cari Bakehouse — Mock Data (src/lib/mock-data.ts)
-//  Dùng cho các section trang chủ trước khi kết nối API thật
+//  NGUỒN DỮ LIỆU MẪU DUY NHẤT của toàn dự án (cửa hàng + khu admin).
+//  Khu admin đọc/ghi qua src/lib/db.ts: đây là dữ liệu gốc (seed), mọi chỉnh sửa
+//  được lưu chồng lên trên trong localStorage của trình duyệt (chưa có database thật).
+//  TODO: thay bằng database thật (Supabase) ở Giai đoạn 4.
 // ============================================================
+
+import type { AuthUser, Customer, PointTransaction } from "@/types/user";
+import type { Order, Voucher } from "@/types/order";
+import type { CustomOrderRequest } from "@/types/custom-order";
+import type { AboutContent, HomeContent, SiteSettings } from "@/types/content";
+
+/** Chuỗi yyyy-mm-dd của "hôm nay + offset ngày" theo giờ địa phương (dùng cho đơn mẫu luôn mới). */
+function dayOffset(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+export type ProductStatus = "active" | "soldout" | "hidden";
+
+export interface ProductSize {
+  label: string;
+  price: number;
+}
 
 export interface HeroSlide {
   id: number;
@@ -27,6 +51,12 @@ export interface Product {
   badge?: string;
   rating: number;
   reviews: number;
+  /** Các cỡ bánh kèm giá riêng. Nếu có, `price` = giá thấp nhất trong các cỡ. */
+  sizes?: ProductSize[];
+  /** Tồn kho (mặc định 20 trong dữ liệu mẫu) */
+  stock?: number;
+  /** Bỏ trống = "active" */
+  status?: ProductStatus;
 }
 
 export interface ProductCategoryGroup {
@@ -36,6 +66,9 @@ export interface ProductCategoryGroup {
   description?: string;
   products: Product[];
 }
+
+/** Thông tin nhóm sản phẩm (không kèm danh sách sản phẩm) */
+export type ProductGroupMeta = Omit<ProductCategoryGroup, "products">;
 
 export interface GalleryItem {
   id: number;
@@ -86,134 +119,8 @@ export const heroSlides: HeroSlide[] = [
   },
 ];
 
-// ─── Top 3 Best-seller (admin picks) ────────────────────────
-export const topProducts: Product[] = [
-  {
-    id: 1,
-    slug: "banh-bong-lan-mat-ong",
-    name: "Bánh Bông Lan Mật Ong",
-    category: "Bánh",
-    price: 185000,
-    image: "https://placehold.co/480x480/FFF8EF/1B4B5A?text=Banh+1",
-    badge: "#1 Best-seller",
-    rating: 5,
-    reviews: 142,
-  },
-  {
-    id: 2,
-    slug: "eclair-ca-phe-so-co-la",
-    name: "Éclair Cà Phê & Sô Cô La",
-    category: "Bánh",
-    price: 65000,
-    originalPrice: 75000,
-    image: "https://placehold.co/480x480/FCE9C6/1B4B5A?text=Banh+2",
-    badge: "#2 Yêu thích",
-    rating: 5,
-    reviews: 98,
-  },
-  {
-    id: 3,
-    slug: "matcha-roll-cake",
-    name: "Matcha Roll Cake",
-    category: "Bánh",
-    price: 220000,
-    image: "https://placehold.co/480x480/E8F5E9/1B4B5A?text=Banh+3",
-    badge: "#3 Trending",
-    rating: 4,
-    reviews: 77,
-  },
-];
-
-// ─── Product Menu Grid ───────────────────────────────────────
-export const menuProducts: Product[] = [
-  {
-    id: 10,
-    slug: "banh-sua-chua-chanh-leo",
-    name: "Bánh Sữa Chua Chanh Leo",
-    category: "Bánh",
-    price: 175000,
-    image: "https://placehold.co/400x400/FFF8EF/1B4B5A?text=Sua+Chua",
-    rating: 5,
-    reviews: 54,
-  },
-  {
-    id: 11,
-    slug: "croissant-bo-phap",
-    name: "Croissant Bơ Pháp",
-    category: "Bánh",
-    price: 45000,
-    image: "https://placehold.co/400x400/FCE9C6/1B4B5A?text=Croissant",
-    badge: "Mới",
-    rating: 5,
-    reviews: 33,
-  },
-  {
-    id: 12,
-    slug: "tart-trung-hong-kong",
-    name: "Tart Trứng Hồng Kông",
-    category: "Bánh",
-    price: 35000,
-    image: "https://placehold.co/400x400/FFF3E0/1B4B5A?text=Tart+Trung",
-    rating: 4,
-    reviews: 61,
-  },
-  {
-    id: 13,
-    slug: "banh-su-kem-vanilla",
-    name: "Bánh Su Kem Vanilla",
-    category: "Bánh",
-    price: 28000,
-    image: "https://placehold.co/400x400/F3E5F5/1B4B5A?text=Su+Kem",
-    rating: 5,
-    reviews: 89,
-  },
-  {
-    id: 14,
-    slug: "tra-sua-tran-chau",
-    name: "Trà Sữa Trân Châu",
-    category: "Đồ uống",
-    price: 55000,
-    image: "https://placehold.co/400x400/E8EAF6/1B4B5A?text=Tra+Sua",
-    badge: "Hot",
-    rating: 5,
-    reviews: 112,
-  },
-  {
-    id: 15,
-    slug: "ca-phe-sua-da-cari",
-    name: "Cà Phê Sữa Đá Cari",
-    category: "Đồ uống",
-    price: 45000,
-    image: "https://placehold.co/400x400/EFEBE9/1B4B5A?text=Ca+Phe",
-    rating: 4,
-    reviews: 47,
-  },
-  {
-    id: 16,
-    slug: "banh-red-velvet",
-    name: "Red Velvet Slice",
-    category: "Bánh",
-    price: 85000,
-    originalPrice: 95000,
-    image: "https://placehold.co/400x400/FFEBEE/1B4B5A?text=Red+Velvet",
-    badge: "Sale",
-    rating: 5,
-    reviews: 68,
-  },
-  {
-    id: 17,
-    slug: "tiramisu-ca-ly",
-    name: "Tiramisu Cá Ly",
-    category: "Bánh",
-    price: 75000,
-    image: "https://placehold.co/400x400/FAFAFA/1B4B5A?text=Tiramisu",
-    rating: 5,
-    reviews: 95,
-  },
-];
-
 // ─── Danh mục chi tiết phân nhóm cho trang /san-pham ──────────────
-export const cakeProductGroups: ProductCategoryGroup[] = [
+const cakeProductGroups: ProductCategoryGroup[] = [
   {
     id: "banh-kem-sinh-nhat",
     category: "Bánh",
@@ -241,7 +148,7 @@ export const cakeProductGroups: ProductCategoryGroup[] = [
         subcategory: "Bánh Kem & Bánh Ổ",
         description: "Trà xanh Uji Nhật Bản đậm vị kết hợp cùng lớp kem tươi mịn màng",
         price: 220000,
-        image: "https://images.unsplash.com/photo-1535141192574-5d4897c13136?w=600&auto=format&fit=crop&q=80",
+        image: "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?w=600&auto=format&fit=crop&q=80",
         badge: "Trending",
         rating: 5,
         reviews: 77,
@@ -356,7 +263,7 @@ export const cakeProductGroups: ProductCategoryGroup[] = [
   },
 ];
 
-export const drinkProductGroups: ProductCategoryGroup[] = [
+const drinkProductGroups: ProductCategoryGroup[] = [
   {
     id: "tra-trai-cay-tra-sua",
     category: "Đồ uống",
@@ -371,7 +278,7 @@ export const drinkProductGroups: ProductCategoryGroup[] = [
         subcategory: "Trà Trái Cây & Trà Sữa",
         description: "Trà đen nguyên bản pha sữa béo ngậy cùng trân châu hoàng kim dẻo bùi",
         price: 55000,
-        image: "https://images.unsplash.com/photo-1558857563-b37cf5c8466b?w=600&auto=format&fit=crop&q=80",
+        image: "https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=600&auto=format&fit=crop&q=80",
         badge: "Hot",
         rating: 5,
         reviews: 112,
@@ -498,10 +405,6 @@ export const drinkProductGroups: ProductCategoryGroup[] = [
   },
 ];
 
-export function getProductGroups(category: "Bánh" | "Đồ uống"): ProductCategoryGroup[] {
-  return category === "Bánh" ? cakeProductGroups : drinkProductGroups;
-}
-
 // ─── Gallery ─────────────────────────────────────────────────
 export const galleryItems: GalleryItem[] = [
   { id: 1, image: "https://placehold.co/600x600/F6CE8B/1B4B5A?text=Gallery+1", alt: "Không gian cửa hàng Cari Bakehouse" },
@@ -542,3 +445,399 @@ export const reviews: Review[] = [
       "Không gian ảo nhưng chất lượng thật. Tiramisu cá ly của Cari là ngon nhất mình từng ăn ở Hà Nội. Hương cà phê đậm đà, kem mascarpone mịn. Đặt hàng online siêu tiện.",
   },
 ];
+
+// ─── Sản phẩm: danh sách phẳng + thông tin nhóm ───────────────
+// Cửa hàng (/san-pham, trang chủ) và admin cùng đọc danh sách này qua src/lib/db.ts.
+const seedGroups: ProductCategoryGroup[] = [...cakeProductGroups, ...drinkProductGroups];
+
+export const PRODUCT_GROUP_META: ProductGroupMeta[] = seedGroups.map(
+  ({ id, category, title, description }) => ({ id, category, title, description }),
+);
+
+export const SEED_PRODUCTS: Product[] = seedGroups.flatMap((group) =>
+  group.products.map((p) => ({ ...p, stock: p.stock ?? 20, status: p.status ?? ("active" as const) })),
+);
+
+// ─── Tài khoản demo ──────────────────────────────────────────
+// TODO: thay bằng kiểm tra vai trò thật qua Supabase Auth ở Giai đoạn 4.
+export const ADMIN_EMAIL = "admin@cari.bakehouse";
+
+/** Khách hàng demo có sẵn đơn hàng + điểm (đăng nhập bằng email này để xem dữ liệu mẫu) */
+export const MOCK_USER: AuthUser = {
+  fullName: "Nguyễn Minh Anh",
+  email: "minhanh@example.com",
+  phone: "0901 234 567",
+};
+
+// ─── Khách hàng mẫu ──────────────────────────────────────────
+// TODO: thay bằng bảng khách hàng thật khi nối database
+export const SEED_CUSTOMERS: Customer[] = [
+  { id: "KH001", fullName: MOCK_USER.fullName, email: MOCK_USER.email, phone: MOCK_USER.phone, createdAt: "2023-11-05" },
+  { id: "KH002", fullName: "Trần Hoàng Nam", email: "nam.tran@example.com", phone: "0912 345 678", createdAt: "2024-02-14" },
+  { id: "KH003", fullName: "Lê Bảo Châu", email: "chau.le@example.com", phone: "0987 654 321", createdAt: "2024-05-20" },
+  { id: "KH004", fullName: "Phạm Thu Hà", email: "thuha.pham@example.com", phone: "0935 111 222", createdAt: "2025-01-09" },
+  { id: "KH005", fullName: "Vũ Đức Anh", email: "ducanh.vu@example.com", phone: "0868 222 333", createdAt: "2026-08-30" },
+];
+
+// ─── Lịch sử điểm mẫu ────────────────────────────────────────
+// Điểm hiện có của khách = tổng các dòng. Khớp với trang /tich-diem: 2745 + 85 − 500 + 120 = 2450.
+export const SEED_POINT_LOGS: PointTransaction[] = [
+  { id: "P001", email: MOCK_USER.email, date: "2026-08-31", title: "Điểm tích lũy từ các đơn trước", points: 2745, kind: "initial" },
+  { id: "P002", email: MOCK_USER.email, date: "2026-09-02", title: "Đơn hàng #CB0998 hoàn tất", points: 85, kind: "order", orderId: "#CB0998" },
+  { id: "P003", email: MOCK_USER.email, date: "2026-09-10", title: "Đổi voucher giảm 20.000đ", points: -500, kind: "redeem" },
+  { id: "P004", email: MOCK_USER.email, date: "2026-09-18", title: "Đơn hàng #CB1024 hoàn tất", points: 120, kind: "order", orderId: "#CB1024" },
+  { id: "P005", email: "nam.tran@example.com", date: "2026-09-10", title: "Đơn hàng #CB1012 hoàn tất", points: 185, kind: "order", orderId: "#CB1012" },
+  { id: "P006", email: "chau.le@example.com", date: "2026-09-05", title: "Đơn hàng #CB1005 hoàn tất", points: 150, kind: "order", orderId: "#CB1005" },
+];
+
+// ─── Voucher mẫu (chỉ dùng để demo giao diện) ────────────────
+// TODO: nối với hệ thống voucher/điểm thật khi có quyết định cụ thể (số điểm ứng mỗi mức giảm chưa chốt).
+// Không thêm mã ngoài danh sách demo này.
+export const MOCK_VOUCHERS: Voucher[] = [
+  { code: "CARI20", discount: 20000 },
+  { code: "CARI50", discount: 50000 },
+];
+
+// ─── Đơn hàng mẫu ────────────────────────────────────────────
+// TODO: thay bằng đơn hàng thật từ database
+// Các đơn "Chờ xử lý" gần đây dùng ngày tương đối (hôm nay / hôm qua) để dashboard luôn có dữ liệu.
+export const SEED_ORDERS: Order[] = [
+  {
+    id: "#CB1031",
+    createdAt: dayOffset(0),
+    items: [
+      { name: "Croissant Bơ Pháp Cổ Điển", quantity: 3, price: 45000 },
+      { name: "Tart Trứng Hồng Kông", quantity: 2, price: 35000 },
+    ],
+    subtotal: 205000,
+    discount: 0,
+    total: 205000,
+    status: "Chờ xử lý",
+    fulfillment: "pickup",
+    receiveDate: dayOffset(0),
+    receiveTime: "17:00",
+    paymentMethod: "cod",
+    customerName: "Trần Hoàng Nam",
+    customerPhone: "0912 345 678",
+    customerEmail: "nam.tran@example.com",
+  },
+  {
+    id: "#CB1030",
+    createdAt: dayOffset(0),
+    items: [{ name: "Matcha Roll Cake", quantity: 1, price: 220000 }],
+    subtotal: 220000,
+    voucherCode: "CARI20",
+    discount: 20000,
+    total: 200000,
+    status: "Chờ xử lý",
+    fulfillment: "delivery",
+    address: "Số 8 ngõ 12 Nguyễn Trãi, Thanh Xuân, Hà Nội",
+    receiveDate: dayOffset(1),
+    receiveTime: "10:00",
+    note: "Viết chữ Chúc mừng sinh nhật",
+    paymentMethod: "bank",
+    customerName: "Lê Bảo Châu",
+    customerPhone: "0987 654 321",
+    customerEmail: "chau.le@example.com",
+  },
+  {
+    id: "#CB1029",
+    createdAt: dayOffset(-1),
+    items: [
+      { name: "Trà Đào Cam Sả Tươi", quantity: 2, price: 45000 },
+      { name: "Cà Phê Muối Kem Béo", quantity: 1, price: 48000 },
+    ],
+    subtotal: 138000,
+    discount: 0,
+    total: 138000,
+    status: "Chờ xử lý",
+    fulfillment: "delivery",
+    address: "25 Lê Văn Lương, Thanh Xuân, Hà Nội",
+    receiveDate: dayOffset(0),
+    receiveTime: "14:30",
+    paymentMethod: "cod",
+    customerName: "Phạm Thu Hà",
+    customerPhone: "0935 111 222",
+    customerEmail: "thuha.pham@example.com",
+  },
+  {
+    id: "#CB1027",
+    createdAt: dayOffset(-2),
+    items: [{ name: "Bánh Sữa Chua Chanh Leo", quantity: 1, price: 175000 }],
+    subtotal: 175000,
+    voucherCode: "CARI50",
+    discount: 50000,
+    total: 125000,
+    status: "Đã hủy",
+    fulfillment: "pickup",
+    receiveDate: dayOffset(-1),
+    receiveTime: "11:00",
+    paymentMethod: "cod",
+    customerName: "Vũ Đức Anh",
+    customerPhone: "0868 222 333",
+    customerEmail: "ducanh.vu@example.com",
+  },
+  {
+    id: "#CB1024",
+    createdAt: "2026-09-18",
+    items: [
+      { name: "Tiramisu Cá Ly Truyền Thống", quantity: 1, price: 75000 },
+      { name: "Croissant Bơ Pháp Cổ Điển", quantity: 1, price: 45000 },
+    ],
+    subtotal: 120000,
+    discount: 0,
+    total: 120000,
+    status: "Đã giao",
+    fulfillment: "delivery",
+    address: "Số 12 ngõ 45 Trần Duy Hưng, Cầu Giấy, Hà Nội",
+    receiveDate: "2026-09-18",
+    receiveTime: "15:00",
+    paymentMethod: "bank",
+    customerName: MOCK_USER.fullName,
+    customerPhone: MOCK_USER.phone,
+    customerEmail: MOCK_USER.email,
+  },
+  {
+    id: "#CB1012",
+    createdAt: "2026-09-10",
+    items: [{ name: "Bánh Bông Lan Mật Ong", quantity: 1, price: 185000 }],
+    subtotal: 185000,
+    discount: 0,
+    total: 185000,
+    status: "Đã giao",
+    fulfillment: "delivery",
+    address: "Số 3 ngõ 88 Vũ Trọng Phụng, Thanh Xuân, Hà Nội",
+    receiveDate: "2026-09-10",
+    receiveTime: "09:30",
+    paymentMethod: "bank",
+    customerName: "Trần Hoàng Nam",
+    customerPhone: "0912 345 678",
+    customerEmail: "nam.tran@example.com",
+  },
+  {
+    id: "#CB1005",
+    createdAt: "2026-09-05",
+    items: [{ name: "Tiramisu Cá Ly Truyền Thống", quantity: 2, price: 75000 }],
+    subtotal: 150000,
+    discount: 0,
+    total: 150000,
+    status: "Đã giao",
+    fulfillment: "pickup",
+    receiveDate: "2026-09-05",
+    receiveTime: "16:00",
+    paymentMethod: "cod",
+    customerName: "Lê Bảo Châu",
+    customerPhone: "0987 654 321",
+    customerEmail: "chau.le@example.com",
+  },
+  {
+    id: "#CB0998",
+    createdAt: "2026-09-02",
+    items: [{ name: "Red Velvet Cream Cheese", quantity: 1, price: 85000 }],
+    subtotal: 85000,
+    discount: 0,
+    total: 85000,
+    status: "Đã giao",
+    fulfillment: "pickup",
+    receiveDate: "2026-09-02",
+    receiveTime: "10:30",
+    paymentMethod: "cod",
+    customerName: MOCK_USER.fullName,
+    customerPhone: MOCK_USER.phone,
+    customerEmail: MOCK_USER.email,
+  },
+  {
+    id: "#CB0951",
+    createdAt: "2026-08-20",
+    items: [
+      { name: "Bánh Bông Lan Mật Ong", quantity: 1, price: 185000 },
+      { name: "Éclair Cà Phê & Sô Cô La", quantity: 1, price: 65000 },
+    ],
+    subtotal: 250000,
+    discount: 0,
+    total: 250000,
+    status: "Đã hủy",
+    fulfillment: "delivery",
+    address: "Số 12 ngõ 45 Trần Duy Hưng, Cầu Giấy, Hà Nội",
+    receiveDate: "2026-08-21",
+    receiveTime: "09:00",
+    paymentMethod: "cod",
+    customerName: MOCK_USER.fullName,
+    customerPhone: MOCK_USER.phone,
+    customerEmail: MOCK_USER.email,
+  },
+];
+
+// ─── Yêu cầu bánh theo yêu cầu mẫu ───────────────────────────
+// TODO: thay bằng bảng yêu cầu thật khi nối database. Form /dat-theo-yeu-cau ghi thêm vào danh sách này.
+export const SEED_CUSTOM_REQUESTS: CustomOrderRequest[] = [
+  {
+    id: "YC0004",
+    createdAt: dayOffset(0),
+    customerName: "Phạm Thu Hà",
+    phone: "0935 111 222",
+    customerEmail: "thuha.pham@example.com",
+    occasion: "Sinh nhật",
+    deliveryDate: dayOffset(6),
+    sizeGuestCount: "Size 18cm, khoảng 8 người",
+    flavor: "Vani kem tươi, dâu tây",
+    budget: "Khoảng 400.000đ - 500.000đ",
+    notes: "Viết chữ Happy Birthday Bống, tone màu hồng pastel, không dùng hạnh nhân.",
+    status: "Mới",
+  },
+  {
+    id: "YC0003",
+    createdAt: dayOffset(-1),
+    customerName: "Vũ Đức Anh",
+    phone: "0868 222 333",
+    customerEmail: "ducanh.vu@example.com",
+    occasion: "Thôi nôi",
+    deliveryDate: dayOffset(10),
+    sizeGuestCount: "Khoảng 20 khách",
+    flavor: "Socola, trà xanh",
+    budget: "Khoảng 800.000đ",
+    notes: "Bánh 2 tầng, trang trí động vật ngộ nghĩnh, tone vàng kem.",
+    status: "Đang tư vấn",
+  },
+  {
+    id: "YC0002",
+    createdAt: dayOffset(-4),
+    customerName: "Lê Bảo Châu",
+    phone: "0987 654 321",
+    customerEmail: "chau.le@example.com",
+    occasion: "Cưới hỏi",
+    deliveryDate: dayOffset(14),
+    sizeGuestCount: "Bánh 3 tầng, khoảng 40 khách",
+    flavor: "Vani, phô mai chanh",
+    budget: "Khoảng 1.500.000đ",
+    notes: "Tone trắng kem, hoa tươi trang trí.",
+    status: "Đã báo giá",
+    quotedPrice: 1300000,
+  },
+  {
+    id: "YC0001",
+    createdAt: "2026-08-15",
+    customerName: "Trần Hoàng Nam",
+    phone: "0912 345 678",
+    customerEmail: "nam.tran@example.com",
+    occasion: "Công ty / Sự kiện",
+    deliveryDate: "2026-08-22",
+    sizeGuestCount: "Set teabreak cho 30 người",
+    flavor: "Mix bánh ngọt nhỏ",
+    budget: "Khoảng 2.000.000đ",
+    notes: "Giao tận công ty lúc 9h sáng.",
+    status: "Hoàn tất",
+    quotedPrice: 1900000,
+  },
+];
+
+// ─── Nội dung trang chủ ──────────────────────────────────────
+// Trang chủ đọc nội dung này qua src/lib/db.ts; admin chỉnh ở /admin/noi-dung-trang-chu.
+export const SEED_HOME_CONTENT: HomeContent = {
+  heroSlides: heroSlides.map((s) => ({
+    id: s.id,
+    image: s.image ?? "",
+    title: s.title.replace(/\n/g, " "),
+    ctaLabel: s.ctaLabel,
+    ctaHref: s.ctaHref,
+    showText: false,
+  })),
+  features: [
+    { id: "points", title: "Chương trình tích điểm" },
+    { id: "delivery", title: "Giao hàng tận nơi" },
+    { id: "preorder", title: "Đặt trước" },
+  ],
+  banners: [
+    {
+      label: "Bánh",
+      href: "/san-pham?danh-muc=banh",
+      image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&auto=format&fit=crop&q=80",
+    },
+    {
+      label: "Đồ uống",
+      href: "/san-pham?danh-muc=do-uong",
+      image: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=800&auto=format&fit=crop&q=80",
+    },
+  ],
+  topOrderSlugs: ["banh-bong-lan-mat-ong", "eclair-ca-phe-so-co-la", "matcha-roll-cake"],
+  menuSlugs: [
+    "banh-sua-chua-chanh-leo",
+    "croissant-bo-phap",
+    "tart-trung-hong-kong",
+    "banh-su-kem-vanilla",
+    "tra-sua-tran-chau-cari",
+    "ca-phe-sua-da-cari",
+    "banh-red-velvet",
+    "tiramisu-ca-ly",
+  ],
+  gallery: galleryItems,
+  about: {
+    image: "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=900&auto=format&fit=crop&q=80",
+    badge: "Tiệm bánh thủ công từ 2024",
+    quote:
+      "Cari. bắt đầu từ một tình yêu rất đơn giản: thích làm bánh và thích nhìn mọi người ăn bánh mình làm. Tụi mình làm bánh với mong muốn mang đến những món ngọt thật dễ thương, thật ngon và đủ gần gũi để bạn có thể ghé Cari. bất cứ khi nào muốn tự thưởng cho mình một chút.",
+  },
+  featuredReviewIds: reviews.map((r) => r.id),
+};
+
+// ─── Nội dung trang Giới thiệu & chính sách ──────────────────
+export const SEED_ABOUT_CONTENT: AboutContent = {
+  storyBadge: "Câu chuyện của Cari",
+  storyTitle: "Vun vén ngọt ngào từ những điều giản dị",
+  storyBody:
+    "Cari. bắt đầu từ một tình yêu rất đơn giản: thích làm bánh và thích nhìn mọi người ăn bánh mình làm. Tụi mình làm bánh với mong muốn mang đến những món ngọt thật dễ thương, thật ngon và đủ gần gũi để bạn có thể ghé Cari. bất cứ khi nào muốn tự thưởng cho mình một chút.",
+  values: [
+    { icon: "shield", title: "Nguyên liệu chất lượng", desc: "Ưu tiên nguyên liệu sạch và an toàn cho từng chiếc bánh" },
+    { icon: "heart", title: "Chăm chút từng bước nhỏ", desc: "Từ khâu chọn nguyên liệu đến hoàn thiện, đều được làm cẩn thận" },
+    { icon: "clock", title: "Làm mới mỗi ngày", desc: "Bánh được sản xuất tươi theo đơn hàng ngày" },
+    {
+      icon: "calendar",
+      title: "Đồng hành mọi khoảnh khắc",
+      desc: "Từ một miếng bánh sau bữa ăn đến một chiếc bánh sinh nhật, Cari. luôn ở đó",
+    },
+  ],
+  faq: [
+    {
+      question: "Cari Bakehouse giao hàng khu vực nào?",
+      answer:
+        "Giao hàng tận nơi trong toàn khu vực Hà Nội, thời gian giao cụ thể sẽ được thông báo khi xác nhận đơn.",
+    },
+    {
+      question: "Phí giao hàng tính như thế nào?",
+      answer:
+        "Với đơn đặt qua các nền tảng như Shopeefood, Grabfood, phí ship tính theo chính sách nền tảng đó. Với đơn đặt trực tiếp ngoài nền tảng, phí ship tính theo ứng dụng Aha.",
+    },
+    {
+      question: "Bánh lớn/đặt theo yêu cầu cần đặt trước bao lâu?",
+      answer:
+        "Đặt trước tối thiểu 12 tiếng đối với bánh kích thước lớn, và cần thanh toán trước khi tiệm bắt đầu làm bánh. Đơn xác nhận sau khi hai bên thống nhất thiết kế, số lượng và đặt cọc (nếu có).",
+    },
+    {
+      question: "Có cần đặt cọc khi mua bánh không?",
+      answer:
+        "Bánh thường (sản xuất hàng ngày) không yêu cầu đặt cọc. Với bánh đặc biệt/đặt riêng, tiệm yêu cầu cọc trước 100% giá trị đơn.",
+    },
+    {
+      question: "Cari Bakehouse có nhận đổi/trả bánh không?",
+      answer:
+        "Tiệm không nhận đổi/trả nếu khách đổi ý sau khi đã xác nhận đơn. Chỉ hỗ trợ đổi/trả/hoàn tiền khi giao sai bánh, bánh bị hư hỏng do vận chuyển, hoặc lỗi chất lượng từ khâu sản xuất. Khách cần gửi khiếu nại kèm ảnh chụp trong vòng 2-4 tiếng sau khi nhận hàng, tiệm phản hồi trong vòng 24 giờ.",
+    },
+    {
+      question: "Thanh toán bằng cách nào?",
+      answer:
+        "Chuyển khoản, tiền mặt khi nhận hàng (COD tại khu vực hỗ trợ), hoặc thanh toán trực tiếp tại cửa hàng.",
+    },
+  ],
+};
+
+// ─── Cài đặt chung (hotline, email, Zalo, mạng xã hội) ───────
+// Topbar, Footer, Header, nút liên hệ nổi, trang Liên hệ và nút Zalo ở bước đặt hàng đều đọc từ đây.
+export const SEED_SITE_SETTINGS: SiteSettings = {
+  hotline: "0338975925",
+  email: "cari.bakehouse07@gmail.com",
+  zalo: "https://zalo.me/0338975925",
+  instagram: "https://www.instagram.com/cari.bakehouse.hn/",
+  facebook: "",
+  tiktok: "",
+  threads: "https://www.threads.com/@cari.bakehouse.hn",
+};

@@ -1,7 +1,13 @@
-import Image from "next/image";
-import { galleryItems } from "@/lib/mock-data";
+"use client";
+
+import Image from "@/components/ui/SafeImage";
+import { useHomeContent } from "@/lib/db";
 
 export default function Gallery() {
+  // Ảnh gallery do admin chỉnh ở /admin/noi-dung-trang-chu
+  const { gallery: galleryItems } = useHomeContent();
+  if (galleryItems.length === 0) return null;
+
   return (
     <section className="bg-[#FFF8EF] py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

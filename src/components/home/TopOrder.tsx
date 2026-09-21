@@ -1,9 +1,11 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/components/ui/SafeImage";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Star, Trophy, ShoppingBag } from "lucide-react";
-import { topProducts } from "@/lib/mock-data";
+import { addToCart } from "@/lib/cart";
+import { getProductStatus, useHomeContent, useProductsBySlugs } from "@/lib/db";
 
 const rankColors = [
   { bg: "bg-[#F6CE8B]", text: "text-[#1B4B5A]", border: "border-[#F6CE8B]" },
@@ -16,6 +18,12 @@ function formatPrice(p: number) {
 }
 
 export default function TopOrder() {
+  const router = useRouter();
+  // Sản phẩm nổi bật do admin chọn ở /admin/noi-dung-trang-chu (giá/ảnh/trạng thái lấy từ /admin/san-pham)
+  const { topOrderSlugs } = useHomeContent();
+  const topProducts = useProductsBySlugs(topOrderSlugs);
+  if (topProducts.length === 0) return null;
+
   return (
     <section className="bg-[#FFF8EF] py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -33,7 +41,8 @@ export default function TopOrder() {
         {/* Grid */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {topProducts.map((product, i) => {
-            const rank = rankColors[i];
+            const rank = rankColors[Math.min(i, rankColors.length - 1)];
+            const soldOut = getProductStatus(product) === "soldout";
             return (
               <div
                 key={product.id}
@@ -57,6 +66,7 @@ export default function TopOrder() {
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, 33vw"
+                    priority={i === 0}
                   />
                 </Link>
 
@@ -89,9 +99,10 @@ export default function TopOrder() {
                   {/* Price */}
                   <div className="mt-3 flex items-baseline gap-2">
                     <span className="font-heading text-lg font-black text-[#1B4B5A]">
+                      {product.sizes?.length ? "Từ " : ""}
                       {formatPrice(product.price)}
                     </span>
-                    {product.originalPrice && (
+                    {product.originalPrice && !product.sizes?.length && (
                       <span className="text-xs text-[#7A7A7A] line-through">
                         {formatPrice(product.originalPrice)}
                       </span>
@@ -102,17 +113,24 @@ export default function TopOrder() {
                   <div className="mt-4 flex items-center gap-2 pt-3 border-t border-[#F5EFE6]">
                     <button
                       type="button"
-                      aria-label="Thêm vào giỏ hàng"
-                      className="flex items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-3.5 py-2 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95"
+                      onClick={() => addToCart(product)}
+                      disabled={soldOut}
+                      aria-label={`Thêm ${product.name} vào giỏ hàng`}
+                      className="flex items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-3.5 py-2 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ShoppingBag className="h-4 w-4" />
                       <span>Giỏ hàng</span>
                     </button>
                     <button
                       type="button"
-                      className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#123640] hover:shadow-lg active:scale-95"
+                      onClick={() => {
+                        addToCart(product);
+                        router.push("/gio-hang");
+                      }}
+                      disabled={soldOut}
+                      className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#123640] hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <span>Mua ngay</span>
+                      <span>{soldOut ? "Hết hàng" : "Mua ngay"}</span>
                     </button>
                   </div>
                 </div>

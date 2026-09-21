@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
+import Image from "@/components/ui/SafeImage";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { heroSlides } from "@/lib/mock-data";
+import Link from "next/link";
+import { useHomeContent } from "@/lib/db";
 
 export default function HeroSlider() {
+  // Nội dung slider do admin chỉnh ở /admin/noi-dung-trang-chu
+  const { heroSlides } = useHomeContent();
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -16,7 +19,7 @@ export default function HeroSlider() {
       setCurrent((index + heroSlides.length) % heroSlides.length);
       setTimeout(() => setIsTransitioning(false), 500);
     },
-    [isTransitioning]
+    [isTransitioning, heroSlides.length]
   );
 
   const prev = () => go(current - 1);
@@ -28,6 +31,10 @@ export default function HeroSlider() {
     return () => clearInterval(timer);
   }, [next]);
 
+  if (heroSlides.length === 0) return null;
+  // Nếu admin xóa bớt slide thì vị trí hiện tại có thể vượt quá số slide
+  const activeIndex = current % heroSlides.length;
+
   return (
     <section className="relative w-full overflow-hidden bg-[#1B4B5A] aspect-[16/8] sm:aspect-[21/8] min-h-[260px] sm:min-h-[420px] lg:min-h-[520px]">
       {/* Slides (Carousel images only, no text overlay) */}
@@ -36,15 +43,15 @@ export default function HeroSlider() {
           key={s.id}
           className="absolute inset-0 transition-opacity duration-700 ease-in-out"
           style={{
-            opacity: i === current ? 1 : 0,
-            pointerEvents: i === current ? "auto" : "none",
-            zIndex: i === current ? 1 : 0,
+            opacity: i === activeIndex ? 1 : 0,
+            pointerEvents: i === activeIndex ? "auto" : "none",
+            zIndex: i === activeIndex ? 1 : 0,
           }}
         >
           {s.image ? (
             <Image
               src={s.image}
-              alt={`Banner slide ${s.id}`}
+              alt={s.title || `Banner slide ${s.id}`}
               fill
               priority={i === 0}
               className="object-cover"
@@ -53,10 +60,25 @@ export default function HeroSlider() {
           ) : (
             <div
               className="h-full w-full"
-              style={{
-                background: `linear-gradient(135deg, ${s.bgColor} 0%, ${s.bgColor}cc 60%, ${s.bgColor}88 100%)`,
-              }}
+              style={{ background: "linear-gradient(135deg, #1B4B5A 0%, #1B4B5Acc 60%, #1B4B5A88 100%)" }}
             />
+          )}
+
+          {/* Chữ + nút CTA đè lên ảnh (chỉ khi admin bật "Hiện chữ trên ảnh") */}
+          {s.showText && (s.title || s.ctaLabel) && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/25 px-6 text-center">
+              {s.title && (
+                <h2 className="font-heading text-3xl font-black text-white drop-shadow-md sm:text-5xl">{s.title}</h2>
+              )}
+              {s.ctaLabel && s.ctaHref && (
+                <Link
+                  href={s.ctaHref}
+                  className="rounded-full bg-[#F6CE8B] px-7 py-3 text-sm font-bold text-[#1B4B5A] shadow-md transition-all hover:bg-white"
+                >
+                  {s.ctaLabel}
+                </Link>
+              )}
+            </div>
           )}
         </div>
       ))}
@@ -88,7 +110,7 @@ export default function HeroSlider() {
           >
             <span
               className={`block rounded-full transition-all duration-300 ${
-                i === current
+                i === activeIndex
                   ? "w-6 h-2 bg-[#F6CE8B] shadow-md"
                   : "w-2 h-2 bg-white/70 hover:bg-white"
               }`}

@@ -1,28 +1,25 @@
-import Link from "next/link";
-import Image from "next/image";
+"use client";
 
-const banners = [
-  {
-    label: "Bánh",
-    href: "/san-pham?danh-muc=banh",
-    image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&auto=format&fit=crop&q=80",
-    gradient: "from-[#1B4B5A]/85 via-[#1B4B5A]/70 to-[#123640]/90",
-  },
-  {
-    label: "Đồ uống",
-    href: "/san-pham?danh-muc=do-uong",
-    image: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=800&auto=format&fit=crop&q=80",
-    gradient: "from-[#C97B3D]/85 via-[#C97B3D]/70 to-[#8C4A18]/90",
-  },
+import Link from "next/link";
+import Image from "@/components/ui/SafeImage";
+import { useHomeContent } from "@/lib/db";
+
+// Màu phủ gradient theo thứ tự banner (giữ nguyên thiết kế gốc)
+const GRADIENTS = [
+  "from-[#1B4B5A]/85 via-[#1B4B5A]/70 to-[#123640]/90",
+  "from-[#C97B3D]/85 via-[#C97B3D]/70 to-[#8C4A18]/90",
 ];
 
 export default function DualBanner() {
+  // Banner đôi Bánh / Đồ uống do admin chỉnh ở /admin/noi-dung-trang-chu
+  const { banners } = useHomeContent();
+
   return (
     <section className="mx-auto max-w-7xl px-4 pt-10 pb-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {banners.map((b) => (
+        {banners.map((b, i) => (
           <Link
-            key={b.label}
+            key={`${b.label}-${i}`}
             href={b.href}
             className="group relative flex min-h-[180px] sm:min-h-[220px] items-center justify-center overflow-hidden rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl"
           >
@@ -39,7 +36,7 @@ export default function DualBanner() {
 
             {/* Gradient Overlay */}
             <div
-              className={`absolute inset-0 bg-gradient-to-tr ${b.gradient} transition-opacity duration-300 group-hover:opacity-90`}
+              className={`absolute inset-0 bg-gradient-to-tr ${GRADIENTS[i % GRADIENTS.length]} transition-opacity duration-300 group-hover:opacity-90`}
             />
 
             {/* Title only (no description, no button) */}

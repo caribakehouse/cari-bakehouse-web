@@ -1,15 +1,22 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/components/ui/SafeImage";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Star, ShoppingBag, ArrowRight } from "lucide-react";
-import { menuProducts } from "@/lib/mock-data";
+import { addToCart } from "@/lib/cart";
+import { getProductStatus, useHomeContent, useProductsBySlugs } from "@/lib/db";
 
 function formatPrice(p: number) {
   return p.toLocaleString("vi-VN") + "đ";
 }
 
 export default function ProductMenu() {
+  const router = useRouter();
+  // Thực đơn do admin chọn ở /admin/noi-dung-trang-chu (giá/ảnh/trạng thái lấy từ /admin/san-pham)
+  const { menuSlugs } = useHomeContent();
+  const menuProducts = useProductsBySlugs(menuSlugs);
+
   return (
     <section className="py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -22,7 +29,9 @@ export default function ProductMenu() {
 
         {/* Grid 4 cols */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-5">
-          {menuProducts.map((product) => (
+          {menuProducts.map((product) => {
+            const soldOut = getProductStatus(product) === "soldout";
+            return (
             <div
               key={product.id}
               className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
@@ -76,9 +85,10 @@ export default function ProductMenu() {
                 <div className="mt-auto flex flex-col gap-2.5 pt-3 border-t border-[#F5EFE6]">
                   <div className="flex items-baseline gap-1">
                     <span className="font-heading text-sm font-black text-[#1B4B5A] sm:text-base">
+                      {product.sizes?.length ? "Từ " : ""}
                       {formatPrice(product.price)}
                     </span>
-                    {product.originalPrice && (
+                    {product.originalPrice && !product.sizes?.length && (
                       <span className="text-[10px] text-[#7A7A7A] line-through">
                         {formatPrice(product.originalPrice)}
                       </span>
@@ -89,8 +99,10 @@ export default function ProductMenu() {
                     {/* Existing round cart button */}
                     <button
                       type="button"
+                      onClick={() => addToCart(product)}
+                      disabled={soldOut}
                       aria-label={`Thêm ${product.name} vào giỏ`}
-                      className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-[#1B4B5A] text-[#F6CE8B] transition-all hover:bg-[#123640] hover:scale-105 active:scale-95 shadow-sm"
+                      className="disabled:cursor-not-allowed disabled:opacity-40 flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-[#1B4B5A] text-[#F6CE8B] transition-all hover:bg-[#123640] hover:scale-105 active:scale-95 shadow-sm"
                     >
                       <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </button>
@@ -98,15 +110,21 @@ export default function ProductMenu() {
                     {/* New "Mua ngay" button next to it */}
                     <button
                       type="button"
-                      className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-2.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-all hover:bg-[#123640] hover:scale-102 active:scale-95 shadow-sm whitespace-nowrap"
+                      onClick={() => {
+                        addToCart(product);
+                        router.push("/gio-hang");
+                      }}
+                      disabled={soldOut}
+                      className="disabled:cursor-not-allowed disabled:opacity-40 flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-2.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-all hover:bg-[#123640] hover:scale-102 active:scale-95 shadow-sm whitespace-nowrap"
                     >
-                      Mua ngay
+                      {soldOut ? "Hết hàng" : "Mua ngay"}
                     </button>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Centered button "Xem tất cả" at the bottom of the section */}

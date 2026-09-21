@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  ChevronRight,
   ChevronDown,
   Sparkles,
   ShieldCheck,
@@ -14,70 +13,18 @@ import {
   ArrowRight,
   HelpCircle,
 } from "lucide-react";
+import { useAboutContent } from "@/lib/db";
 
-// =============================================================================
-// DỮ LIỆU CHÍNH SÁCH & CÂU HỎI THƯỜNG GẶP (FAQ)
-// =============================================================================
-const FAQ_ITEMS = [
-  {
-    question: "Cari Bakehouse giao hàng khu vực nào?",
-    answer:
-      "Giao hàng tận nơi trong toàn khu vực Hà Nội, thời gian giao cụ thể sẽ được thông báo khi xác nhận đơn.",
-  },
-  {
-    question: "Phí giao hàng tính như thế nào?",
-    answer:
-      "Với đơn đặt qua các nền tảng như Shopeefood, Grabfood, phí ship tính theo chính sách nền tảng đó. Với đơn đặt trực tiếp ngoài nền tảng, phí ship tính theo ứng dụng Aha.",
-  },
-  {
-    question: "Bánh lớn/đặt theo yêu cầu cần đặt trước bao lâu?",
-    answer:
-      "Đặt trước tối thiểu 12 tiếng đối với bánh kích thước lớn, và cần thanh toán trước khi tiệm bắt đầu làm bánh. Đơn xác nhận sau khi hai bên thống nhất thiết kế, số lượng và đặt cọc (nếu có).",
-  },
-  {
-    question: "Có cần đặt cọc khi mua bánh không?",
-    answer:
-      "Bánh thường (sản xuất hàng ngày) không yêu cầu đặt cọc. Với bánh đặc biệt/đặt riêng, tiệm yêu cầu cọc trước 100% giá trị đơn.",
-  },
-  {
-    question: "Cari Bakehouse có nhận đổi/trả bánh không?",
-    answer:
-      "Tiệm không nhận đổi/trả nếu khách đổi ý sau khi đã xác nhận đơn. Chỉ hỗ trợ đổi/trả/hoàn tiền khi giao sai bánh, bánh bị hư hỏng do vận chuyển, hoặc lỗi chất lượng từ khâu sản xuất. Khách cần gửi khiếu nại kèm ảnh chụp trong vòng 2-4 tiếng sau khi nhận hàng, tiệm phản hồi trong vòng 24 giờ.",
-  },
-  {
-    question: "Thanh toán bằng cách nào?",
-    answer:
-      "Chuyển khoản, tiền mặt khi nhận hàng (COD tại khu vực hỗ trợ), hoặc thanh toán trực tiếp tại cửa hàng.",
-  },
-];
-
-// =============================================================================
-// DỮ LIỆU GIÁ TRỊ CỐT LÕI (We care about the little things)
-// =============================================================================
-const CORE_VALUES = [
-  {
-    title: "Nguyên liệu chất lượng",
-    desc: "Ưu tiên nguyên liệu sạch và an toàn cho từng chiếc bánh",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Chăm chút từng bước nhỏ",
-    desc: "Từ khâu chọn nguyên liệu đến hoàn thiện, đều được làm cẩn thận",
-    icon: Heart,
-  },
-  {
-    title: "Làm mới mỗi ngày",
-    desc: "Bánh được sản xuất tươi theo đơn hàng ngày",
-    icon: Clock,
-  },
-  {
-    title: "Đồng hành mọi khoảnh khắc",
-    desc: "Từ một miếng bánh sau bữa ăn đến một chiếc bánh sinh nhật, Cari. luôn ở đó",
-    icon: CalendarHeart,
-  },
-];
+// Nội dung (câu chuyện thương hiệu, giá trị cốt lõi, FAQ chính sách) lấy từ dữ liệu chung — admin chỉnh ở /admin/gioi-thieu-chinh-sach.
+const VALUE_ICONS = {
+  shield: ShieldCheck,
+  heart: Heart,
+  clock: Clock,
+  calendar: CalendarHeart,
+} as const;
 
 export default function GioiThieuPage() {
+  const { storyBadge, storyTitle, storyBody, values: CORE_VALUES, faq: FAQ_ITEMS } = useAboutContent();
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   const toggleFaq = (idx: number) => {
@@ -86,20 +33,7 @@ export default function GioiThieuPage() {
 
   return (
     <div className="min-h-screen bg-[#FFF8EF]/50 pb-20 overflow-x-hidden">
-      {/* ============================================================
-          1. BREADCRUMB
-          ============================================================ */}
-      <section className="border-b border-[#E5D9C3]/70 bg-white/70 backdrop-blur-xs py-4">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs sm:text-sm text-[#7A7A7A]">
-            <Link href="/" className="transition-colors hover:text-[#1B4B5A]">
-              Trang chủ
-            </Link>
-            <ChevronRight className="h-3.5 w-3.5 opacity-60" />
-            <b className="font-bold text-[#1B4B5A]">Giới thiệu</b>
-          </nav>
-        </div>
-      </section>
+
 
       {/* ============================================================
           2. HERO BANNER PLACEHOLDER
@@ -107,11 +41,8 @@ export default function GioiThieuPage() {
           ============================================================ */}
       <section className="relative overflow-hidden bg-[#FCE9C6] py-14 sm:py-20 lg:py-24 border-b border-[#E5D9C3]/70">
         <div className="mx-auto max-w-4xl px-4 text-center">
-          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[#C97B3D] mb-3">
-            Since 2023 • Tiệm Bánh Thủ Công
-          </p>
           <h1 className="font-heading italic text-2xl sm:text-4xl lg:text-5xl font-black text-[#1B4B5A] tracking-tight leading-tight sm:leading-snug break-words">
-            “A little bakehouse, made with lots of love.”
+            A little bakehouse, made with lots of love.
           </h1>
           <div className="mx-auto mt-4 h-1 w-16 rounded-full bg-[#1B4B5A]/20" />
           <p className="mt-3 font-heading text-sm sm:text-base font-bold text-[#1B4B5A]/80 tracking-wide uppercase">
@@ -153,14 +84,14 @@ export default function GioiThieuPage() {
             <div className="flex flex-col justify-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-[#FCE9C6] px-3.5 py-1 text-xs font-bold text-[#1B4B5A] uppercase tracking-wider w-fit mb-3">
                 <Sparkles className="h-3.5 w-3.5 text-[#C97B3D]" />
-                Câu chuyện của Cari
+                {storyBadge}
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B4B5A] tracking-tight mb-4">
-                Vun vén ngọt ngào từ những điều giản dị
+                {storyTitle}
               </h2>
               <div className="h-1 w-12 rounded-full bg-[#F6CE8B] mb-5" />
               <p className="text-base sm:text-lg text-[#2B2B2B]/90 leading-relaxed font-normal">
-                Cari. bắt đầu từ một tình yêu rất đơn giản: thích làm bánh và thích nhìn mọi người ăn bánh mình làm. Tụi mình làm bánh với mong muốn mang đến những món ngọt thật dễ thương, thật ngon và đủ gần gũi để bạn có thể ghé Cari. bất cứ khi nào muốn tự thưởng cho mình một chút.
+                {storyBody}
               </p>
             </div>
           </div>
@@ -184,7 +115,7 @@ export default function GioiThieuPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {CORE_VALUES.map((val, idx) => {
-              const IconComp = val.icon;
+              const IconComp = VALUE_ICONS[val.icon] ?? Heart;
               return (
                 <div
                   key={idx}
@@ -285,9 +216,6 @@ export default function GioiThieuPage() {
               <span className="font-heading text-sm font-bold text-[#1B4B5A]">
                 Không gian mặt tiền & Biển hiệu
               </span>
-              <span className="mt-1 text-[11px] text-[#7A7A7A] max-w-xs">
-                // TODO: thay ảnh thật khi có (shop đồng ý cho quay, ưu tiên khung 18h-22h)
-              </span>
             </div>
 
             {/* Ảnh 2 // TODO: thay ảnh thật khi có (shop đồng ý cho quay, ưu tiên khung 18h-22h) */}
@@ -296,9 +224,6 @@ export default function GioiThieuPage() {
               <span className="font-heading text-sm font-bold text-[#1B4B5A]">
                 Quầy bánh trưng bày trong ngày
               </span>
-              <span className="mt-1 text-[11px] text-[#7A7A7A] max-w-xs">
-                // TODO: thay ảnh thật khi có (shop đồng ý cho quay, ưu tiên khung 18h-22h)
-              </span>
             </div>
 
             {/* Ảnh 3 // TODO: thay ảnh thật khi có (shop đồng ý cho quay, ưu tiên khung 18h-22h) */}
@@ -306,9 +231,6 @@ export default function GioiThieuPage() {
               <Heart className="h-10 w-10 text-[#C97B3D] mb-2 opacity-80" />
               <span className="font-heading text-sm font-bold text-[#1B4B5A]">
                 Góc thưởng thức bánh & thức uống
-              </span>
-              <span className="mt-1 text-[11px] text-[#7A7A7A] max-w-xs">
-                // TODO: thay ảnh thật khi có (shop đồng ý cho quay, ưu tiên khung 18h-22h)
               </span>
             </div>
           </div>

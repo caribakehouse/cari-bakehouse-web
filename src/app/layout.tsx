@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { Lato, Nunito_Sans } from "next/font/google";
 import "./globals.css";
-import Topbar from "@/components/layout/Topbar";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import BottomNav from "@/components/layout/BottomNav";
-import FloatingContact from "@/components/layout/FloatingContact";
 
 const lato = Lato({
   weight: ["400", "700", "900"],
@@ -27,6 +22,8 @@ export const metadata: Metadata = {
     "Cari Bakehouse — Tiệm bánh thủ công tại Hà Nội với những chiếc bánh tươi ngon, làm từ nguyên liệu tự nhiên mỗi ngày.",
 };
 
+// Layout gốc chỉ giữ font + <body>. Khung cửa hàng (Topbar/Header/Footer...) nằm ở (shop)/layout.tsx,
+// khung quản trị (sidebar/topbar) nằm ở (admin)/admin/layout.tsx.
 export default function RootLayout({
   children,
 }: {
@@ -38,12 +35,7 @@ export default function RootLayout({
       className={`${lato.variable} ${nunitoSans.variable}`}
     >
       <body className="flex min-h-screen flex-col bg-cream text-text-dark antialiased">
-        <Topbar />
-        <Header />
-        <main className="flex-1 pb-16 md:pb-0">{children}</main>
-        <Footer />
-        <BottomNav />
-        <FloatingContact />
+        {children}
       </body>
     </html>
   );

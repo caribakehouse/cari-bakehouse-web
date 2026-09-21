@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -8,8 +10,12 @@ import {
   Heart,
   Send,
 } from "lucide-react";
+import { useSiteSettings } from "@/lib/db";
+import { formatHotline } from "@/lib/utils";
 
 export default function Footer() {
+  const settings = useSiteSettings();
+
   return (
     <footer className="border-t border-primary-dark/20 bg-primary text-cream">
       {/* Khối chính 4 cột */}
@@ -170,19 +176,19 @@ export default function Footer() {
               <div className="flex items-center gap-2.5">
                 <Phone className="h-4 w-4 shrink-0 text-accent" />
                 <a
-                  href="tel:0338975925"
+                  href={`tel:${settings.hotline}`}
                   className="transition-colors hover:text-accent"
                 >
-                  Hotline: <strong className="font-semibold text-cream">0338 975 925</strong>
+                  Hotline: <strong className="font-semibold text-cream">{formatHotline(settings.hotline)}</strong>
                 </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="h-4 w-4 shrink-0 text-accent" />
                 <a
-                  href="mailto:cari.bakehouse07@gmail.com"
+                  href={`mailto:${settings.email}`}
                   className="transition-colors hover:text-accent break-all"
                 >
-                  cari.bakehouse07@gmail.com
+                  {settings.email}
                 </a>
               </div>
             </div>
@@ -193,7 +199,8 @@ export default function Footer() {
               <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
                 {/* Facebook */}
                 <a
-                  href="#"
+                  href={settings.facebook || "#"}
+                  {...(settings.facebook ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   aria-label="Facebook Cari Bakehouse"
                   title="Facebook Cari Bakehouse"
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-cream/10 text-cream transition-colors hover:bg-[#1877F2] hover:text-white"
@@ -205,9 +212,8 @@ export default function Footer() {
 
                 {/* Instagram */}
                 <a
-                  href="https://www.instagram.com/cari.bakehouse.hn?stkn=ZzdzcG1iNThrMmdk"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={settings.instagram || "#"}
+                  {...(settings.instagram ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   aria-label="Instagram Cari Bakehouse"
                   title="Instagram Cari Bakehouse"
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-cream/10 text-cream transition-colors hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] hover:text-white"
@@ -219,9 +225,8 @@ export default function Footer() {
 
                 {/* Threads */}
                 <a
-                  href="https://www.threads.com/@cari.bakehouse.hn"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={settings.threads || "#"}
+                  {...(settings.threads ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   aria-label="Threads Cari Bakehouse"
                   title="Threads Cari Bakehouse"
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-cream/10 text-cream transition-colors hover:bg-black hover:text-white"
@@ -233,7 +238,8 @@ export default function Footer() {
 
                 {/* TikTok */}
                 <a
-                  href="#"
+                  href={settings.tiktok || "#"}
+                  {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   aria-label="TikTok Cari Bakehouse"
                   title="TikTok Cari Bakehouse"
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-cream/10 text-cream transition-colors hover:bg-black hover:text-white"
