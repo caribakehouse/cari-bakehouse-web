@@ -4,12 +4,14 @@ interface RibbonIconProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
   width?: number | string;
   height?: number | string;
+  color?: string;
 }
 
 export default function RibbonIcon({
   className = "",
   width = 135,
   height = 135,
+  color = "#F6CE8B",
   ...props
 }: RibbonIconProps) {
   return (
@@ -27,7 +29,7 @@ export default function RibbonIcon({
            C 14 82, 24 110, 52 114
            C 74 117, 96 104, 108 88 Z"
         fill="none"
-        stroke="#F6CE8B"
+        stroke={color}
         strokeWidth="7"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -38,7 +40,7 @@ export default function RibbonIcon({
            C 193 82, 188 104, 166 108
            C 148 111, 128 100, 112 86 Z"
         fill="none"
-        stroke="#F6CE8B"
+        stroke={color}
         strokeWidth="7"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -46,18 +48,18 @@ export default function RibbonIcon({
       <path
         d="M98 94 C 90 106, 84 116, 90 130"
         fill="none"
-        stroke="#F6CE8B"
+        stroke={color}
         strokeWidth="7"
         strokeLinecap="round"
       />
       <path
         d="M122 92 C 134 112, 146 132, 138 160"
         fill="none"
-        stroke="#F6CE8B"
+        stroke={color}
         strokeWidth="7"
         strokeLinecap="round"
       />
-      <circle cx="111" cy="88" r="10" fill="#F6CE8B" />
+      <circle cx="111" cy="88" r="10" fill={color} />
     </svg>
   );
 }

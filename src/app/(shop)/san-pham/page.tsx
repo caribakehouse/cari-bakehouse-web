@@ -115,12 +115,12 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
         </text>
       </svg>
 
-      {/* 2. Lớp nơ ruy băng — Giữ nguyên kích thước (96px), 
-          dịch chuyển lên cao hơn, tiến sát ngay dưới chữ BÁNH/ĐỒ UỐNG mà không đè/che lên chữ */}
+      {/* 2. Lớp nơ ruy băng — Khi active: màu vàng #F6CE8B; khi inactive: màu xanh petrol #1B4B5A */}
       <div className="absolute top-[66px] sm:top-[67px] left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-[0_2px_5px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:scale-105">
         <RibbonIcon
           width={96}
           height={96}
+          color={active ? "#F6CE8B" : "#1B4B5A"}
           className="w-[92px] h-[92px] sm:w-[96px] sm:h-[96px]"
         />
       </div>
