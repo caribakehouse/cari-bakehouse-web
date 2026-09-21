@@ -8,7 +8,6 @@ import {
   Star,
   ShoppingBag,
   Check,
-  ChevronRight,
   Sparkles,
 } from "lucide-react";
 import { getProductGroups, Product } from "@/lib/mock-data";
@@ -99,16 +98,16 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
           opacity="0.6"
         />
 
-        {/* Chữ tên danh mục — VIẾT HOA, đặt phía trên nơ */}
+        {/* Chữ tên danh mục — CỐ ĐỊNH CÙNG 1 CỠ CHỮ (20px), font-heading, căn giữa đều */}
         <text
           x={cx}
-          y={cy - 22}
+          y={cy - 20}
           textAnchor="middle"
           dominantBaseline="middle"
           fontFamily="var(--font-heading), Lato, sans-serif"
           fontWeight="900"
-          fontSize={label.length > 4 ? "20" : "24"}
-          letterSpacing="2.5"
+          fontSize="20"
+          letterSpacing="1.5"
           fill={textColor}
           className="select-none uppercase transition-all duration-300"
         >
@@ -116,16 +115,13 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
         </text>
       </svg>
 
-      {/* 2. Lớp nơ ruy băng to nổi bật (Layer trên cùng):
-          - Dùng component RibbonIcon
-          - Kích thước phóng to đáng kể (160px), tràn ra ngoài mép răng cưa và thõng đuôi qua mép dưới badge
-          - Vị trí dưới chữ nhưng đè lên viền dưới của badge
-          - Đổ bóng nhẹ để nơ nổi hẳn lên trên con dấu */}
-      <div className="absolute top-[52px] sm:top-[54px] left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.22)] transition-transform duration-300 group-hover:scale-106">
+      {/* 2. Lớp nơ ruy băng — Giảm kích thước ~25-30% (116px) vừa phải, 
+          chờm nhẹ lên mép răng cưa dưới của badge, không lấn át toàn bộ badge */}
+      <div className="absolute top-[62px] sm:top-[64px] left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-[0_3px_6px_rgba(0,0,0,0.2)] transition-transform duration-300 group-hover:scale-105">
         <RibbonIcon
-          width={160}
-          height={160}
-          className="w-[150px] h-[150px] sm:w-[160px] sm:h-[160px]"
+          width={116}
+          height={116}
+          className="w-[112px] h-[112px] sm:w-[116px] sm:h-[116px]"
         />
       </div>
     </button>
@@ -196,41 +192,9 @@ function ProductsContent() {
       )}
 
       {/* ============================================================
-          1. BREADCRUMB & TIÊU ĐỀ TRANG
+          CHỌN DANH MỤC: BADGE CON DẤU RĂNG CƯA & NƠ RUY BĂNG
           ============================================================ */}
-      <section className="border-b border-[#E5D9C3]/70 bg-white/70 backdrop-blur-xs py-5 sm:py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs sm:text-sm text-[#7A7A7A]">
-            <Link href="/" className="transition-colors hover:text-[#1B4B5A]">
-              Trang chủ
-            </Link>
-            <ChevronRight className="h-3.5 w-3.5 opacity-60" />
-            <Link href="/san-pham" className="transition-colors hover:text-[#1B4B5A]">
-              Sản phẩm
-            </Link>
-            <ChevronRight className="h-3.5 w-3.5 opacity-60" />
-            <b className="font-bold text-[#1B4B5A]">{activeTab}</b>
-          </nav>
-
-          {/* Tiêu đề trang & Giới thiệu ngắn */}
-          <div className="mt-3 sm:mt-4">
-            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1B4B5A]">
-              Danh mục {activeTab}
-            </h1>
-            <p className="mt-1.5 max-w-2xl text-xs sm:text-sm text-[#7A7A7A] leading-relaxed">
-              {activeTab === "Bánh"
-                ? "Tất cả các món bánh thủ công tươi mới mỗi ngày từ lò nướng Cari Bakehouse, sử dụng nguyên liệu cao cấp và chuẩn vị ngọt thanh."
-                : "Menu thức uống thanh mát, được phối trộn từ trà mộc thảo mộc, trái cây tươi nguyên chất và hạt cà phê Arabica hảo hạng."}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================================
-          2. BADGE CON DẤU RĂNG CƯA — Chọn danh mục (tái sử dụng phong cách Hero Slider)
-          ============================================================ */}
-      <section className="pt-6 pb-12 sm:pt-8 sm:pb-14">
+      <section className="pt-8 pb-10 sm:pt-10 sm:pb-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Nhãn hướng dẫn nhỏ phía trên */}
           <p className="text-center text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-[#C97B3D]/80 mb-5">
