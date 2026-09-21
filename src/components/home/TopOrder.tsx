@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Trophy } from "lucide-react";
+import { Star, Trophy, ShoppingBag } from "lucide-react";
 import { topProducts } from "@/lib/mock-data";
 
 const rankColors = [
@@ -22,21 +24,20 @@ export default function TopOrder() {
           <Trophy className="h-6 w-6 text-[#C97B3D]" />
           <div>
             <h2 className="font-heading text-2xl font-black text-[#1B4B5A] sm:text-3xl">
-              Top đặt nhiều nhất
+              Top Order
             </h2>
             <p className="text-sm text-[#7A7A7A]">Được yêu thích &amp; đặt nhiều nhất tuần này</p>
           </div>
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {topProducts.map((product, i) => {
             const rank = rankColors[i];
             return (
-              <Link
+              <div
                 key={product.id}
-                href={`/san-pham/${product.slug}`}
-                className="group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 {/* Rank badge */}
                 <div
@@ -45,8 +46,11 @@ export default function TopOrder() {
                   {i + 1}
                 </div>
 
-                {/* Product image */}
-                <div className="relative aspect-square w-full overflow-hidden bg-[#FCE9C6]">
+                {/* Product image link */}
+                <Link
+                  href={`/san-pham/${product.slug}`}
+                  className="relative aspect-square w-full overflow-hidden bg-[#FCE9C6]"
+                >
                   <Image
                     src={product.image}
                     alt={product.name}
@@ -54,30 +58,36 @@ export default function TopOrder() {
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 640px) 100vw, 33vw"
                   />
-                </div>
+                </Link>
 
                 {/* Info */}
-                <div className="p-4">
+                <div className="flex flex-1 flex-col p-4">
                   <p className="text-xs font-semibold text-[#C97B3D] uppercase tracking-wide">
                     {product.category}
                   </p>
-                  <h3 className="font-heading mt-1 text-base font-bold text-[#2B2B2B] line-clamp-2">
-                    {product.name}
-                  </h3>
+                  <Link href={`/san-pham/${product.slug}`}>
+                    <h3 className="font-heading mt-1 text-base font-bold text-[#2B2B2B] line-clamp-2 hover:text-[#1B4B5A] transition-colors">
+                      {product.name}
+                    </h3>
+                  </Link>
 
                   {/* Stars */}
                   <div className="mt-1.5 flex items-center gap-1">
                     {Array.from({ length: 5 }).map((_, j) => (
                       <Star
                         key={j}
-                        className={`h-3.5 w-3.5 ${j < product.rating ? "fill-[#F6CE8B] text-[#F6CE8B]" : "text-[#E5D9C3]"}`}
+                        className={`h-3.5 w-3.5 ${
+                          j < product.rating
+                            ? "fill-[#F6CE8B] text-[#F6CE8B]"
+                            : "text-[#E5D9C3]"
+                        }`}
                       />
                     ))}
                     <span className="ml-1 text-xs text-[#7A7A7A]">({product.reviews})</span>
                   </div>
 
                   {/* Price */}
-                  <div className="mt-3 flex items-center gap-2">
+                  <div className="mt-3 flex items-baseline gap-2">
                     <span className="font-heading text-lg font-black text-[#1B4B5A]">
                       {formatPrice(product.price)}
                     </span>
@@ -87,8 +97,26 @@ export default function TopOrder() {
                       </span>
                     )}
                   </div>
+
+                  {/* 2 Buttons side-by-side: "Giỏ hàng" and "Mua ngay" */}
+                  <div className="mt-4 flex items-center gap-2 pt-3 border-t border-[#F5EFE6]">
+                    <button
+                      type="button"
+                      aria-label="Thêm vào giỏ hàng"
+                      className="flex items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-3.5 py-2 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95"
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      <span>Giỏ hàng</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#123640] hover:shadow-lg active:scale-95"
+                    >
+                      <span>Mua ngay</span>
+                    </button>
+                  </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

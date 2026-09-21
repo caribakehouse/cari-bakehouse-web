@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Cake } from "lucide-react";
+import { ChevronRight, CakeSlice } from "lucide-react";
 
 export default function CustomOrderBanner() {
   return (
@@ -11,8 +11,9 @@ export default function CustomOrderBanner() {
 
         <div className="relative z-10 flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
+            {/* Burnt Cheesecake line-art icon */}
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#F6CE8B]/20 sm:h-16 sm:w-16">
-              <Cake className="h-7 w-7 text-[#F6CE8B] sm:h-8 sm:w-8" />
+              <CakeSlice className="h-7 w-7 text-[#F6CE8B] sm:h-8 sm:w-8" />
             </div>
             <div>
               <p className="text-xs font-semibold tracking-widest text-[#F6CE8B]/70 uppercase">

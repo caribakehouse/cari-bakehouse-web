@@ -1,54 +1,52 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import Image from "next/image";
 
 const banners = [
   {
     label: "Bánh",
-    tagline: "Nướng tươi mỗi ngày",
     href: "/danh-muc/banh",
-    bg: "from-[#1B4B5A] to-[#123640]",
-    accent: "#F6CE8B",
+    image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800&auto=format&fit=crop&q=80",
+    gradient: "from-[#1B4B5A]/85 via-[#1B4B5A]/70 to-[#123640]/90",
   },
   {
     label: "Đồ uống",
-    tagline: "Sánh đôi cùng bánh ngọt",
     href: "/danh-muc/do-uong",
-    bg: "from-[#C97B3D] to-[#A5602A]",
-    accent: "#FFF8EF",
+    image: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=800&auto=format&fit=crop&q=80",
+    gradient: "from-[#C97B3D]/85 via-[#C97B3D]/70 to-[#8C4A18]/90",
   },
 ];
 
 export default function DualBanner() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 pt-10 pb-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {banners.map((b) => (
           <Link
             key={b.label}
             href={b.href}
-            className={`group relative flex min-h-[200px] flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-br ${b.bg} p-7 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:min-h-[240px]`}
+            className="group relative flex min-h-[180px] sm:min-h-[220px] items-center justify-center overflow-hidden rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl"
           >
-            {/* Decorative circles */}
-            <div className="absolute right-[-30px] top-[-30px] h-44 w-44 rounded-full bg-white/10 transition-transform duration-500 group-hover:scale-110" />
-            <div className="absolute right-[40px] top-[20px] h-24 w-24 rounded-full bg-white/5" />
+            {/* Background Image with hover zoom & brightness effect */}
+            <div className="absolute inset-0 overflow-hidden">
+              <Image
+                src={b.image}
+                alt={b.label}
+                fill
+                className="object-cover transition-all duration-700 ease-out group-hover:scale-108 group-hover:brightness-105"
+                sizes="(max-width: 640px) 100vw, 50vw"
+              />
+            </div>
 
-            <div className="relative z-10">
-              <p className="text-xs font-semibold tracking-widest text-white/60 uppercase">
-                {b.tagline}
-              </p>
-              <h2
-                className="font-heading mt-1 text-4xl font-black text-white sm:text-5xl"
-                style={{ textShadow: "0 2px 12px rgba(0,0,0,0.2)" }}
-              >
+            {/* Gradient Overlay */}
+            <div
+              className={`absolute inset-0 bg-gradient-to-tr ${b.gradient} transition-opacity duration-300 group-hover:opacity-90`}
+            />
+
+            {/* Title only (no description, no button) */}
+            <div className="relative z-10 text-center px-4">
+              <h2 className="font-heading text-4xl sm:text-5xl font-black text-white tracking-wide drop-shadow-md transition-transform duration-300 group-hover:scale-105">
                 {b.label}
               </h2>
-              <span
-                className="mt-4 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-bold transition-all duration-300 group-hover:gap-3"
-                style={{ background: b.accent, color: "#1B4B5A" }}
-              >
-                Xem tất cả
-                <ChevronRight className="h-4 w-4" />
-              </span>
             </div>
           </Link>
         ))}

@@ -13,20 +13,11 @@ export default function ProductMenu() {
   return (
     <section className="py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Heading */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h2 className="font-heading text-2xl font-black text-[#1B4B5A] sm:text-3xl">
-              Thực đơn của Cari
-            </h2>
-            <p className="mt-1 text-sm text-[#7A7A7A]">Tất cả món đều làm tươi theo đơn</p>
-          </div>
-          <Link
-            href="/san-pham"
-            className="hidden items-center gap-1 text-sm font-semibold text-[#1B4B5A] hover:text-[#C97B3D] sm:flex"
-          >
-            Xem tất cả <ArrowRight className="h-4 w-4" />
-          </Link>
+        {/* Heading (Only title, no subtitle, no top-right link) */}
+        <div className="mb-8">
+          <h2 className="font-heading text-2xl font-black text-[#1B4B5A] sm:text-3xl">
+            Thực đơn của Cari
+          </h2>
         </div>
 
         {/* Grid 4 cols */}
@@ -37,7 +28,10 @@ export default function ProductMenu() {
               className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
               {/* Image */}
-              <Link href={`/san-pham/${product.slug}`} className="relative block aspect-square w-full overflow-hidden bg-[#FCE9C6]">
+              <Link
+                href={`/san-pham/${product.slug}`}
+                className="relative block aspect-square w-full overflow-hidden bg-[#FCE9C6]"
+              >
                 {product.badge && (
                   <span className="absolute left-2 top-2 z-10 rounded-full bg-[#1B4B5A] px-2.5 py-0.5 text-[10px] font-bold text-[#F6CE8B]">
                     {product.badge}
@@ -58,7 +52,7 @@ export default function ProductMenu() {
                   {product.category}
                 </p>
                 <Link href={`/san-pham/${product.slug}`}>
-                  <h3 className="font-heading mt-1 text-sm font-bold text-[#2B2B2B] line-clamp-2 leading-snug hover:text-[#1B4B5A]">
+                  <h3 className="font-heading mt-1 text-sm font-bold text-[#2B2B2B] line-clamp-2 leading-snug hover:text-[#1B4B5A] transition-colors">
                     {product.name}
                   </h3>
                 </Link>
@@ -68,43 +62,61 @@ export default function ProductMenu() {
                   {Array.from({ length: 5 }).map((_, j) => (
                     <Star
                       key={j}
-                      className={`h-3 w-3 ${j < product.rating ? "fill-[#F6CE8B] text-[#F6CE8B]" : "text-[#E5D9C3]"}`}
+                      className={`h-3 w-3 ${
+                        j < product.rating
+                          ? "fill-[#F6CE8B] text-[#F6CE8B]"
+                          : "text-[#E5D9C3]"
+                      }`}
                     />
                   ))}
                   <span className="ml-1 text-[10px] text-[#7A7A7A]">({product.reviews})</span>
                 </div>
 
-                {/* Price + Cart button */}
-                <div className="mt-auto flex items-center justify-between pt-3">
-                  <div>
+                {/* Price + Round cart button + "Mua ngay" button */}
+                <div className="mt-auto flex flex-col gap-2.5 pt-3 border-t border-[#F5EFE6]">
+                  <div className="flex items-baseline gap-1">
                     <span className="font-heading text-sm font-black text-[#1B4B5A] sm:text-base">
                       {formatPrice(product.price)}
                     </span>
                     {product.originalPrice && (
-                      <span className="ml-1 text-[10px] text-[#7A7A7A] line-through">
+                      <span className="text-[10px] text-[#7A7A7A] line-through">
                         {formatPrice(product.originalPrice)}
                       </span>
                     )}
                   </div>
-                  <button
-                    aria-label={`Thêm ${product.name} vào giỏ`}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1B4B5A] text-[#F6CE8B] transition-all hover:bg-[#123640] hover:scale-110 sm:h-9 sm:w-9"
-                  >
-                    <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  </button>
+
+                  <div className="flex items-center gap-1.5">
+                    {/* Existing round cart button */}
+                    <button
+                      type="button"
+                      aria-label={`Thêm ${product.name} vào giỏ`}
+                      className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-[#1B4B5A] text-[#F6CE8B] transition-all hover:bg-[#123640] hover:scale-105 active:scale-95 shadow-sm"
+                    >
+                      <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </button>
+
+                    {/* New "Mua ngay" button next to it */}
+                    <button
+                      type="button"
+                      className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-2.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold text-white transition-all hover:bg-[#123640] hover:scale-102 active:scale-95 shadow-sm whitespace-nowrap"
+                    >
+                      Mua ngay
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Mobile view all */}
-        <div className="mt-6 flex justify-center sm:hidden">
+        {/* Centered button "Xem tất cả" at the bottom of the section */}
+        <div className="mt-10 flex justify-center">
           <Link
             href="/san-pham"
-            className="flex items-center gap-2 rounded-full border border-[#1B4B5A] px-6 py-2.5 text-sm font-semibold text-[#1B4B5A] hover:bg-[#1B4B5A] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-[#1B4B5A] px-8 py-3.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:bg-[#123640] hover:shadow-xl hover:scale-105"
           >
-            Xem tất cả sản phẩm <ArrowRight className="h-4 w-4" />
+            <span>Xem tất cả</span>
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

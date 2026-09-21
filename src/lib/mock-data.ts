@@ -11,6 +11,7 @@ export interface HeroSlide {
   ctaLabel: string;
   ctaHref: string;
   bgColor: string;
+  image?: string;
 }
 
 export interface Product {
@@ -51,6 +52,7 @@ export const heroSlides: HeroSlide[] = [
     ctaLabel: "Khám phá ngay",
     ctaHref: "/san-pham",
     bgColor: "#1B4B5A",
+    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1920&auto=format&fit=crop&q=80",
   },
   {
     id: 2,
@@ -60,6 +62,7 @@ export const heroSlides: HeroSlide[] = [
     ctaLabel: "Đặt bánh ngay",
     ctaHref: "/dat-theo-yeu-cau",
     bgColor: "#C97B3D",
+    image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1920&auto=format&fit=crop&q=80",
   },
   {
     id: 3,
@@ -69,6 +72,7 @@ export const heroSlides: HeroSlide[] = [
     ctaLabel: "Mua ngay",
     ctaHref: "/san-pham",
     bgColor: "#123640",
+    image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=1920&auto=format&fit=crop&q=80",
   },
 ];
 
