@@ -17,21 +17,25 @@ const giftBoxes = [
 
 export default function FeatureStrip() {
   return (
-    <section className="relative z-20 -mt-10 sm:-mt-14 lg:-mt-16 px-4">
+    <section className="relative z-20 -mt-12 sm:-mt-16 lg:-mt-18 px-4">
       <div className="mx-auto max-w-5xl">
         {/* 3 hộp quà: kích thước bằng nhau, khoảng cách đều, cuộn ngang mượt mà trên mobile, căn giữa trên desktop */}
-        <div className="flex items-center justify-start sm:justify-center gap-4 sm:gap-6 lg:gap-8 overflow-x-auto no-scrollbar pt-10 pb-7 px-2">
+        <div className="flex items-center justify-start sm:justify-center gap-4 sm:gap-6 lg:gap-8 overflow-x-auto no-scrollbar pt-14 pb-7 px-2">
           {giftBoxes.map((box) => (
             <div
               key={box.id}
-              className="group relative flex shrink-0 w-[210px] sm:w-[240px] md:w-[260px] h-[92px] sm:h-[104px] flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-[#225564] to-[#153D4A] shadow-xl border border-white/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-default"
+              className="group relative flex shrink-0 w-[210px] sm:w-[240px] md:w-[260px] h-[96px] sm:h-[108px] flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-[#225564] to-[#153D4A] shadow-xl border border-white/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-default"
             >
               {/* Dải ruy băng dọc nhẹ trên thân hộp quà */}
               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-4 sm:w-5 bg-gradient-to-b from-[#F6CE8B]/25 to-[#F6CE8B]/10 pointer-events-none" />
 
-              {/* Nơ SVG đè lên cạnh trên của hộp */}
-              <div className="absolute -top-7 sm:-top-8 left-1/2 -translate-x-1/2 z-10 transition-transform duration-300 group-hover:scale-105 pointer-events-none drop-shadow-md">
-                <RibbonIcon width={72} height={65} className="sm:w-[80px] sm:h-[72px]" />
+              {/* Nơ SVG bất đối xứng tự nhiên đè lên cạnh trên của hộp quà (kích thước 130-140px) */}
+              <div className="absolute -top-[48px] sm:-top-[54px] left-1/2 -translate-x-1/2 z-10 transition-transform duration-300 group-hover:scale-105 pointer-events-none drop-shadow-md">
+                <RibbonIcon
+                  width={135}
+                  height={135}
+                  className="w-[130px] h-[130px] sm:w-[140px] sm:h-[140px]"
+                />
               </div>
 
               {/* Pill nhỏ nền kem-vàng nhạt (#FCE9C6) đè lên cạnh dưới của khối tối */}
