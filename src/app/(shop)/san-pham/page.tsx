@@ -27,12 +27,12 @@ interface SealBadgeProps {
 }
 
 function SealBadge({ label, active, onClick }: SealBadgeProps) {
-  // SVG path con dấu răng cưa 12 đỉnh, bán kính ngoài ~98, trong ~82 trên viewBox 220x220
+  // SVG path con dấu răng cưa 12 đỉnh, đối xứng hoàn hảo trên viewBox 220x220
   const teeth = 12;
-  const outerR = 98;
-  const innerR = 82;
+  const outerR = 96;
+  const innerR = 80;
   const cx = 110;
-  const cy = 105;
+  const cy = 110;
   const points: string[] = [];
   for (let i = 0; i < teeth * 2; i++) {
     const angle = (Math.PI * i) / teeth - Math.PI / 2;
@@ -53,10 +53,10 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
       aria-label={`Xem danh mục ${label}`}
       className={`group relative flex flex-col items-center cursor-pointer transition-all duration-300 select-none focus:outline-none ${
         active
-          ? "scale-105 drop-shadow-[0_12px_24px_rgba(27,75,90,0.25)]"
+          ? "scale-105 drop-shadow-[0_10px_20px_rgba(27,75,90,0.25)]"
           : "scale-100 opacity-85 hover:opacity-100 hover:scale-103 drop-shadow-md"
       }`}
-      style={{ width: "155px" }}
+      style={{ width: "150px" }}
     >
       {/* 1. Lớp nền: Con dấu răng cưa */}
       <svg
@@ -90,7 +90,7 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
         <circle
           cx={cx}
           cy={cy}
-          r="70"
+          r="72"
           fill="none"
           stroke={active ? "#F6CE8B" : "#C97B3D"}
           strokeWidth="1.5"
@@ -98,12 +98,12 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
           opacity="0.6"
         />
 
-        {/* Chữ tên danh mục — CỐ ĐỊNH CÙNG 1 CỠ CHỮ (20px), font-heading, căn giữa đều */}
+        {/* Chữ tên danh mục — CĂN GIỮA HOÀN HẢO CẢ CHIỀU NGANG VÀ CHIỀU DỌC TRONG VÒNG TRÒN CHẤM */}
         <text
           x={cx}
-          y={cy - 20}
+          y={cy}
           textAnchor="middle"
-          dominantBaseline="middle"
+          dominantBaseline="central"
           fontFamily="var(--font-heading), Lato, sans-serif"
           fontWeight="900"
           fontSize="20"
@@ -115,13 +115,13 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
         </text>
       </svg>
 
-      {/* 2. Lớp nơ ruy băng — Giảm kích thước ~25-30% (116px) vừa phải, 
-          chờm nhẹ lên mép răng cưa dưới của badge, không lấn át toàn bộ badge */}
-      <div className="absolute top-[62px] sm:top-[64px] left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-[0_3px_6px_rgba(0,0,0,0.2)] transition-transform duration-300 group-hover:scale-105">
+      {/* 2. Lớp nơ ruy băng — Giảm kích thước vừa vặn cân đối (96px), 
+          chiều ngang nơ xấp xỉ tỉ lệ badge, chờm nhẹ lên mép răng cưa đáy mà không che chữ ở tâm */}
+      <div className="absolute top-[84px] sm:top-[86px] left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-[0_2px_5px_rgba(0,0,0,0.18)] transition-transform duration-300 group-hover:scale-105">
         <RibbonIcon
-          width={116}
-          height={116}
-          className="w-[112px] h-[112px] sm:w-[116px] sm:h-[116px]"
+          width={96}
+          height={96}
+          className="w-[92px] h-[92px] sm:w-[96px] sm:h-[96px]"
         />
       </div>
     </button>
