@@ -3,7 +3,7 @@
 import Image from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Star, Trophy, ShoppingBag } from "lucide-react";
+import { Trophy, ShoppingBag } from "lucide-react";
 import { addToCart } from "@/lib/cart";
 import { getProductStatus, useHomeContent, useProductsBySlugs } from "@/lib/db";
 
@@ -80,21 +80,6 @@ export default function TopOrder() {
                       {product.name}
                     </h3>
                   </Link>
-
-                  {/* Stars */}
-                  <div className="mt-1.5 flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <Star
-                        key={j}
-                        className={`h-3.5 w-3.5 ${
-                          j < product.rating
-                            ? "fill-[#F6CE8B] text-[#F6CE8B]"
-                            : "text-[#E5D9C3]"
-                        }`}
-                      />
-                    ))}
-                    <span className="ml-1 text-xs text-[#7A7A7A]">({product.reviews})</span>
-                  </div>
 
                   {/* Price */}
                   <div className="mt-3 flex items-baseline gap-2">

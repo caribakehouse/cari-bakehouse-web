@@ -5,13 +5,12 @@ import Image from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
-  Star,
   ShoppingBag,
   Check,
   Sparkles,
 } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
-import { defaultSize, getProductStatus, priceForSize, useProductGroups } from "@/lib/db";
+import { defaultSize, getProductStatus, priceForSize, useCategoryPickerLabel, useProductGroups } from "@/lib/db";
 import RibbonIcon from "@/components/ui/RibbonIcon";
 import { addToCart } from "@/lib/cart";
 
@@ -164,6 +163,8 @@ function ProductsContent() {
 
   // Danh sách sản phẩm lấy từ dữ liệu chung (admin chỉnh ở /admin/san-pham); sản phẩm ẩn không hiện
   const productGroups = useProductGroups(activeTab);
+  // Nhãn + tên/mô tả từng nhóm: admin chỉnh ở /admin/noi-dung-trang-san-pham
+  const categoryPickerLabel = useCategoryPickerLabel();
   const [sizeChoice, setSizeChoice] = useState<Record<string, string>>({});
   const chosenSize = (p: Product) => sizeChoice[p.slug] ?? defaultSize(p);
 
@@ -205,7 +206,7 @@ function ProductsContent() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Nhãn hướng dẫn nhỏ phía trên */}
           <p className="text-center text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-[#C97B3D]/80 mb-5">
-            Chọn danh mục
+            {categoryPickerLabel}
           </p>
           <div className="flex justify-center items-end gap-10 sm:gap-16">
             <SealBadge
@@ -284,7 +285,7 @@ function ProductsContent() {
                   {/* Thông tin sản phẩm */}
                   <div className="flex flex-1 flex-col p-4 sm:p-5">
                     <p className="text-[11px] font-bold uppercase tracking-wider text-[#C97B3D]">
-                      {product.subcategory || product.category}
+                      {group.title}
                     </p>
 
                     <Link href={`/san-pham/${product.slug}`} className="mt-1">
@@ -298,21 +299,6 @@ function ProductsContent() {
                         {product.description}
                       </p>
                     )}
-
-                    {/* Đánh giá sao */}
-                    <div className="mt-2.5 flex items-center gap-1">
-                      {Array.from({ length: 5 }).map((_, j) => (
-                        <Star
-                          key={j}
-                          className={`h-3.5 w-3.5 ${
-                            j < product.rating
-                              ? "fill-[#F6CE8B] text-[#F6CE8B]"
-                              : "text-[#E5D9C3]"
-                          }`}
-                        />
-                      ))}
-                      <span className="ml-1 text-xs text-[#7A7A7A]">({product.reviews})</span>
-                    </div>
 
                     {/* Chọn cỡ bánh (chỉ khi sản phẩm có nhiều cỡ) */}
                     {product.sizes && product.sizes.length > 0 && (

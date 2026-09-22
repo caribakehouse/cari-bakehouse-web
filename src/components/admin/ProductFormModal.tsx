@@ -5,7 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import ImageField from "@/components/admin/ImageField";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { BTN_ICON, BTN_OUTLINE, BTN_SOLID, Field, INPUT, INPUT_INVALID, Modal } from "@/components/admin/ui";
-import { PRODUCT_STATUS_LABELS, productGroupMeta, saveProduct } from "@/lib/db";
+import { PRODUCT_STATUS_LABELS, saveProduct, useProductGroupOptions } from "@/lib/db";
 import type { Product, ProductStatus } from "@/lib/mock-data";
 import { formatVND } from "@/lib/utils";
 
@@ -29,15 +29,15 @@ interface Draft {
 
 type Errors = Partial<Record<"name" | "price" | "originalPrice" | "stock" | "sizes" | "image", string>>;
 
-const groupsOf = (category: Category) => productGroupMeta.filter((g) => g.category === category);
-
 function toDraft(p: Product | null): Draft {
   if (!p) {
     return {
       name: "",
       description: "",
       category: "Bánh",
-      subcategory: groupsOf("Bánh")[0]?.title ?? "",
+      // Danh sách nhóm chỉ có được sau khi component mount (useProductGroupOptions); chọn mặc định
+      // nhóm đầu tiên được thực hiện ở effect bên dưới, ngay khi mở form thêm mới.
+      subcategory: "",
       image: "",
       price: "",
       originalPrice: "",
@@ -69,6 +69,13 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
   const { toast } = useAdmin();
   const [draft, setDraft] = useState<Draft>(() => toDraft(product));
   const [errors, setErrors] = useState<Errors>({});
+  // Nhãn nhóm hiển thị theo nội dung mới nhất (admin chỉnh ở /admin/noi-dung-trang-san-pham);
+  // giá trị lưu vào sản phẩm vẫn là tiêu đề gốc (g.value) nên đổi tên hiển thị không làm mất liên kết.
+  const groupOptions = useProductGroupOptions();
+  const groupsOf = (category: Category) => groupOptions.filter((g) => g.category === category);
+  // Chưa chọn nhóm (sản phẩm mới mở form lần đầu) thì ngầm định nhóm đầu tiên của danh mục đang chọn —
+  // tính trực tiếp lúc render, không cần effect đồng bộ state.
+  const effectiveSubcategory = draft.subcategory || groupsOf(draft.category)[0]?.value || "";
 
   // Sửa ô nào thì xóa lỗi cũ của ô đó (đổi cỡ bánh thì cũng bỏ lỗi giá)
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
@@ -106,7 +113,7 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
       name: draft.name.trim(),
       description: draft.description.trim() || undefined,
       category: draft.category,
-      subcategory: draft.subcategory || undefined,
+      subcategory: effectiveSubcategory || undefined,
       image: draft.image || PLACEHOLDER_IMAGE,
       price: hasSizes ? (minSizePrice ?? 0) : toInt(draft.price),
       originalPrice: draft.originalPrice.trim() ? toInt(draft.originalPrice) : undefined,
@@ -162,7 +169,7 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
             value={draft.category}
             onChange={(e) => {
               const category = e.target.value as Category;
-              setDraft((d) => ({ ...d, category, subcategory: groupsOf(category)[0]?.title ?? "" }));
+              setDraft((d) => ({ ...d, category, subcategory: groupsOf(category)[0]?.value ?? "" }));
             }}
             className={INPUT}
           >
@@ -171,11 +178,24 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
           </select>
         </Field>
 
-        <Field label="Nhóm sản phẩm">
-          <select value={draft.subcategory} onChange={(e) => set("subcategory", e.target.value)} className={INPUT}>
+        <Field
+          label="Nhóm sản phẩm"
+          hint={
+            groupsOf(draft.category).length === 0
+              ? "Chưa có nhóm nào cho danh mục này — tạo ở Nội dung trang → Trang sản phẩm"
+              : undefined
+          }
+        >
+          <select
+            value={effectiveSubcategory}
+            onChange={(e) => set("subcategory", e.target.value)}
+            disabled={groupsOf(draft.category).length === 0}
+            className={`${INPUT} disabled:bg-[#efefef]`}
+          >
+            <option value="">— Chưa chọn nhóm —</option>
             {groupsOf(draft.category).map((g) => (
-              <option key={g.id} value={g.title}>
-                {g.title}
+              <option key={g.id} value={g.value}>
+                {g.label}
               </option>
             ))}
           </select>

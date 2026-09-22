@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 
-// Tab chuyển giữa hai màn hình thuộc mục "Nội dung trang"
-export default function ContentTabs({ active }: { active: "home" | "about" }) {
-  const tab = (href: string, label: string, key: "home" | "about") => (
+type ContentTabKey = "home" | "products" | "about";
+
+// Tab chuyển giữa các màn hình thuộc mục "Nội dung trang"
+export default function ContentTabs({ active }: { active: ContentTabKey }) {
+  const tab = (href: string, label: string, key: ContentTabKey) => (
     <Link
       href={href}
       aria-current={active === key ? "page" : undefined}
@@ -18,6 +20,7 @@ export default function ContentTabs({ active }: { active: "home" | "about" }) {
   return (
     <div className="mb-5 flex border-b border-[#d6d6d6]">
       {tab("/admin/noi-dung-trang-chu", "Trang chủ", "home")}
+      {tab("/admin/noi-dung-trang-san-pham", "Trang sản phẩm", "products")}
       {tab("/admin/gioi-thieu-chinh-sach", "Giới thiệu & chính sách", "about")}
     </div>
   );

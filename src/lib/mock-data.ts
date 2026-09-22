@@ -9,7 +9,7 @@
 import type { AuthUser, Customer, PointTransaction } from "@/types/user";
 import type { Order, Voucher } from "@/types/order";
 import type { CustomOrderRequest } from "@/types/custom-order";
-import type { AboutContent, HomeContent, SiteSettings } from "@/types/content";
+import type { AboutContent, HomeContent, ProductsPageContent, SiteSettings } from "@/types/content";
 
 /** Chuỗi yyyy-mm-dd của "hôm nay + offset ngày" theo giờ địa phương (dùng cho đơn mẫu luôn mới). */
 function dayOffset(offset: number): string {
@@ -43,6 +43,11 @@ export interface Product {
   slug: string;
   name: string;
   category: string;
+  /**
+   * Id của nhóm sản phẩm (ProductGroupContent.id) — KHÔNG phải tên nhóm, để đổi tên/xóa nhóm khác
+   * không làm sản phẩm lạc nhóm. Trong các literal seed bên dưới trường này bị SEED_PRODUCTS ghi đè
+   * lại bằng id nhóm thật; giá trị viết tay ở đây chỉ mang tính minh họa, không được dùng trực tiếp.
+   */
   subcategory?: string;
   description?: string;
   price: number;
@@ -454,8 +459,29 @@ export const PRODUCT_GROUP_META: ProductGroupMeta[] = seedGroups.map(
   ({ id, category, title, description }) => ({ id, category, title, description }),
 );
 
+// ─── Nội dung trang /san-pham ─────────────────────────────────
+// Danh sách nhóm sản phẩm hiển thị ở trang /san-pham — admin toàn quyền thêm/xóa/đổi tên/sắp xếp lại
+// ở /admin/noi-dung-trang-san-pham. Đây là NGUỒN GỐC duy nhất cho việc nhóm nào tồn tại; sản phẩm
+// (Product.subcategory) tham chiếu tới nhóm qua `id` bên dưới — id không đổi nên đổi tên nhóm
+// (hoặc xóa nhóm khác) không làm sản phẩm "lạc" khỏi nhóm của nó.
+export const SEED_PRODUCTS_PAGE_CONTENT: ProductsPageContent = {
+  categoryPickerLabel: "Chọn danh mục",
+  groups: PRODUCT_GROUP_META.map(({ id, category, title, description }) => ({
+    id,
+    category,
+    title,
+    description: description ?? "",
+  })),
+};
+
+// subcategory của mỗi sản phẩm = id nhóm gốc (không phải tên), khớp với SEED_PRODUCTS_PAGE_CONTENT ở trên.
 export const SEED_PRODUCTS: Product[] = seedGroups.flatMap((group) =>
-  group.products.map((p) => ({ ...p, stock: p.stock ?? 20, status: p.status ?? ("active" as const) })),
+  group.products.map((p) => ({
+    ...p,
+    subcategory: group.id,
+    stock: p.stock ?? 20,
+    status: p.status ?? ("active" as const),
+  })),
 );
 
 // ─── Tài khoản demo ──────────────────────────────────────────

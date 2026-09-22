@@ -3,7 +3,7 @@
 import Image from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Star, ShoppingBag, ArrowRight } from "lucide-react";
+import { ShoppingBag, ArrowRight } from "lucide-react";
 import { addToCart } from "@/lib/cart";
 import { getProductStatus, useHomeContent, useProductsBySlugs } from "@/lib/db";
 
@@ -65,21 +65,6 @@ export default function ProductMenu() {
                     {product.name}
                   </h3>
                 </Link>
-
-                {/* Stars */}
-                <div className="mt-1.5 flex items-center gap-0.5">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star
-                      key={j}
-                      className={`h-3 w-3 ${
-                        j < product.rating
-                          ? "fill-[#F6CE8B] text-[#F6CE8B]"
-                          : "text-[#E5D9C3]"
-                      }`}
-                    />
-                  ))}
-                  <span className="ml-1 text-[10px] text-[#7A7A7A]">({product.reviews})</span>
-                </div>
 
                 {/* Price + Round cart button + "Mua ngay" button */}
                 <div className="mt-auto flex flex-col gap-2.5 pt-3 border-t border-[#F5EFE6]">

@@ -71,6 +71,25 @@ export interface AboutContent {
   faq: FaqItem[];
 }
 
+/**
+ * Một nhóm sản phẩm trên trang /san-pham — admin có thể thêm, xóa, đổi tên, sắp xếp lại tùy ý.
+ * `id` sinh một lần khi tạo nhóm và không đổi sau đó: đây là khóa để gán sản phẩm vào nhóm
+ * (Product.subcategory lưu đúng id này), nên đổi tên nhóm không làm "lạc" sản phẩm đang có trong nhóm.
+ */
+export interface ProductGroupContent {
+  id: string;
+  category: "Bánh" | "Đồ uống";
+  title: string;
+  description: string;
+}
+
+/** Nội dung trang /san-pham (danh mục sản phẩm) */
+export interface ProductsPageContent {
+  /** Nhãn nhỏ phía trên 2 badge chọn danh mục, vd "Chọn danh mục" */
+  categoryPickerLabel: string;
+  groups: ProductGroupContent[];
+}
+
 export interface SiteSettings {
   /** Số hotline dạng chữ số liền, vd 0338975925 */
   hotline: string;

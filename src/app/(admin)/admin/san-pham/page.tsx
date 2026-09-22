@@ -27,6 +27,7 @@ import {
   deleteProducts,
   getProductStatus,
   setProductsStatus,
+  useProductGroupOptions,
   useProducts,
 } from "@/lib/db";
 import type { Product } from "@/lib/mock-data";
@@ -60,6 +61,11 @@ function matchesFilter(p: Product, filter: Filter): boolean {
 export default function AdminProductsPage() {
   const { query, toast } = useAdmin();
   const products = useProducts();
+  // Nhóm sản phẩm hiện có (thêm/xóa/đổi tên ở Nội dung trang → Trang sản phẩm) — dùng để hiện đúng
+  // tên nhóm hiện tại thay vì id lưu trong product.subcategory.
+  const groupOptions = useProductGroupOptions();
+  const groupTitle = (subcategory: string | undefined) =>
+    groupOptions.find((g) => g.value === subcategory)?.label;
 
   const [filter, setFilter] = useState<Filter>("all");
   const [page, setPage] = useState(1);
@@ -68,7 +74,7 @@ export default function AdminProductsPage() {
   const [deleteIds, setDeleteIds] = useState<number[] | null>(null);
 
   const filtered = products.filter(
-    (p) => matchesFilter(p, filter) && matchesQuery(query, p.name, p.subcategory, p.category, p.slug),
+    (p) => matchesFilter(p, filter) && matchesQuery(query, p.name, groupTitle(p.subcategory), p.category, p.slug),
   );
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
@@ -179,7 +185,7 @@ export default function AdminProductsPage() {
                     )}
                   </td>
                   <td className={TD}>
-                    {p.subcategory ?? p.category}
+                    {groupTitle(p.subcategory) ?? <span className="text-[#9a9a9a] italic">Chưa phân nhóm</span>}
                     <div className="text-[10px] text-[#9a9a9a]">{p.category}</div>
                   </td>
                   <td className={`${TD} whitespace-nowrap`}>

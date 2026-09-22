@@ -19,6 +19,7 @@ import {
   SEED_ORDERS,
   SEED_POINT_LOGS,
   SEED_PRODUCTS,
+  SEED_PRODUCTS_PAGE_CONTENT,
   SEED_SITE_SETTINGS,
   reviews as SEED_REVIEWS,
   type Product,
@@ -27,7 +28,7 @@ import {
   type Review,
 } from "@/lib/mock-data";
 import { todayISO } from "@/lib/utils";
-import type { AboutContent, HomeContent, SiteSettings } from "@/types/content";
+import type { AboutContent, HomeContent, ProductsPageContent, SiteSettings } from "@/types/content";
 import type { CustomOrderRequest, CustomOrderStatus } from "@/types/custom-order";
 import type { Order, OrderStatus } from "@/types/order";
 import type { Customer, PointTransaction } from "@/types/user";
@@ -64,6 +65,11 @@ const settingsStore = createPersistentStore<SiteSettings>(
   SEED_SITE_SETTINGS,
   asObject(SEED_SITE_SETTINGS),
 );
+const productsPageStore = createPersistentStore<ProductsPageContent>(
+  "cari-db:products-page",
+  SEED_PRODUCTS_PAGE_CONTENT,
+  asObject(SEED_PRODUCTS_PAGE_CONTENT),
+);
 
 const allStores: PersistentStore<unknown>[] = [
   productsStore,
@@ -74,6 +80,7 @@ const allStores: PersistentStore<unknown>[] = [
   homeStore,
   aboutStore,
   settingsStore,
+  productsPageStore,
 ] as PersistentStore<unknown>[];
 
 function useStore<T>(store: PersistentStore<T>): T {
@@ -106,8 +113,6 @@ export function getProducts(): Product[] {
   return productsStore.getSnapshot();
 }
 
-export const productGroupMeta = PRODUCT_GROUP_META;
-
 /** Trạng thái hiệu lực: hết tồn kho thì coi như hết hàng */
 export function getProductStatus(p: Product): ProductStatus {
   if (p.status === "hidden") return "hidden";
@@ -131,22 +136,63 @@ export function defaultSize(p: Pick<Product, "sizes">): string | undefined {
   return p.sizes?.[0]?.label;
 }
 
-/** Các nhóm sản phẩm hiển thị ở cửa hàng: bỏ sản phẩm ẩn và nhóm rỗng */
+/**
+ * Các nhóm sản phẩm hiển thị ở cửa hàng: bỏ sản phẩm ẩn và nhóm rỗng.
+ * Danh sách nhóm (thêm/xóa/đổi tên/sắp xếp) do admin toàn quyền quản lý ở
+ * /admin/noi-dung-trang-san-pham — đây là nguồn duy nhất cho việc nhóm nào tồn tại.
+ * Sản phẩm được xếp vào nhóm qua product.subcategory === group.id (id cố định, không đổi khi
+ * admin đổi tên nhóm), nên đổi tên nhóm không làm sản phẩm "lạc" khỏi nhóm của nó.
+ */
 export function useProductGroups(category: "Bánh" | "Đồ uống"): ProductCategoryGroup[] {
   const products = useProducts();
+  const content = useStore(productsPageStore);
   return useMemo(
     () =>
-      productGroupMeta
+      content.groups
         .filter((g) => g.category === category)
         .map((g) => ({
-          ...g,
-          products: products.filter(
-            (p) => p.category === g.category && p.subcategory === g.title && getProductStatus(p) !== "hidden",
-          ),
+          id: g.id,
+          category: g.category,
+          title: g.title,
+          description: g.description,
+          products: products.filter((p) => p.subcategory === g.id && getProductStatus(p) !== "hidden"),
         }))
         .filter((g) => g.products.length > 0),
-    [products, category],
+    [products, content, category],
   );
+}
+
+/** Nhãn nhỏ phía trên 2 badge chọn danh mục ở trang /san-pham */
+export function useCategoryPickerLabel(): string {
+  return useStore(productsPageStore).categoryPickerLabel;
+}
+
+export interface ProductGroupOption {
+  id: string;
+  category: "Bánh" | "Đồ uống";
+  /** Giá trị lưu vào Product.subcategory — chính là id nhóm */
+  value: string;
+  /** Tên hiển thị hiện tại của nhóm */
+  label: string;
+}
+
+/** Danh sách nhóm để chọn khi thêm/sửa sản phẩm ở admin (theo đúng danh sách nhóm hiện có) */
+export function useProductGroupOptions(): ProductGroupOption[] {
+  const content = useStore(productsPageStore);
+  return useMemo(
+    () => content.groups.map((g) => ({ id: g.id, category: g.category, value: g.id, label: g.title })),
+    [content],
+  );
+}
+
+/** Số sản phẩm hiện đang thuộc một nhóm (id) — dùng để chặn xóa nhóm còn sản phẩm */
+export function productCountInGroup(products: Product[], groupId: string): number {
+  return products.filter((p) => p.subcategory === groupId).length;
+}
+
+/** Id nhóm mới, sinh một lần và không đổi kể cả khi admin đổi tên nhóm sau đó. */
+export function generateGroupId(): string {
+  return `nhom-${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
 }
 
 /** Tra sản phẩm theo danh sách slug (giữ thứ tự, bỏ sản phẩm ẩn / không còn tồn tại) */
@@ -417,6 +463,13 @@ export function useAboutContent(): AboutContent {
 }
 export function saveAboutContent(content: AboutContent) {
   aboutStore.set(content);
+}
+
+export function useProductsPageContent(): ProductsPageContent {
+  return useStore(productsPageStore);
+}
+export function saveProductsPageContent(content: ProductsPageContent) {
+  productsPageStore.set(content);
 }
 
 export function useSiteSettings(): SiteSettings {
