@@ -28,7 +28,8 @@ import {
 import { PageSpinner, SignedOutNotice } from "@/components/account/PageSpinner";
 import { useRequireAuth } from "@/lib/auth";
 import { clearCart, useCart } from "@/lib/cart";
-import { checkVoucher, placeOrder, useSiteSettings } from "@/lib/db";
+import PackingAnimation, { type PackingItemKind } from "@/components/order/PackingAnimation";
+import { checkVoucher, placeOrder, useProducts, useSiteSettings } from "@/lib/db";
 import { openZaloChat } from "@/lib/zalo";
 import {
   FULFILLMENT_LABELS,
@@ -110,6 +111,9 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState("");
 
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
+  // Đơn vừa đặt xong, đang chạy animation đóng gói (xong mới hiện màn hình "Đặt hàng thành công")
+  const [packing, setPacking] = useState<{ order: Order; kinds: PackingItemKind[] } | null>(null);
+  const products = useProducts();
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
 
   // Voucher không bao giờ làm tổng tiền âm
@@ -185,8 +189,20 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Hộp đóng gói bỏ vào bánh và/hoặc ly đồ uống theo đúng loại món trong giỏ
+    const categories = items.map((i) => products.find((p) => p.slug === i.slug)?.category);
+    const kinds: PackingItemKind[] = [];
+    if (categories.some((c) => c !== "Đồ uống")) kinds.push("cake");
+    if (categories.some((c) => c === "Đồ uống")) kinds.push("drink");
+
     clearCart();
-    setPlacedOrder(result.order);
+    setPacking({ order: result.order, kinds });
+  };
+
+  const finishPacking = () => {
+    if (!packing) return;
+    setPlacedOrder(packing.order);
+    setPacking(null);
     window.scrollTo({ top: 0 });
   };
 
@@ -203,6 +219,9 @@ export default function CheckoutPage() {
   // ─── Trạng thái tải / chuyển hướng ─────────────────────────
   if (status === "signed-out") return <SignedOutNotice />;
   if (!user) return <PageSpinner />;
+
+  // ─── Animation đóng gói (giỏ hàng đã được xóa, nên phải hiện trước màn hình "giỏ trống") ───
+  if (packing) return <PackingAnimation kinds={packing.kinds} onDone={finishPacking} />;
 
   // ─── Màn hình Xác nhận đơn hàng ────────────────────────────
   if (placedOrder) {

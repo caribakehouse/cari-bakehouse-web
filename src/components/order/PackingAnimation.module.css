@@ -1,0 +1,238 @@
+/* Animation đóng gói đơn hàng — tổng thời lượng khớp TOTAL_MS trong PackingAnimation.tsx (3,8 giây).
+   Mốc: 0–0,4s hộp hiện · 0,4–0,9s mở nắp · 0,9–2,2s món bay vào · 2,1–2,6s gập nắp · 2,6–3,4s quai, tim, lấp lánh */
+
+.overlay {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+.boxWrap,
+.item,
+.handle,
+.heart,
+.sparkle {
+  transform-box: fill-box;
+}
+
+.boxWrap {
+  transform-origin: 50% 100%;
+  animation:
+    popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    squash 0.5s ease-in-out 2.6s both;
+}
+
+/* Cánh nắp xoay quanh bản lề (toạ độ bản lề đặt bằng style transform-origin theo khung SVG) */
+.flapLeft,
+.flapRight {
+  transform-box: view-box;
+  animation-duration: 3.8s;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+.flapLeft {
+  animation-name: flapLeft;
+}
+.flapRight {
+  animation-name: flapRight;
+}
+
+/* Món bay vào: điểm xuất phát lấy từ biến --fx, --fy, --fr đặt riêng cho từng món */
+.item {
+  transform-origin: 50% 50%;
+  animation: fly 0.8s cubic-bezier(0.3, 0.1, 0.4, 1) both;
+}
+
+/* Món lún xuống đáy hộp ngay trước khi nắp gập */
+.sink {
+  animation: sink 0.35s ease-in 2.05s both;
+}
+
+.handle {
+  transform-origin: 50% 100%;
+  animation: handleUp 0.4s cubic-bezier(0.34, 1.8, 0.64, 1) 2.6s both;
+}
+
+.heart {
+  transform-origin: 50% 50%;
+  animation: stamp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 2.9s both;
+}
+
+.sparkle {
+  transform-origin: 50% 50%;
+  animation: twinkle 0.9s ease-out both;
+}
+.sparkle1 {
+  animation-delay: 2.8s;
+}
+.sparkle2 {
+  animation-delay: 2.95s;
+}
+.sparkle3 {
+  animation-delay: 3.1s;
+}
+.sparkle4 {
+  animation-delay: 3s;
+}
+
+.caption {
+  animation: fadeIn 0.3s ease-out both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5) rotate(-6deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes flapLeft {
+  0%,
+  10% {
+    transform: rotate(0deg);
+  }
+  22% {
+    transform: rotate(-122deg);
+  }
+  26%,
+  55% {
+    transform: rotate(-112deg);
+  }
+  66% {
+    transform: rotate(5deg);
+  }
+  70%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes flapRight {
+  0%,
+  11% {
+    transform: rotate(0deg);
+  }
+  23% {
+    transform: rotate(122deg);
+  }
+  27%,
+  56% {
+    transform: rotate(112deg);
+  }
+  67% {
+    transform: rotate(-5deg);
+  }
+  71%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes fly {
+  0% {
+    opacity: 0;
+    transform: translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(1.1);
+  }
+  12% {
+    opacity: 1;
+  }
+  55% {
+    transform: translate(calc(var(--fx) * 0.35), calc(var(--fy) * 0.35 - 55px)) rotate(calc(var(--fr) * 0.4)) scale(1.05);
+  }
+  85% {
+    transform: translate(0, 6px) rotate(0deg) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(0.95);
+  }
+}
+
+@keyframes sink {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(28px);
+  }
+}
+
+@keyframes squash {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  35% {
+    transform: scale(1.08, 0.9);
+  }
+  65% {
+    transform: scale(0.96, 1.05);
+  }
+}
+
+@keyframes handleUp {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: scale(0) rotate(-25deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.3) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(0) scale(1.15) rotate(20deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.8) rotate(45deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .boxWrap,
+  .flapLeft,
+  .flapRight,
+  .item,
+  .sink,
+  .handle,
+  .heart,
+  .sparkle,
+  .caption {
+    animation: none;
+  }
+  .item,
+  .sparkle {
+    opacity: 0;
+  }
+}

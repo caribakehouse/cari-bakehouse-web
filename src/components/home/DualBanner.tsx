@@ -4,11 +4,8 @@ import Link from "next/link";
 import Image from "@/components/ui/SafeImage";
 import { useHomeContent } from "@/lib/db";
 
-// Màu phủ gradient theo thứ tự banner (giữ nguyên thiết kế gốc)
-const GRADIENTS = [
-  "from-[#1B4B5A]/85 via-[#1B4B5A]/70 to-[#123640]/90",
-  "from-[#C97B3D]/85 via-[#C97B3D]/70 to-[#8C4A18]/90",
-];
+// Lớp phủ trắng mờ cho nền sáng (ảnh vẫn hiện rõ phía sau); chữ màu xanh thương hiệu
+const OVERLAY = "from-white/60 via-white/40 to-[#FFF8EF]/60";
 
 export default function DualBanner() {
   // Banner đôi Bánh / Đồ uống do admin chỉnh ở /admin/noi-dung-trang-chu
@@ -21,7 +18,7 @@ export default function DualBanner() {
           <Link
             key={`${b.label}-${i}`}
             href={b.href}
-            className="group relative flex min-h-[180px] sm:min-h-[220px] items-center justify-center overflow-hidden rounded-2xl shadow-md transition-all duration-300 hover:shadow-xl"
+            className="group relative flex min-h-[180px] sm:min-h-[220px] items-center justify-center overflow-hidden rounded-2xl border border-[#E5D9C3] shadow-md transition-all duration-300 hover:shadow-xl"
           >
             {/* Background Image with hover zoom & brightness effect */}
             <div className="absolute inset-0 overflow-hidden">
@@ -36,12 +33,14 @@ export default function DualBanner() {
 
             {/* Gradient Overlay */}
             <div
-              className={`absolute inset-0 bg-gradient-to-tr ${GRADIENTS[i % GRADIENTS.length]} transition-opacity duration-300 group-hover:opacity-90`}
+              className={`absolute inset-0 bg-gradient-to-tr ${OVERLAY} transition-opacity duration-300 group-hover:opacity-85`}
             />
 
             {/* Title only (no description, no button) */}
             <div className="relative z-10 text-center px-4">
-              <h2 className="font-heading text-4xl sm:text-5xl font-black text-white tracking-wide drop-shadow-md transition-transform duration-300 group-hover:scale-105">
+              <h2
+                className={`font-heading text-4xl sm:text-5xl font-black text-[#1B4B5A] tracking-wide [text-shadow:0_1px_12px_rgba(255,255,255,0.9)] transition-transform duration-300 group-hover:scale-105`}
+              >
                 {b.label}
               </h2>
             </div>
