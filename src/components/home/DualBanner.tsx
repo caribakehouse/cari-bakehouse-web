@@ -3,9 +3,14 @@
 import Link from "next/link";
 import Image from "@/components/ui/SafeImage";
 import { useHomeContent } from "@/lib/db";
+import type { BannerOverlay } from "@/types/content";
 
-// Lớp phủ trắng mờ cho nền sáng (ảnh vẫn hiện rõ phía sau); chữ màu xanh thương hiệu — chỉ dùng khi bật "Hiện tiêu đề"
-const OVERLAY = "from-white/60 via-white/40 to-[#FFF8EF]/60";
+// Lớp phủ trắng mờ theo mức admin chọn (ảnh vẫn hiện phía sau)
+const OVERLAYS: Record<Exclude<BannerOverlay, "none">, string> = {
+  light: "from-white/35 via-white/20 to-[#FFF8EF]/35",
+  medium: "from-white/60 via-white/40 to-[#FFF8EF]/60",
+  strong: "from-white/80 via-white/65 to-[#FFF8EF]/80",
+};
 
 export default function DualBanner() {
   // Banner đôi Bánh / Đồ uống do admin chỉnh ở /admin/noi-dung-trang-chu.
@@ -32,17 +37,18 @@ export default function DualBanner() {
               />
             </div>
 
+            {b.overlay && b.overlay !== "none" && (
+              <div
+                className={`absolute inset-0 bg-gradient-to-tr ${OVERLAYS[b.overlay]} transition-opacity duration-300 group-hover:opacity-85`}
+              />
+            )}
+
             {b.showText && (
-              <>
-                <div
-                  className={`absolute inset-0 bg-gradient-to-tr ${OVERLAY} transition-opacity duration-300 group-hover:opacity-85`}
-                />
-                <div className="relative z-10 px-4 text-center">
-                  <h2 className="font-heading text-4xl font-black tracking-wide text-[#1B4B5A] [text-shadow:0_1px_12px_rgba(255,255,255,0.9)] transition-transform duration-300 group-hover:scale-105 sm:text-5xl">
-                    {b.label}
-                  </h2>
-                </div>
-              </>
+              <div className="relative z-10 px-4 text-center">
+                <h2 className="font-heading text-4xl font-black tracking-wide text-[#1B4B5A] [text-shadow:0_1px_12px_rgba(255,255,255,0.9)] transition-transform duration-300 group-hover:scale-105 sm:text-5xl">
+                  {b.label}
+                </h2>
+              </div>
             )}
           </Link>
         ))}

@@ -20,9 +20,13 @@ export interface BannerItem {
   label: string;
   href: string;
   image: string;
-  /** Hiện chữ + lớp phủ trắng đè lên ảnh. Mặc định tắt: chỉ hiện ảnh admin tự thiết kế. */
+  /** Hiện chữ (tiêu đề) đè lên ảnh. Mặc định tắt: chỉ hiện ảnh admin tự thiết kế. */
   showText?: boolean;
+  /** Lớp phủ trắng mờ trên ảnh. Bỏ trống = "none". */
+  overlay?: BannerOverlay;
 }
+
+export type BannerOverlay = "none" | "light" | "medium" | "strong";
 
 export interface GalleryImage {
   id: number;

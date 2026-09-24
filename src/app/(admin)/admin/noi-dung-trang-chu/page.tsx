@@ -8,7 +8,7 @@ import ProductPicker from "@/components/admin/ProductPicker";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { BTN_ICON, BTN_OUTLINE, BTN_SOLID, Card, Field, INPUT } from "@/components/admin/ui";
 import { saveHomeContent, useHomeContent, useReviews } from "@/lib/db";
-import type { HomeContent } from "@/types/content";
+import type { BannerOverlay, HomeContent } from "@/types/content";
 
 function HomeContentForm({ initial }: { initial: HomeContent }) {
   const { toast } = useAdmin();
@@ -162,6 +162,18 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
                   />
                   Hiện tiêu đề đè lên ảnh (mặc định tắt: chỉ hiện ảnh bạn tự thiết kế)
                 </label>
+                <Field label="Lớp phủ trắng trên ảnh">
+                  <select
+                    value={b.overlay ?? "none"}
+                    onChange={(e) => update({ overlay: e.target.value as BannerOverlay })}
+                    className={INPUT}
+                  >
+                    <option value="none">Không phủ (ảnh gốc)</option>
+                    <option value="light">Nhẹ</option>
+                    <option value="medium">Vừa</option>
+                    <option value="strong">Đậm (sáng nhất — hợp khi hiện tiêu đề)</option>
+                  </select>
+                </Field>
               </div>
             );
           })}
