@@ -56,8 +56,8 @@ export default function AdminOrdersPage() {
 
   const detail = orders.find((o) => o.id === detailId) ?? null;
 
-  const applyStatus = (order: Order, next: "Đã giao" | "Đã hủy") => {
-    const res = setOrderStatus(order.id, next);
+  const applyStatus = async (order: Order, next: "Đã giao" | "Đã hủy") => {
+    const res = await setOrderStatus(order.id, next);
     if (!res.ok) {
       toast(res.error, "error");
       return;

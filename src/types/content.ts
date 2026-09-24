@@ -1,4 +1,4 @@
-// Nội dung có thể chỉnh trong khu admin (dữ liệu mẫu)
+// Nội dung có thể chỉnh trong khu admin (lưu trong bảng site_content trên Supabase)
 
 export interface HeroSlideContent {
   id: number;

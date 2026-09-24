@@ -9,7 +9,7 @@ export interface AuthUser {
   role?: UserRole;
 }
 
-/** Hồ sơ khách hàng trong dữ liệu mẫu (khóa theo email) */
+/** Hồ sơ khách hàng (bảng customers, khóa theo email) */
 export interface Customer {
   id: string;
   fullName: string;

@@ -19,7 +19,7 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
 
 export default function AccountPage() {
   const router = useRouter();
-  // Chỉ vào được khi đã đăng nhập (mock)
+  // Chỉ vào được khi đã đăng nhập
   const { status, user } = useRequireAuth("/tai-khoan");
   const orders = useMyOrders(user?.email);
   const points = usePoints(user?.email);
@@ -62,7 +62,7 @@ export default function AccountPage() {
         </div>
 
         {/* Thông tin cá nhân */}
-        {/* TODO: thay bằng thông tin người dùng thật khi nối database (hiện là dữ liệu mẫu / lưu tạm) */}
+        {/* Thông tin tài khoản (Supabase Auth + bảng profiles) */}
         <section className="space-y-4">
           <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#1B4B5A] sm:text-2xl">
             <User className="h-5 w-5" />
@@ -104,7 +104,7 @@ export default function AccountPage() {
         </section>
 
         {/* Lịch sử đơn hàng */}
-        {/* TODO: thay bằng đơn hàng thật từ database (hiện đọc từ dữ liệu mẫu dùng chung với khu admin) */}
+        {/* Đơn hàng của khách (database chỉ trả về đơn của chính tài khoản này) */}
         <section className="space-y-4">
           <h2 className="flex items-center gap-2 font-heading text-xl font-bold text-[#1B4B5A] sm:text-2xl">
             <Receipt className="h-5 w-5" />

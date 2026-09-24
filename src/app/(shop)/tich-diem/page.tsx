@@ -17,7 +17,6 @@ import {
 import PointCard from "@/components/account/PointCard";
 import { useAuth } from "@/lib/auth";
 import { pointBalance, pointHistory, usePointLogs } from "@/lib/db";
-import { MOCK_USER } from "@/lib/mock-data";
 import { formatDateVN } from "@/lib/utils";
 
 // =============================================================================
@@ -46,9 +45,9 @@ const FAQ_ITEMS = [
 export default function TichDiemPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
-  // Chưa đăng nhập: hiện dữ liệu demo của khách mẫu (trang vẫn ghi "Dữ liệu mẫu demo")
-  const { user } = useAuth();
-  const email = user?.email ?? MOCK_USER.email;
+  // Điểm và lịch sử điểm của tài khoản đang đăng nhập (database chỉ trả về dữ liệu của chính khách)
+  const { user, hydrated } = useAuth();
+  const email = user?.email;
   const logs = usePointLogs();
   const currentPoints = useMemo(() => pointBalance(logs, email), [logs, email]);
   const history = useMemo(
@@ -122,17 +121,28 @@ export default function TichDiemPage() {
         </section>
 
         {/* 3. THẺ ĐIỂM CỦA TÔI (KHI ĐÃ ĐĂNG NHẬP) */}
-        {/* TODO: thay bằng dữ liệu điểm thật của user khi nối database */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#1B4B5A] flex items-center gap-2">
               <Award className="h-6 w-6 text-[#1B4B5A]" />
               Thẻ điểm của tôi
             </h2>
-            <span className="text-xs text-muted italic">(Dữ liệu mẫu demo)</span>
           </div>
 
-          <PointCard data={{ currentPoints, tier: "Thành viên mới" }} />
+          {user ? (
+            <PointCard data={{ currentPoints, tier: "Thành viên mới" }} />
+          ) : hydrated ? (
+            <div className="rounded-2xl border border-border/80 bg-white p-6 text-center shadow-xs">
+              <p className="text-sm text-[#2b2b2b]/80">Đăng nhập để xem điểm và lịch sử tích điểm của bạn.</p>
+              <Link
+                href="/dang-nhap?next=/tich-diem"
+                className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-[#1B4B5A] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#123640]"
+              >
+                Đăng nhập
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          ) : null}
         </section>
 
         {/* 4. BẢNG QUY ĐỔI ĐIỂM VÀ HẠNG THÀNH VIÊN */}
@@ -305,55 +315,55 @@ export default function TichDiemPage() {
           </div>
         </section>
 
-        {/* 5. LỊCH SỬ GIAO DỊCH ĐIỂM */}
-        {/* TODO: thay bằng dữ liệu thật từ database */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#1B4B5A] flex items-center gap-2">
-              <History className="h-5 w-5 text-[#1B4B5A]" />
-              Lịch sử điểm của bạn
-            </h2>
-            <span className="text-xs text-muted italic">(Dữ liệu mẫu demo)</span>
-          </div>
+        {/* 5. LỊCH SỬ GIAO DỊCH ĐIỂM (chỉ khi đã đăng nhập) */}
+        {user && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#1B4B5A] flex items-center gap-2">
+                <History className="h-5 w-5 text-[#1B4B5A]" />
+                Lịch sử điểm của bạn
+              </h2>
+            </div>
 
-          <div className="overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs">
-            <table className="w-full text-left border-collapse text-xs sm:text-sm">
-              <thead>
-                <tr className="border-b border-border/80 bg-[#FCE9C6]/50 text-[#1B4B5A] font-bold">
-                  <th className="py-3.5 px-4 sm:px-6">Ngày</th>
-                  <th className="py-3.5 px-4 sm:px-6">Nội dung / Đơn hàng</th>
-                  <th className="py-3.5 px-4 sm:px-6 text-center">Điểm</th>
-                  <th className="py-3.5 px-4 sm:px-6 text-right">Số dư</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60 text-[#2b2b2b]">
-                {history.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="py-6 px-6 text-center text-sm text-muted">
-                      Chưa có lịch sử điểm.
-                    </td>
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs">
+              <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead>
+                  <tr className="border-b border-border/80 bg-[#FCE9C6]/50 text-[#1B4B5A] font-bold">
+                    <th className="py-3.5 px-4 sm:px-6">Ngày</th>
+                    <th className="py-3.5 px-4 sm:px-6">Nội dung / Đơn hàng</th>
+                    <th className="py-3.5 px-4 sm:px-6 text-center">Điểm</th>
+                    <th className="py-3.5 px-4 sm:px-6 text-right">Số dư</th>
                   </tr>
-                )}
-                {history.map((item) => (
-                  <tr key={item.id} className="hover:bg-[#FFF8EF]/50 transition-colors">
-                    <td className="py-3.5 px-4 sm:px-6 text-muted">{item.date}</td>
-                    <td className="py-3.5 px-4 sm:px-6 font-medium text-[#1B4B5A]">{item.title}</td>
-                    <td
-                      className={`py-3.5 px-4 sm:px-6 text-center font-bold ${
-                        item.isPositive ? "text-emerald-600" : "text-rose-600"
-                      }`}
-                    >
-                      {item.points}
-                    </td>
-                    <td className="py-3.5 px-4 sm:px-6 text-right font-semibold text-[#2b2b2b]">
-                      {item.balance}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                </thead>
+                <tbody className="divide-y divide-border/60 text-[#2b2b2b]">
+                  {history.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-6 px-6 text-center text-sm text-muted">
+                        Chưa có lịch sử điểm.
+                      </td>
+                    </tr>
+                  )}
+                  {history.map((item) => (
+                    <tr key={item.id} className="hover:bg-[#FFF8EF]/50 transition-colors">
+                      <td className="py-3.5 px-4 sm:px-6 text-muted">{item.date}</td>
+                      <td className="py-3.5 px-4 sm:px-6 font-medium text-[#1B4B5A]">{item.title}</td>
+                      <td
+                        className={`py-3.5 px-4 sm:px-6 text-center font-bold ${
+                          item.isPositive ? "text-emerald-600" : "text-rose-600"
+                        }`}
+                      >
+                        {item.points}
+                      </td>
+                      <td className="py-3.5 px-4 sm:px-6 text-right font-semibold text-[#2b2b2b]">
+                        {item.balance}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {/* 6. FAQ TÍCH ĐIỂM */}
         <section className="space-y-6 pt-4">

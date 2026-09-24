@@ -12,10 +12,13 @@ Khung: sidebar tối 220px + topbar + vùng nội dung (theo wireframe 07-khung-
 | `/admin/tich-diem` | Tổng quan tích điểm + nhật ký điểm |
 | `/admin/noi-dung-trang-chu` | Nội dung các khối trang chủ |
 | `/admin/gioi-thieu-chinh-sach` | Câu chuyện thương hiệu, giá trị cốt lõi, FAQ chính sách |
-| `/admin/cai-dat` | Hotline, email, Zalo, mạng xã hội + khôi phục dữ liệu mẫu |
+| `/admin/cai-dat` | Hotline, email, Zalo, mạng xã hội |
 
-## Dữ liệu (Giai đoạn 2 — mock)
-- Dữ liệu gốc DUY NHẤT: `src/lib/mock-data.ts`. Cửa hàng và admin cùng đọc/ghi qua `src/lib/db.ts`;
-  chỉnh sửa được lưu chồng lên bằng localStorage (`cari-db:*`). "Khôi phục dữ liệu mẫu" ở `/admin/cai-dat`.
-- Đăng nhập admin (mock): email `admin@cari.bakehouse`, mật khẩu bất kỳ — xem `src/lib/auth.ts`.
-  TODO: thay bằng kiểm tra vai trò thật qua Supabase Auth ở Giai đoạn 4.
+## Dữ liệu (Supabase)
+- Mọi dữ liệu nằm trên Supabase; cửa hàng và admin cùng đọc/ghi qua `src/lib/db.ts`.
+  Cấu trúc bảng + quyền (RLS): `supabase/migrations/` (chạy lần lượt trong Supabase SQL Editor).
+- Đặt hàng đi qua hàm `place_order()` trong database — giá lấy từ bảng products, khách không sửa được.
+  Voucher: bảng `vouchers` (thêm/tắt mã trong Supabase Table Editor).
+- Ảnh admin tải lên: Supabase Storage, bucket `images`.
+- Đăng nhập: Supabase Auth. Quyền admin = `profiles.role = 'admin'` (cấp trong SQL Editor) — xem `src/lib/auth.ts`.
+- `src/lib/mock-data.ts` chỉ còn là dữ liệu mẫu ban đầu (sinh `supabase/seed.sql` bằng `npm run db:seed-sql`).

@@ -1,32 +1,22 @@
 // ============================================================
-//  Lớp truy cập dữ liệu dùng chung — cửa hàng và khu admin cùng đọc/ghi ở đây.
+//  Lớp truy cập dữ liệu dùng chung — cửa hàng và khu admin cùng đọc/ghi Supabase qua đây.
 //
-//  ĐÃ LÊN SUPABASE: sản phẩm, nhóm sản phẩm, đánh giá, nội dung trang, cài đặt.
-//    - Layout gốc tải sẵn trên server (src/app/layout.tsx → PublicDataProvider) nên trang hiện dữ liệu thật ngay.
-//    - Admin lưu → ghi Supabase (RLS chỉ cho admin) → cập nhật bản sao trong trình duyệt để giao diện đổi ngay.
-//  CHƯA LÊN SUPABASE (phần 3): đơn hàng, khách hàng, điểm, yêu cầu đặt bánh — vẫn lưu tạm localStorage
-//    (khóa `cari-db:<bảng>`), dữ liệu gốc lấy từ src/lib/mock-data.ts.
+//  - Dữ liệu công khai (sản phẩm, nhóm, đánh giá, nội dung trang, cài đặt): layout gốc tải sẵn trên server
+//    (src/app/layout.tsx → PublicDataProvider); admin lưu → ghi Supabase → cập nhật bản sao trong trình duyệt.
+//  - Dữ liệu riêng (đơn hàng, khách hàng, điểm, yêu cầu đặt bánh): tải trong trình duyệt theo tài khoản
+//    đang đăng nhập; RLS tự lọc — khách chỉ thấy dữ liệu của mình, admin thấy tất cả.
+//  - Đặt hàng đi qua hàm place_order() trong database: giá lấy từ bảng products, khách không sửa được.
 // ============================================================
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { usePublicData } from "@/components/PublicDataProvider";
-import { createPersistentStore, type PersistentStore } from "@/lib/persistent-store";
-import {
-  SEED_CUSTOM_REQUESTS,
-  SEED_CUSTOMERS,
-  SEED_ORDERS,
-  SEED_POINT_LOGS,
-  type Product,
-  type ProductCategoryGroup,
-  type ProductStatus,
-  type Review,
-} from "@/lib/mock-data";
+import { useAuth } from "@/lib/auth";
+import type { Product, ProductCategoryGroup, ProductStatus, Review } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/client";
 import { fetchProducts, productToRow, type PublicData } from "@/lib/supabase/public-data";
-import { todayISO } from "@/lib/utils";
 import type { AboutContent, HomeContent, ProductGroupContent, ProductsPageContent, SiteSettings } from "@/types/content";
 import type { CustomOrderRequest, CustomOrderStatus } from "@/types/custom-order";
-import type { Order, OrderStatus } from "@/types/order";
+import type { FulfillmentMethod, Order, OrderStatus, PaymentMethod } from "@/types/order";
 import type { Customer, PointTransaction } from "@/types/user";
 
 // ─── Dữ liệu trên Supabase ───────────────────────────────────
@@ -78,6 +68,8 @@ export type SaveResult = string | null;
 function saveError(error: { code?: string; message?: string } | null): SaveResult {
   if (!error) return null;
   console.error(error);
+  // Lỗi nghiệp vụ do database báo (raise exception) đã viết sẵn bằng tiếng Việt
+  if (error.code === "P0001" && error.message) return error.message;
   if (error.code === "42501") return "Bạn không có quyền sửa dữ liệu này — hãy đăng nhập bằng tài khoản quản trị";
   if (error.code === "23503") return "Không thể xóa: vẫn còn sản phẩm thuộc nhóm này";
   if (error.code === "23505") return "Dữ liệu bị trùng (ví dụ tên sản phẩm đã tồn tại)";
@@ -91,54 +83,199 @@ async function saveContent(key: string, value: unknown): Promise<SaveResult> {
   return saveError(error);
 }
 
-// ─── Dữ liệu còn lưu tạm localStorage (phần 3 sẽ chuyển lên Supabase) ───
-const asArray =
-  <T,>(seed: T[]) =>
-  (value: unknown): T[] =>
-    Array.isArray(value) ? (value as T[]) : seed;
+// ─── Dữ liệu riêng theo tài khoản đang đăng nhập ─────────────
+// Tải khi có component cần, tải lại khi đổi tài khoản, khi quay lại tab, và sau mỗi lần ghi.
 
-const ordersStore = createPersistentStore<Order[]>("cari-db:orders", SEED_ORDERS, asArray(SEED_ORDERS));
-const customersStore = createPersistentStore<Customer[]>("cari-db:customers", SEED_CUSTOMERS, asArray(SEED_CUSTOMERS));
-const pointLogsStore = createPersistentStore<PointTransaction[]>(
-  "cari-db:point-logs",
-  SEED_POINT_LOGS,
-  asArray(SEED_POINT_LOGS),
-);
-const requestsStore = createPersistentStore<CustomOrderRequest[]>(
-  "cari-db:custom-requests",
-  SEED_CUSTOM_REQUESTS,
-  asArray(SEED_CUSTOM_REQUESTS),
-);
-
-const localStores: PersistentStore<unknown>[] = [
-  ordersStore,
-  customersStore,
-  pointLogsStore,
-  requestsStore,
-] as PersistentStore<unknown>[];
-
-function useStore<T>(store: PersistentStore<T>): T {
-  return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
+interface QueryStore<T> {
+  use: () => T;
+  reload: () => Promise<void>;
 }
 
-/**
- * Xóa dữ liệu thử (đơn hàng, khách hàng, điểm, yêu cầu đặt bánh) trên trình duyệt này, quay về dữ liệu mẫu.
- * Không đụng tới sản phẩm, nội dung và cài đặt — những phần đó đã lưu thật trên Supabase.
- */
-export function resetAllData() {
-  localStores.forEach((s) => s.reset());
+function createQuery<T>(fetcher: () => Promise<T>, empty: T): QueryStore<T> {
+  let key: string | null = null;
+  let data = empty;
+  let loadId = 0;
+  const listeners = new Set<() => void>();
+  const emit = () => listeners.forEach((l) => l());
+
+  async function load() {
+    if (!key) return;
+    const id = ++loadId;
+    try {
+      const next = await fetcher();
+      if (id === loadId) {
+        data = next;
+        emit();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function ensure(nextKey: string) {
+    if (nextKey === key) return;
+    key = nextKey;
+    data = empty;
+    emit();
+    void load();
+  }
+
+  const onFocus = () => void load();
+
+  function subscribe(listener: () => void) {
+    if (listeners.size === 0) window.addEventListener("focus", onFocus);
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) window.removeEventListener("focus", onFocus);
+    };
+  }
+
+  return {
+    use() {
+      const { user } = useAuth();
+      const userKey = user?.email ?? "";
+      useEffect(() => ensure(userKey), [userKey]);
+      return useSyncExternalStore(
+        subscribe,
+        () => (key === userKey ? data : empty),
+        () => empty,
+      );
+    },
+    reload: load,
+  };
 }
+
+const EMPTY_ORDERS: Order[] = [];
+const EMPTY_CUSTOMERS: Customer[] = [];
+const EMPTY_POINT_LOGS: PointTransaction[] = [];
+const EMPTY_REQUESTS: CustomOrderRequest[] = [];
+
+interface OrderRow {
+  id: string;
+  created_at: string;
+  items: Order["items"];
+  subtotal: number;
+  voucher_code: string | null;
+  discount: number;
+  total: number;
+  status: OrderStatus;
+  fulfillment: FulfillmentMethod;
+  address: string | null;
+  receive_date: string;
+  receive_time: string;
+  note: string | null;
+  payment_method: PaymentMethod;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_email: string | null;
+}
+
+function orderFromRow(r: OrderRow): Order {
+  return {
+    id: r.id,
+    createdAt: r.created_at,
+    items: r.items,
+    subtotal: r.subtotal,
+    voucherCode: r.voucher_code ?? undefined,
+    discount: r.discount,
+    total: r.total,
+    status: r.status,
+    fulfillment: r.fulfillment,
+    address: r.address ?? undefined,
+    receiveDate: r.receive_date,
+    receiveTime: r.receive_time,
+    note: r.note ?? undefined,
+    paymentMethod: r.payment_method,
+    customerName: r.customer_name ?? undefined,
+    customerPhone: r.customer_phone ?? undefined,
+    customerEmail: r.customer_email ?? undefined,
+  };
+}
+
+const ordersQuery = createQuery(async () => {
+  const { data, error } = await sb().from("orders").select("*").order("placed_at", { ascending: false });
+  if (error) throw error;
+  return (data as OrderRow[]).map(orderFromRow);
+}, EMPTY_ORDERS);
+
+const customersQuery = createQuery(async () => {
+  const { data, error } = await sb().from("customers").select("id, full_name, email, phone, created_at").order("id");
+  if (error) throw error;
+  return (data as { id: string; full_name: string; email: string; phone: string; created_at: string }[]).map(
+    (r): Customer => ({ id: r.id, fullName: r.full_name, email: r.email, phone: r.phone, createdAt: r.created_at }),
+  );
+}, EMPTY_CUSTOMERS);
+
+const pointLogsQuery = createQuery(async () => {
+  const { data, error } = await sb().from("point_logs").select("*").order("date").order("id");
+  if (error) throw error;
+  return (
+    data as {
+      id: string;
+      email: string;
+      date: string;
+      title: string;
+      points: number;
+      kind: PointTransaction["kind"];
+      order_id: string | null;
+      reason: string | null;
+    }[]
+  ).map(
+    (r): PointTransaction => ({
+      id: r.id,
+      email: r.email,
+      date: r.date,
+      title: r.title,
+      points: r.points,
+      kind: r.kind,
+      orderId: r.order_id ?? undefined,
+      reason: r.reason ?? undefined,
+    }),
+  );
+}, EMPTY_POINT_LOGS);
+
+const requestsQuery = createQuery(async () => {
+  const { data, error } = await sb().from("custom_requests").select("*").order("placed_at", { ascending: false });
+  if (error) throw error;
+  return (
+    data as {
+      id: string;
+      created_at: string;
+      customer_name: string;
+      phone: string;
+      customer_email: string | null;
+      occasion: string;
+      delivery_date: string;
+      size_guest_count: string;
+      flavor: string;
+      budget: string;
+      notes: string;
+      reference_image: string | null;
+      status: CustomOrderStatus;
+      quoted_price: number | null;
+    }[]
+  ).map(
+    (r): CustomOrderRequest => ({
+      id: r.id,
+      createdAt: r.created_at,
+      customerName: r.customer_name,
+      phone: r.phone,
+      customerEmail: r.customer_email ?? undefined,
+      occasion: r.occasion,
+      deliveryDate: r.delivery_date,
+      sizeGuestCount: r.size_guest_count,
+      flavor: r.flavor,
+      budget: r.budget,
+      notes: r.notes,
+      referenceImage: r.reference_image ?? undefined,
+      status: r.status,
+      quotedPrice: r.quoted_price ?? undefined,
+    }),
+  );
+}, EMPTY_REQUESTS);
 
 const emailKey = (email: string | undefined) => (email ?? "").trim().toLowerCase();
-
-/** Sinh mã tăng dần dạng <prefix><số>, ví dụ KH006, YC0005 */
-function nextCode(prefix: string, existing: string[], width: number): string {
-  const max = existing.reduce((m, id) => {
-    const n = parseInt(id.replace(/\D/g, ""), 10);
-    return Number.isFinite(n) && n > m ? n : m;
-  }, 0);
-  return `${prefix}${String(max + 1).padStart(width, "0")}`;
-}
 
 // ═════════════════════════ SẢN PHẨM ═════════════════════════
 
@@ -304,34 +441,14 @@ export async function setProductsStatus(ids: number[], status: ProductStatus): P
 }
 
 // ═════════════════════════ KHÁCH HÀNG & ĐIỂM ═════════════════════════
+// Hồ sơ khách (bảng customers) do database tự tạo khi khách đăng ký hoặc đặt đơn đầu tiên.
 
 export function useCustomers(): Customer[] {
-  return useStore(customersStore);
-}
-
-export function getCustomerByEmail(email: string): Customer | undefined {
-  const key = emailKey(email);
-  return customersStore.getSnapshot().find((c) => emailKey(c.email) === key);
-}
-
-/** Tạo hồ sơ khách nếu email chưa có (khi khách đăng ký / đặt đơn đầu tiên). */
-export function ensureCustomer(info: { fullName: string; email: string; phone?: string }): Customer {
-  const existing = getCustomerByEmail(info.email);
-  if (existing) return existing;
-  const customers = customersStore.getSnapshot();
-  const created: Customer = {
-    id: nextCode("KH", customers.map((c) => c.id), 3),
-    fullName: info.fullName.trim() || info.email,
-    email: info.email.trim(),
-    phone: info.phone?.trim() ?? "",
-    createdAt: todayISO(),
-  };
-  customersStore.set([...customers, created]);
-  return created;
+  return customersQuery.use();
 }
 
 export function usePointLogs(): PointTransaction[] {
-  return useStore(pointLogsStore);
+  return pointLogsQuery.use();
 }
 
 export function pointBalance(logs: PointTransaction[], email: string | undefined): number {
@@ -346,7 +463,7 @@ export function pointHistory(logs: PointTransaction[], email: string | undefined
   const key = emailKey(email);
   const mine = logs
     .filter((l) => emailKey(l.email) === key)
-    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id, undefined, { numeric: true }));
   const result: PointHistoryEntry[] = [];
   let running = 0;
   for (const l of mine) {
@@ -362,134 +479,136 @@ export function usePoints(email: string | undefined): number {
   return useMemo(() => pointBalance(logs, email), [logs, email]);
 }
 
-/** Quy tắc tích điểm: 1.000đ = 1 điểm (chỉ cộng khi đơn "Đã giao") */
+/** Quy tắc tích điểm: 1.000đ = 1 điểm (chỉ cộng khi đơn "Đã giao") — database dùng đúng quy tắc này */
 export const POINT_RATE_VND = 1000;
 export const pointsForOrder = (total: number) => Math.floor(total / POINT_RATE_VND);
 
-function addPointLog(entry: Omit<PointTransaction, "id" | "date"> & { date?: string }): PointTransaction {
-  const logs = pointLogsStore.getSnapshot();
-  const created: PointTransaction = {
-    ...entry,
-    id: nextCode("P", logs.map((l) => l.id), 3),
-    date: entry.date ?? todayISO(),
-  };
-  pointLogsStore.set([...logs, created]);
-  return created;
-}
-
-/** Admin cộng (points > 0) hoặc trừ (points < 0) điểm thủ công, kèm lý do. */
-export function adjustPoints(
+/** Admin cộng (points > 0) hoặc trừ (points < 0) điểm thủ công, kèm lý do. Database chặn trừ quá số dư. */
+export async function adjustPoints(
   email: string,
   points: number,
   reason: string,
-): { ok: true } | { ok: false; error: string } {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!Number.isInteger(points) || points === 0) return { ok: false, error: "Số điểm phải là số nguyên khác 0" };
   if (!reason.trim()) return { ok: false, error: "Vui lòng nhập lý do" };
-  const balance = pointBalance(pointLogsStore.getSnapshot(), email);
-  if (balance + points < 0) return { ok: false, error: `Không thể trừ quá số điểm hiện có (${balance} điểm)` };
-  addPointLog({
-    email,
-    points,
-    kind: "manual",
-    title: points > 0 ? "Admin cộng điểm" : "Admin trừ điểm",
-    reason: reason.trim(),
-  });
+  const { error } = await sb()
+    .from("point_logs")
+    .insert({
+      email,
+      points,
+      kind: "manual",
+      title: points > 0 ? "Admin cộng điểm" : "Admin trừ điểm",
+      reason: reason.trim(),
+    });
+  if (error) return { ok: false, error: saveError(error) ?? "Lưu thất bại" };
+  await pointLogsQuery.reload();
   return { ok: true };
 }
 
 // ═════════════════════════ ĐƠN HÀNG ═════════════════════════
 
 export function useOrders(): Order[] {
-  return useStore(ordersStore);
+  return ordersQuery.use();
 }
 
-/** Mã đơn dạng #CB + số ngẫu nhiên, không trùng đơn đã có */
-export function generateOrderId(): string {
-  const used = new Set(ordersStore.getSnapshot().map((o) => o.id));
-  let id: string;
-  do {
-    id = `#CB${Math.floor(1000 + Math.random() * 9000)}`;
-  } while (used.has(id));
-  return id;
+export interface PlaceOrderInput {
+  items: { slug: string; size?: string; quantity: number }[];
+  voucherCode?: string;
+  fulfillment: FulfillmentMethod;
+  address?: string;
+  receiveDate: string;
+  receiveTime: string;
+  note?: string;
+  paymentMethod: PaymentMethod;
 }
 
-/** Lưu đơn mới đặt từ web (đơn mới nhất lên đầu) và đảm bảo khách có hồ sơ. */
-export function addOrder(order: Order) {
-  if (order.customerEmail) {
-    ensureCustomer({
-      fullName: order.customerName ?? order.customerEmail,
-      email: order.customerEmail,
-      phone: order.customerPhone,
-    });
+/** Đặt đơn: database tự tính giá, giảm giá, tổng tiền và gán đơn cho tài khoản đang đăng nhập. */
+export async function placeOrder(input: PlaceOrderInput): Promise<{ order: Order } | { error: string }> {
+  const { data, error } = await sb().rpc("place_order", {
+    p_items: input.items,
+    p_voucher: input.voucherCode ?? null,
+    p_fulfillment: input.fulfillment,
+    p_address: input.address ?? null,
+    p_receive_date: input.receiveDate,
+    p_receive_time: input.receiveTime,
+    p_note: input.note ?? null,
+    p_payment: input.paymentMethod,
+  });
+  if (error) return { error: saveError(error) ?? "Đặt hàng thất bại, vui lòng thử lại" };
+  void ordersQuery.reload();
+  return { order: orderFromRow(data as OrderRow) };
+}
+
+/** Số tiền giảm của một mã voucher đang hoạt động, hoặc null nếu mã không hợp lệ */
+export async function checkVoucher(code: string): Promise<number | null> {
+  const { data, error } = await sb().rpc("check_voucher", { p_code: code.trim() });
+  if (error) {
+    console.error(error);
+    return null;
   }
-  ordersStore.set([order, ...ordersStore.getSnapshot()]);
+  return typeof data === "number" ? data : null;
 }
 
 /**
- * Đổi trạng thái đơn theo đúng luồng: chỉ từ "Chờ xử lý" → "Đã giao" hoặc "Đã hủy".
- * Khi sang "Đã giao" thì cộng điểm cho khách (1.000đ = 1 điểm) — không cộng khi hủy.
+ * Đổi trạng thái đơn: chỉ từ "Chờ xử lý" → "Đã giao" hoặc "Đã hủy" (database chặn đổi đơn đã kết thúc).
+ * Khi sang "Đã giao", database tự cộng điểm cho khách (1.000đ = 1 điểm, mỗi đơn một lần).
  */
-export function setOrderStatus(
+export async function setOrderStatus(
   orderId: string,
   next: Exclude<OrderStatus, "Chờ xử lý">,
-): { ok: true; pointsAwarded: number } | { ok: false; error: string } {
-  const orders = ordersStore.getSnapshot();
-  const order = orders.find((o) => o.id === orderId);
-  if (!order) return { ok: false, error: "Không tìm thấy đơn hàng" };
-  if (order.status !== "Chờ xử lý") return { ok: false, error: "Đơn đã kết thúc, không thể đổi trạng thái" };
-
-  ordersStore.set(orders.map((o) => (o.id === orderId ? { ...o, status: next } : o)));
-
-  let pointsAwarded = 0;
-  if (next === "Đã giao" && order.customerEmail) {
-    const alreadyAwarded = pointLogsStore.getSnapshot().some((l) => l.kind === "order" && l.orderId === orderId);
-    pointsAwarded = pointsForOrder(order.total);
-    if (!alreadyAwarded && pointsAwarded > 0) {
-      ensureCustomer({
-        fullName: order.customerName ?? order.customerEmail,
-        email: order.customerEmail,
-        phone: order.customerPhone,
-      });
-      addPointLog({
-        email: order.customerEmail,
-        points: pointsAwarded,
-        kind: "order",
-        orderId,
-        title: `Đơn hàng ${orderId} hoàn tất`,
-      });
-    } else {
-      pointsAwarded = 0;
-    }
-  }
+): Promise<{ ok: true; pointsAwarded: number } | { ok: false; error: string }> {
+  const { data, error } = await sb()
+    .from("orders")
+    .update({ status: next })
+    .eq("id", orderId)
+    .select("total, customer_email")
+    .maybeSingle();
+  if (error) return { ok: false, error: saveError(error) ?? "Lưu thất bại" };
+  if (!data) return { ok: false, error: "Không tìm thấy đơn hàng" };
+  await Promise.all([ordersQuery.reload(), pointLogsQuery.reload(), customersQuery.reload()]);
+  const pointsAwarded = next === "Đã giao" && data.customer_email ? pointsForOrder(data.total) : 0;
   return { ok: true, pointsAwarded };
 }
 
 // ═════════════════════════ BÁNH ĐẶT THEO YÊU CẦU ═════════════════════════
 
 export function useCustomRequests(): CustomOrderRequest[] {
-  return useStore(requestsStore);
+  return requestsQuery.use();
 }
 
 export type CustomRequestInput = Omit<CustomOrderRequest, "id" | "createdAt" | "status" | "quotedPrice">;
 
-/** Form /dat-theo-yeu-cau gọi hàm này: yêu cầu mới có trạng thái "Mới". */
-export function addCustomRequest(input: CustomRequestInput): CustomOrderRequest {
-  const requests = requestsStore.getSnapshot();
-  const created: CustomOrderRequest = {
-    ...input,
-    id: nextCode("YC", requests.map((r) => r.id), 4),
-    createdAt: todayISO(),
-    status: "Mới",
-  };
-  requestsStore.set([created, ...requests]);
-  return created;
+/** Form /dat-theo-yeu-cau gọi hàm này: yêu cầu mới có trạng thái "Mới" (khách chưa đăng nhập cũng gửi được). */
+export async function addCustomRequest(input: CustomRequestInput): Promise<SaveResult> {
+  const { error } = await sb()
+    .from("custom_requests")
+    .insert({
+      customer_name: input.customerName,
+      phone: input.phone,
+      occasion: input.occasion,
+      delivery_date: input.deliveryDate,
+      size_guest_count: input.sizeGuestCount,
+      flavor: input.flavor,
+      budget: input.budget,
+      notes: input.notes,
+      reference_image: input.referenceImage ?? null,
+    });
+  if (error) return saveError(error);
+  void requestsQuery.reload();
+  return null;
 }
 
-export function updateCustomRequest(
+export async function updateCustomRequest(
   id: string,
   patch: Partial<Pick<CustomOrderRequest, "status" | "quotedPrice">>,
-) {
-  requestsStore.set(requestsStore.getSnapshot().map((r) => (r.id === id ? { ...r, ...patch } : r)));
+): Promise<SaveResult> {
+  const row: Record<string, unknown> = {};
+  if (patch.status !== undefined) row.status = patch.status;
+  if (patch.quotedPrice !== undefined) row.quoted_price = patch.quotedPrice;
+  const { error } = await sb().from("custom_requests").update(row).eq("id", id);
+  if (error) return saveError(error);
+  await requestsQuery.reload();
+  return null;
 }
 
 export type { CustomOrderStatus };

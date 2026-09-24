@@ -48,22 +48,27 @@ function RequestDetail({ request }: { request: CustomOrderRequest }) {
   const stepIndex = (CUSTOM_ORDER_STEPS as readonly string[]).indexOf(request.status);
   const quoteNumber = quote.trim() === "" ? undefined : Number(quote);
 
-  const saveQuote = (silent = false): boolean => {
+  const saveQuote = async (silent = false): Promise<boolean> => {
     if (quoteNumber === undefined || !Number.isFinite(quoteNumber) || quoteNumber <= 0) {
       setError("Vui lòng nhập giá đã báo lớn hơn 0");
       return false;
     }
     setError("");
-    updateCustomRequest(request.id, { quotedPrice: quoteNumber });
+    const saveError = await updateCustomRequest(request.id, { quotedPrice: quoteNumber });
+    if (saveError) {
+      toast(saveError, "error");
+      return false;
+    }
     if (!silent) toast(`Đã lưu giá báo ${formatVND(quoteNumber)}`);
     return true;
   };
 
-  const advance = () => {
+  const advance = async () => {
     if (!next) return;
     // Bước "Đã báo giá" bắt buộc có giá đã báo
-    if (next === "Đã báo giá" && !saveQuote(true)) return;
-    updateCustomRequest(request.id, { status: next });
+    if (next === "Đã báo giá" && !(await saveQuote(true))) return;
+    const saveError = await updateCustomRequest(request.id, { status: next });
+    if (saveError) return toast(saveError, "error");
     toast(`Yêu cầu ${request.id} → ${next}`);
   };
 
@@ -177,8 +182,9 @@ function RequestDetail({ request }: { request: CustomOrderRequest }) {
             Hủy yêu cầu <strong>{request.id}</strong> của {request.customerName}? Không thể chuyển lại trạng thái khác.
           </>
         }
-        onConfirm={() => {
-          updateCustomRequest(request.id, { status: "Đã hủy" });
+        onConfirm={async () => {
+          const saveError = await updateCustomRequest(request.id, { status: "Đã hủy" });
+          if (saveError) return toast(saveError, "error");
           toast(`Đã hủy yêu cầu ${request.id}`);
         }}
         onClose={() => setCancelOpen(false)}

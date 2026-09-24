@@ -22,7 +22,7 @@ export default function CartPage() {
   const { items, count, subtotal } = useCart();
 
   const handleCheckout = () => {
-    // Chưa đăng nhập (mock) → sang /dang-nhap trước, đăng nhập xong quay lại /dat-hang
+    // Chưa đăng nhập → sang /dang-nhap trước, đăng nhập xong quay lại /dat-hang
     router.push(user ? "/dat-hang" : "/dang-nhap?next=/dat-hang");
   };
 

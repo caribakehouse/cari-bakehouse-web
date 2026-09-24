@@ -42,7 +42,7 @@ export default function Header() {
   const { count: cartCount } = useCart();
   const settings = useSiteSettings();
 
-  // Tài khoản mock có vai trò admin thấy thêm mục "Quản trị" ở cuối menu
+  // Tài khoản có vai trò admin thấy thêm mục "Quản trị" ở cuối menu
   const navItems: NavItem[] =
     user?.role === "admin" ? [...NAV_ITEMS, { label: "Quản trị", href: "/admin" }] : NAV_ITEMS;
 

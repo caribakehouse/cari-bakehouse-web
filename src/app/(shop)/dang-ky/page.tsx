@@ -12,7 +12,6 @@ import {
   PRIMARY_BUTTON_CLASS,
 } from "@/components/ui/form-styles";
 import { signUp, useAuth } from "@/lib/auth";
-import { ensureCustomer } from "@/lib/db";
 import { safeInternalPath } from "@/lib/utils";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -74,8 +73,6 @@ export default function RegisterPage() {
       setErrors({ form: result.error });
       return;
     }
-    // TODO(phần 3): bỏ dòng này khi /admin/khach-hang đọc bảng customers trên Supabase
-    ensureCustomer({ fullName: values.fullName.trim(), email: values.email.trim(), phone: values.phone.trim() });
     if (result.needsConfirmation) {
       setPendingEmail(values.email.trim());
       return;

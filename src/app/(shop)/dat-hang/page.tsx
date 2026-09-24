@@ -28,13 +28,12 @@ import {
 import { PageSpinner, SignedOutNotice } from "@/components/account/PageSpinner";
 import { useRequireAuth } from "@/lib/auth";
 import { clearCart, useCart } from "@/lib/cart";
-import { addOrder, generateOrderId, useSiteSettings } from "@/lib/db";
+import { checkVoucher, placeOrder, useSiteSettings } from "@/lib/db";
 import {
   FULFILLMENT_LABELS,
   PAYMENT_LABELS,
   buildOrderMessage,
   copyToClipboard,
-  findVoucher,
 } from "@/lib/orders";
 import { formatDateVN, formatVND, todayISO } from "@/lib/utils";
 import type { FulfillmentMethod, Order, PaymentMethod, Voucher } from "@/types/order";
@@ -89,7 +88,7 @@ function SectionCard({ step, title, children }: { step: number; title: string; c
 }
 
 export default function CheckoutPage() {
-  // Chưa đăng nhập (mock) → sang /dang-nhap, đăng nhập xong quay lại đây
+  // Chưa đăng nhập → sang /dang-nhap, đăng nhập xong quay lại đây
   const { status, user } = useRequireAuth("/dat-hang");
   const { items, subtotal } = useCart();
   const settings = useSiteSettings();
@@ -105,6 +104,9 @@ export default function CheckoutPage() {
   const [voucherInput, setVoucherInput] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
   const [voucherError, setVoucherError] = useState(false);
+  const [checkingVoucher, setCheckingVoucher] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
@@ -114,14 +116,17 @@ export default function CheckoutPage() {
   const total = subtotal - discount;
 
   // ─── Voucher ───────────────────────────────────────────────
-  const handleApplyVoucher = () => {
-    if (!voucherInput.trim()) return;
-    const voucher = findVoucher(voucherInput);
-    if (!voucher) {
+  const handleApplyVoucher = async () => {
+    const code = voucherInput.trim().toUpperCase();
+    if (!code || checkingVoucher) return;
+    setCheckingVoucher(true);
+    const voucherDiscount = await checkVoucher(code);
+    setCheckingVoucher(false);
+    if (voucherDiscount === null) {
       setVoucherError(true);
       return;
     }
-    setAppliedVoucher(voucher);
+    setAppliedVoucher({ code, discount: voucherDiscount });
     setVoucherError(false);
     setVoucherInput("");
   };
@@ -132,9 +137,9 @@ export default function CheckoutPage() {
   };
 
   // ─── Xác nhận đặt hàng ─────────────────────────────────────
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || items.length === 0) return;
+    if (!user || items.length === 0 || submitting) return;
 
     const nextErrors: FormErrors = {};
     if (fulfillment === "delivery" && !address.trim()) {
@@ -159,31 +164,28 @@ export default function CheckoutPage() {
       return;
     }
 
-    // MOCK: tạo đơn hàng ở trạng thái "Chờ xử lý", chưa gửi lên server.
-    // TODO: gọi API tạo đơn thật khi nối database.
-    const order: Order = {
-      id: generateOrderId(),
-      createdAt: todayISO(),
-      items: items.map(({ name, size, quantity, price }) => ({ name, size, quantity, price })),
-      subtotal,
+    // Gửi đơn lên database: chỉ gửi sản phẩm + cỡ + số lượng; giá, giảm giá và tổng tiền do database tự tính
+    // từ bảng sản phẩm (khách không sửa được). Đơn tạo ra ở trạng thái "Chờ xử lý".
+    setSubmitting(true);
+    setSubmitError("");
+    const result = await placeOrder({
+      items: items.map(({ slug, size, quantity }) => ({ slug, size, quantity })),
       voucherCode: appliedVoucher?.code,
-      discount,
-      total,
-      status: "Chờ xử lý",
       fulfillment,
       address: fulfillment === "delivery" ? address.trim() : undefined,
       receiveDate,
       receiveTime,
       note: note.trim() || undefined,
       paymentMethod: payment,
-      customerName: user.fullName,
-      customerPhone: user.phone || undefined,
-      customerEmail: user.email,
-    };
+    });
+    setSubmitting(false);
+    if ("error" in result) {
+      setSubmitError(result.error);
+      return;
+    }
 
-    addOrder(order);
     clearCart();
-    setPlacedOrder(order);
+    setPlacedOrder(result.order);
     window.scrollTo({ top: 0 });
   };
 
@@ -606,7 +608,7 @@ export default function CheckoutPage() {
                     <button
                       type="button"
                       onClick={handleApplyVoucher}
-                      disabled={!voucherInput.trim()}
+                      disabled={!voucherInput.trim() || checkingVoucher}
                       className="shrink-0 cursor-pointer rounded-xl bg-[#1B4B5A] px-4 text-sm font-bold text-white transition-all hover:bg-[#123640] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Áp dụng
@@ -627,9 +629,19 @@ export default function CheckoutPage() {
               <span className="font-heading text-2xl font-black text-[#1B4B5A]">{formatVND(total)}</span>
             </div>
 
-            <button type="submit" className={`${PRIMARY_BUTTON_CLASS} mt-5 w-full`}>
+            {submitError && (
+              <p role="alert" className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {submitError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className={`${PRIMARY_BUTTON_CLASS} mt-5 w-full disabled:cursor-wait disabled:opacity-70`}
+            >
               <MessageCircle className="h-4 w-4 text-[#F6CE8B]" />
-              Xác nhận đặt hàng
+              {submitting ? "Đang đặt hàng..." : "Xác nhận đặt hàng"}
             </button>
             <p className="mt-3 text-center text-[11px] leading-relaxed text-text-muted">
               Sau khi đặt, bạn sẽ gửi nội dung đơn cho tiệm qua Zalo để được xác nhận.

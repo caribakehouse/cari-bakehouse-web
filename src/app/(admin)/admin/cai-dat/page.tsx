@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
 import { useAdmin } from "@/components/admin/AdminContext";
-import { BTN_DANGER, BTN_OUTLINE, BTN_SOLID, Card, ConfirmDialog, Field, INPUT, INPUT_INVALID } from "@/components/admin/ui";
-import { resetAllData, saveSiteSettings, useSiteSettings } from "@/lib/db";
+import { BTN_OUTLINE, BTN_SOLID, Card, Field, INPUT, INPUT_INVALID } from "@/components/admin/ui";
+import { saveSiteSettings, useSiteSettings } from "@/lib/db";
 import { formatHotline, isHttpUrl } from "@/lib/utils";
 import type { SiteSettings } from "@/types/content";
 
@@ -123,39 +122,11 @@ function SettingsForm({ initial }: { initial: SiteSettings }) {
 }
 
 export default function AdminSettingsPage() {
-  const { toast } = useAdmin();
   const settings = useSiteSettings();
-  const [resetOpen, setResetOpen] = useState(false);
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <SettingsForm initial={settings} />
-
-      <Card title="Dữ liệu thử (đơn hàng, khách hàng, điểm)">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-xl text-[12px] leading-relaxed text-[#5b5b5b]">
-            Sản phẩm, nội dung trang và cài đặt đã lưu thật trên database — nút này không đụng tới. Riêng đơn hàng, khách hàng, điểm và
-            yêu cầu đặt bánh vẫn đang lưu tạm trong trình duyệt này; khôi phục sẽ xóa các chỉnh sửa đó và quay về dữ liệu mẫu.
-          </p>
-          <button type="button" className={BTN_DANGER} onClick={() => setResetOpen(true)}>
-            <RotateCcw className="h-3.5 w-3.5" />
-            Khôi phục dữ liệu mẫu
-          </button>
-        </div>
-      </Card>
-
-      <ConfirmDialog
-        open={resetOpen}
-        danger
-        title="Khôi phục dữ liệu mẫu"
-        confirmLabel="Khôi phục"
-        message="Các chỉnh sửa đơn hàng, khách hàng, điểm và yêu cầu đặt bánh trên trình duyệt này sẽ bị xóa và quay về dữ liệu mẫu. Sản phẩm, nội dung, cài đặt, giỏ hàng và trạng thái đăng nhập không bị ảnh hưởng."
-        onConfirm={() => {
-          resetAllData();
-          toast("Đã khôi phục dữ liệu mẫu");
-        }}
-        onClose={() => setResetOpen(false)}
-      />
     </div>
   );
 }

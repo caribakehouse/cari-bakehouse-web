@@ -273,7 +273,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 )}
               </div>
 
-              {/* Avatar admin (mock) */}
+              {/* Avatar admin */}
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-[#9a9a9a] bg-[#e8e8e8] text-[11px] font-bold text-[#2b2b2b]">
                   {initial}

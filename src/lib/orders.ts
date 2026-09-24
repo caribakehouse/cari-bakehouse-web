@@ -1,11 +1,10 @@
 // Helper cho đơn hàng phía cửa hàng: nhãn, voucher, nội dung gửi Zalo, sao chép clipboard.
-// Dữ liệu đơn hàng nằm trong src/lib/db.ts (dùng chung với khu admin).
+// Dữ liệu đơn hàng nằm trong src/lib/db.ts (dùng chung với khu admin); voucher kiểm tra qua checkVoucher() ở db.ts.
 
 import { useMemo } from "react";
 import { useOrders } from "@/lib/db";
-import { MOCK_VOUCHERS } from "@/lib/mock-data";
 import { formatDateVN, formatVND } from "@/lib/utils";
-import type { FulfillmentMethod, Order, PaymentMethod, Voucher } from "@/types/order";
+import type { FulfillmentMethod, Order, PaymentMethod } from "@/types/order";
 
 export const FULFILLMENT_LABELS: Record<FulfillmentMethod, string> = {
   delivery: "Giao tận nơi",
@@ -16,13 +15,6 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   cod: "Tiền mặt khi nhận hàng",
   bank: "Chuyển khoản",
 };
-
-// ─── Voucher ─────────────────────────────────────────────────
-// TODO: nối với hệ thống voucher/điểm thật khi có quyết định cụ thể (số điểm ứng mỗi mức giảm chưa chốt)
-export function findVoucher(code: string): Voucher | undefined {
-  const normalized = code.trim().toUpperCase();
-  return MOCK_VOUCHERS.find((v) => v.code === normalized);
-}
 
 /** Đơn hàng của một khách (theo email), mới nhất trước. */
 export function useMyOrders(email: string | undefined): Order[] {

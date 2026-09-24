@@ -49,13 +49,13 @@ function CustomerDetail({ customer }: { customer: Customer }) {
   // Lịch sử điểm kèm số dư sau mỗi lần thay đổi (mới nhất trước)
   const history = useMemo(() => pointHistory(logs, customer.email), [logs, customer.email]);
 
-  const submit = () => {
+  const submit = async () => {
     const n = Number(amount);
     if (!Number.isInteger(n) || n <= 0) {
       setError("Số điểm phải là số nguyên lớn hơn 0");
       return;
     }
-    const res = adjustPoints(customer.email, sign * n, reason);
+    const res = await adjustPoints(customer.email, sign * n, reason);
     if (!res.ok) {
       setError(res.error);
       return;

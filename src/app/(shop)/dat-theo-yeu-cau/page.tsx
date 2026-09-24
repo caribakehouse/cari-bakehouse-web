@@ -138,8 +138,9 @@ export default function BanhDatTheoYeuCauPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!formState.phoneZalo.trim() || !formState.deliveryDate) {
       alert("Vui lòng điền ngày nhận bánh và số điện thoại / Zalo để tiệm liên hệ.");
       return;
@@ -148,8 +149,8 @@ export default function BanhDatTheoYeuCauPage() {
     setIsSubmitting(true);
     // Đây là form gửi yêu cầu tư vấn (không thanh toán trên web)
     // Sau khi gửi, tiệm chủ động liên hệ báo giá qua Zalo trong vòng 24 giờ
-    // Yêu cầu được lưu vào dữ liệu chung → hiện ở /admin/dat-theo-yeu-cau với trạng thái "Mới"
-    addCustomRequest({
+    // Yêu cầu lưu lên database → hiện ở /admin/dat-theo-yeu-cau với trạng thái "Mới"
+    const saveError = await addCustomRequest({
       customerName: user?.fullName ?? "Khách chưa đăng nhập",
       customerEmail: user?.email,
       phone: formState.phoneZalo.trim(),
@@ -161,22 +162,24 @@ export default function BanhDatTheoYeuCauPage() {
       notes: formState.notes.trim(),
       referenceImage,
     });
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccessModalOpen(true);
-      // Reset form
-      setFormState({
-        occasion: "",
-        deliveryDate: "",
-        sizeGuestCount: "",
-        flavor: "",
-        budget: "",
-        phoneZalo: "",
-        notes: "",
-      });
-      setSelectedFileName(null);
-      setReferenceImage(undefined);
-    }, 700);
+    setIsSubmitting(false);
+    if (saveError) {
+      alert(`Gửi yêu cầu thất bại: ${saveError}. Bạn có thể nhắn Zalo cho tiệm để được hỗ trợ.`);
+      return;
+    }
+    setIsSuccessModalOpen(true);
+    // Reset form
+    setFormState({
+      occasion: "",
+      deliveryDate: "",
+      sizeGuestCount: "",
+      flavor: "",
+      budget: "",
+      phoneZalo: "",
+      notes: "",
+    });
+    setSelectedFileName(null);
+    setReferenceImage(undefined);
   };
 
   const scrollToForm = () => {
