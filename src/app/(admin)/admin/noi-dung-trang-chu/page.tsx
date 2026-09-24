@@ -88,7 +88,7 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
                     </button>
                   </div>
                 </div>
-                <ImageField label="Ảnh slide" value={s.image} onChange={(v) => update({ image: v })} maxSize={1600} />
+                <ImageField label="Ảnh slide (khuyên dùng 2100 × 800)" value={s.image} onChange={(v) => update({ image: v })} maxSize={2400} />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <Field label="Tiêu đề">
                     <input value={s.title} onChange={(e) => update({ title: e.target.value })} className={INPUT} />
