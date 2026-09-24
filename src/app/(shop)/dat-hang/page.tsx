@@ -29,6 +29,7 @@ import { PageSpinner, SignedOutNotice } from "@/components/account/PageSpinner";
 import { useRequireAuth } from "@/lib/auth";
 import { clearCart, useCart } from "@/lib/cart";
 import { checkVoucher, placeOrder, useSiteSettings } from "@/lib/db";
+import { openZaloChat } from "@/lib/zalo";
 import {
   FULFILLMENT_LABELS,
   PAYMENT_LABELS,
@@ -193,9 +194,9 @@ export default function CheckoutPage() {
   const handleCopyAndOpenZalo = () => {
     if (!placedOrder) return;
     // Cả hai lệnh phải chạy đồng bộ trong sự kiện click: sao chép trước (khi trang còn focus),
-    // rồi mở Zalo ở tab mới (không bị chặn popup).
+    // rồi mở Zalo (máy tính: app Zalo PC, không có thì Zalo Web; điện thoại: app Zalo).
     const copying = copyToClipboard(buildOrderMessage(placedOrder));
-    window.open(settings.zalo, "_blank", "noopener,noreferrer");
+    openZaloChat(settings.hotline, settings.zalo);
     copying.then((ok) => setCopyStatus(ok ? "copied" : "failed"));
   };
 

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useSiteSettings } from "@/lib/db";
 import { formatHotline, handleFromUrl } from "@/lib/utils";
+import { openZaloChat } from "@/lib/zalo";
 
 const MAP_QUERY = "34 ngõ 40 Tô Vĩnh Diện, Khương Trung, Thanh Xuân, Hà Nội";
 
@@ -169,6 +170,10 @@ export default function LienHePage() {
                     href={settings.zalo}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openZaloChat(settings.hotline, settings.zalo);
+                    }}
                     className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-[#FFF8EF] px-3.5 py-2 text-xs font-bold text-[#1B4B5A] hover:bg-[#FCE9C6] hover:border-[#F6CE8B] transition-all shadow-2xs"
                   >
                     <MessageCircle className="h-4 w-4 text-blue-600" />

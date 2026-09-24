@@ -5,6 +5,7 @@ import { Phone, Mail, Heart } from "lucide-react";
 import LetterModal from "@/components/ui/LetterModal";
 import { useSiteSettings } from "@/lib/db";
 import { formatHotline } from "@/lib/utils";
+import { openZaloChat } from "@/lib/zalo";
 
 interface FloatingAction {
   name: string;
@@ -14,6 +15,8 @@ interface FloatingAction {
   textColor: string;
   icon: React.ReactNode;
   pulse?: boolean;
+  /** Thay cho mở link thường (vd. Zalo: thử mở app Zalo PC trước) */
+  onClick?: () => void;
 }
 
 export default function FloatingContact() {
@@ -51,6 +54,7 @@ export default function FloatingContact() {
     {
       name: "Zalo",
       href: settings.zalo,
+      onClick: () => openZaloChat(settings.hotline, settings.zalo),
       ariaLabel: `Chat Zalo tiệm bánh ${settings.hotline}`,
       bgColor: "bg-[#0068FF] hover:bg-[#0057d6]",
       textColor: "text-white",
@@ -117,6 +121,14 @@ export default function FloatingContact() {
               href={item.href}
               target={item.href.startsWith("http") ? "_blank" : undefined}
               rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
+              onClick={
+                item.onClick
+                  ? (e) => {
+                      e.preventDefault();
+                      item.onClick?.();
+                    }
+                  : undefined
+              }
               aria-label={item.ariaLabel}
               className={`relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full ${item.bgColor} ${item.textColor} shadow-lg ring-2 ring-cream/80 transition-all duration-300 hover:scale-110 active:scale-95`}
             >
