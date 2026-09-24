@@ -11,7 +11,7 @@ import {
   LABEL_CLASS,
   PRIMARY_BUTTON_CLASS,
 } from "@/components/ui/form-styles";
-import { login, useAuth } from "@/lib/auth";
+import { signUp, useAuth } from "@/lib/auth";
 import { ensureCustomer } from "@/lib/db";
 import { safeInternalPath } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ interface FormValues {
   confirmPassword: string;
 }
 
-type FormErrors = Partial<Record<keyof FormValues, string>>;
+type FormErrors = Partial<Record<keyof FormValues | "form", string>>;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -41,12 +41,15 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [submitting, setSubmitting] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  /** Email đang chờ xác nhận (Supabase bật "Confirm email") */
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const setField = (field: keyof FormValues) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setValues((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const nextErrors: FormErrors = {};
@@ -64,15 +67,19 @@ export default function RegisterPage() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    // MOCK: chưa tạo tài khoản thật — lưu tạm thông tin và coi như đã đăng nhập.
-    // TODO: gọi API đăng ký thật khi nối backend.
-    const profile = {
-      fullName: values.fullName.trim(),
-      email: values.email.trim(),
-      phone: values.phone.trim(),
-    };
-    ensureCustomer(profile); // tạo hồ sơ khách trong dữ liệu chung (hiện ở /admin/khach-hang)
-    login(profile);
+    setSubmitting(true);
+    const result = await signUp(values);
+    setSubmitting(false);
+    if ("error" in result) {
+      setErrors({ form: result.error });
+      return;
+    }
+    // TODO(phần 3): bỏ dòng này khi /admin/khach-hang đọc bảng customers trên Supabase
+    ensureCustomer({ fullName: values.fullName.trim(), email: values.email.trim(), phone: values.phone.trim() });
+    if (result.needsConfirmation) {
+      setPendingEmail(values.email.trim());
+      return;
+    }
     setRedirecting(true);
 
     const next = safeInternalPath(new URLSearchParams(window.location.search).get("next"), "/tai-khoan");
@@ -114,7 +121,16 @@ export default function RegisterPage() {
         </>
       }
     >
-      {alreadyLoggedIn ? (
+      {pendingEmail ? (
+        <div className="space-y-3 text-center">
+          <p className="text-sm text-[#2b2b2b]">
+            Đã gửi email xác nhận tới <strong className="text-[#1B4B5A]">{pendingEmail}</strong>.
+          </p>
+          <p className="text-sm text-text-muted">
+            Vui lòng mở hộp thư (kể cả mục Spam) và bấm link xác nhận để hoàn tất đăng ký.
+          </p>
+        </div>
+      ) : alreadyLoggedIn ? (
         <div className="space-y-4 text-center">
           <p className="text-sm text-[#2b2b2b]">
             Bạn đang đăng nhập với <strong className="text-[#1B4B5A]">{user.email}</strong>.
@@ -144,14 +160,20 @@ export default function RegisterPage() {
             </div>
           ))}
 
-          <button type="submit" className={`${PRIMARY_BUTTON_CLASS} w-full`}>
-            <UserPlus className="h-4 w-4 text-[#F6CE8B]" />
-            Đăng ký
-          </button>
+          {errors.form && (
+            <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              {errors.form}
+            </p>
+          )}
 
-          <p className="text-center text-[11px] text-text-muted">
-            Bản demo: thông tin chỉ được lưu tạm trên trình duyệt này.
-          </p>
+          <button
+            type="submit"
+            disabled={submitting || redirecting}
+            className={`${PRIMARY_BUTTON_CLASS} w-full disabled:cursor-wait disabled:opacity-70`}
+          >
+            <UserPlus className="h-4 w-4 text-[#F6CE8B]" />
+            {submitting ? "Đang tạo tài khoản..." : "Đăng ký"}
+          </button>
         </form>
       )}
     </AuthShell>

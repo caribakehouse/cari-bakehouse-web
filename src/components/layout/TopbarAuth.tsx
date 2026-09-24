@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, logout } from "@/lib/auth";
 
-// Liên kết đăng nhập / tài khoản ở góc phải Topbar (phụ thuộc trạng thái đăng nhập mock)
+// Liên kết đăng nhập / tài khoản ở góc phải Topbar (theo trạng thái đăng nhập Supabase)
 export default function TopbarAuth() {
   const { user } = useAuth();
   const router = useRouter();

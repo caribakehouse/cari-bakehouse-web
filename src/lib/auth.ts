@@ -1,27 +1,73 @@
-// Đăng nhập MOCK: chỉ lưu tạm thông tin người dùng vào localStorage để các trang khác kiểm tra.
-// Có 2 vai trò: khách thường và admin (tài khoản demo ADMIN_EMAIL).
-// TODO: thay bằng kiểm tra vai trò thật qua Supabase Auth ở Giai đoạn 4.
+// Đăng nhập thật qua Supabase Auth. Có 2 vai trò: khách thường và admin (profiles.role = 'admin',
+// chỉ cấp được trong Supabase SQL Editor). Trang chặn quyền ở đây chỉ để hiển thị cho đúng —
+// quyền đọc/ghi dữ liệu thật do RLS trong database quyết định (supabase/migrations/0001_init.sql).
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { createPersistentStore } from "@/lib/persistent-store";
-import { ADMIN_EMAIL } from "@/lib/mock-data";
-import { getCustomerByEmail } from "@/lib/db";
+import type { AuthError, User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 import type { AuthUser, UserRole } from "@/types/user";
 
-function sanitizeUser(value: unknown): AuthUser | null {
-  if (!value || typeof value !== "object") return null;
-  const v = value as Partial<AuthUser>;
-  if (typeof v.fullName !== "string" || typeof v.email !== "string") return null;
+interface AuthState {
+  user: AuthUser | null;
+  /** Đã biết chắc đang đăng nhập hay chưa (đã hỏi Supabase xong) */
+  ready: boolean;
+}
+
+const SERVER_STATE: AuthState = { user: null, ready: false };
+
+let state: AuthState = SERVER_STATE;
+let started = false;
+const listeners = new Set<() => void>();
+
+function setState(next: AuthState) {
+  state = next;
+  listeners.forEach((l) => l());
+}
+
+let supabase: ReturnType<typeof createClient> | null = null;
+function client() {
+  supabase ??= createClient();
+  return supabase;
+}
+
+/** Ghép thông tin đăng nhập với hồ sơ (tên, sđt, vai trò) trong bảng profiles */
+async function loadUser(user: User | null): Promise<AuthUser | null> {
+  if (!user) return null;
+  const { data } = await client().from("profiles").select("full_name, phone, role").eq("id", user.id).maybeSingle();
+  const meta = user.user_metadata ?? {};
   return {
-    fullName: v.fullName,
-    email: v.email,
-    phone: typeof v.phone === "string" ? v.phone : "",
-    role: v.role === "admin" ? "admin" : undefined,
+    fullName: data?.full_name || meta.full_name || user.email?.split("@")[0] || "Khách",
+    email: user.email ?? "",
+    phone: data?.phone || meta.phone || "",
+    role: data?.role === "admin" ? "admin" : undefined,
   };
 }
 
-const authStore = createPersistentStore<AuthUser | null>("cari-auth", null, sanitizeUser);
+let loadSeq = 0;
+async function refresh(user: User | null) {
+  const seq = ++loadSeq;
+  const next = await loadUser(user);
+  if (seq === loadSeq) setState({ user: next, ready: true });
+}
+
+function start() {
+  if (started || typeof window === "undefined") return;
+  started = true;
+  const auth = client().auth;
+  auth.getUser().then(({ data }) => refresh(data.user));
+  auth.onAuthStateChange((event, session) => {
+    if (event === "INITIAL_SESSION") return;
+    // Không gọi Supabase trực tiếp trong callback này (dễ bị treo) — đẩy sang lượt sau.
+    setTimeout(() => refresh(session?.user ?? null), 0);
+  });
+}
+
+function subscribe(listener: () => void) {
+  start();
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 
 const subscribeNoop = () => () => {};
 
@@ -34,40 +80,72 @@ export function useHydrated(): boolean {
   );
 }
 
-export function login(user: AuthUser) {
-  authStore.set(user);
+export function useAuth() {
+  const { user, ready } = useSyncExternalStore(subscribe, () => state, () => SERVER_STATE);
+  return { user, isLoggedIn: user !== null, isAdmin: user?.role === "admin", hydrated: ready };
 }
 
-export function logout() {
-  authStore.set(null);
+// ─── Đăng nhập / đăng ký / đăng xuất ─────────────────────────
+
+function translateError(error: AuthError): string {
+  switch (error.code) {
+    case "invalid_credentials":
+      return "Email hoặc mật khẩu không đúng";
+    case "email_not_confirmed":
+      return "Email chưa được xác nhận — vui lòng mở hộp thư và bấm link xác nhận";
+    case "user_already_exists":
+    case "email_exists":
+      return "Email này đã được đăng ký — vui lòng đăng nhập";
+    case "weak_password":
+      return "Mật khẩu quá yếu, vui lòng chọn mật khẩu khác";
+    case "over_email_send_rate_limit":
+    case "over_request_rate_limit":
+      return "Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút";
+    default:
+      return "Có lỗi xảy ra, vui lòng thử lại";
+  }
+}
+
+export async function signIn(email: string, password: string): Promise<{ user: AuthUser } | { error: string }> {
+  const { data, error } = await client().auth.signInWithPassword({ email: email.trim(), password });
+  if (error) return { error: translateError(error) };
+  const user = await loadUser(data.user);
+  if (!user) return { error: "Có lỗi xảy ra, vui lòng thử lại" };
+  loadSeq++;
+  setState({ user, ready: true });
+  return { user };
 }
 
 /**
- * Dựng hồ sơ đăng nhập mock từ email (chưa kiểm tra mật khẩu):
- * - ADMIN_EMAIL → vai trò admin
- * - email đã có trong danh sách khách hàng → dùng hồ sơ đó (thấy đơn hàng + điểm mẫu)
- * - email lạ → khách mới, tên lấy từ phần trước dấu @
+ * Tạo tài khoản. Hồ sơ khách (profiles + customers) do trigger trong database tự tạo.
+ * Nếu Supabase đang bật "Confirm email" thì chưa đăng nhập ngay: needsConfirmation = true.
  */
-export function buildMockUser(rawEmail: string): AuthUser {
-  const email = rawEmail.trim();
-  if (email.toLowerCase() === ADMIN_EMAIL) {
-    return { fullName: "Quản trị viên Cari", email, phone: "", role: "admin" };
-  }
-  const customer = getCustomerByEmail(email);
-  if (customer) {
-    return { fullName: customer.fullName, email: customer.email, phone: customer.phone };
-  }
-  return { fullName: email.split("@")[0] || "Khách", email, phone: "" };
+export async function signUp(info: {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+}): Promise<{ needsConfirmation: boolean } | { error: string }> {
+  const { data, error } = await client().auth.signUp({
+    email: info.email.trim(),
+    password: info.password,
+    options: {
+      data: { full_name: info.fullName.trim(), phone: info.phone.trim() },
+      emailRedirectTo: `${window.location.origin}/tai-khoan`,
+    },
+  });
+  if (error) return { error: translateError(error) };
+  // Email đã tồn tại: Supabase không báo lỗi (tránh lộ email) mà trả về user không có identity
+  if (data.user && data.user.identities?.length === 0) return { error: "Email này đã được đăng ký — vui lòng đăng nhập" };
+  if (!data.session) return { needsConfirmation: true };
+  await refresh(data.user);
+  return { needsConfirmation: false };
 }
 
-export function useAuth() {
-  const user = useSyncExternalStore(
-    authStore.subscribe,
-    authStore.getSnapshot,
-    authStore.getServerSnapshot,
-  );
-  const hydrated = useHydrated();
-  return { user, isLoggedIn: user !== null, isAdmin: user?.role === "admin", hydrated };
+export function logout() {
+  loadSeq++;
+  setState({ user: null, ready: true });
+  void client().auth.signOut();
 }
 
 type RequireAuthResult =

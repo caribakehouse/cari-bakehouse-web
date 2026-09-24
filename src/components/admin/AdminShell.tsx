@@ -68,8 +68,7 @@ function pageTitle(pathname: string): string {
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  // Chỉ vào được khi tài khoản mock có vai trò admin.
-  // TODO: thay bằng kiểm tra vai trò thật qua Supabase Auth ở Giai đoạn 4.
+  // Chỉ hiện khu quản trị cho tài khoản có profiles.role = 'admin' (quyền ghi dữ liệu do RLS kiểm soát).
   const auth = useRequireAuth(pathname, "admin");
 
   const [drawerOpen, setDrawerOpen] = useState(false);

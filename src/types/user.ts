@@ -1,11 +1,11 @@
 export type UserRole = "admin" | "customer";
 
-// Thông tin người dùng đang đăng nhập (mock)
+// Thông tin người dùng đang đăng nhập (Supabase Auth + bảng profiles)
 export interface AuthUser {
   fullName: string;
   email: string;
   phone: string;
-  /** Bỏ trống = khách thường. TODO: thay bằng kiểm tra vai trò thật qua Supabase Auth ở Giai đoạn 4. */
+  /** Bỏ trống = khách thường; "admin" lấy từ profiles.role */
   role?: UserRole;
 }
 
