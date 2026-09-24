@@ -140,14 +140,28 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
               <div key={i} className="space-y-3 rounded-md border border-[#e3e3e3] bg-[#fafafa] p-3">
                 <strong className="text-xs text-[#2b2b2b]">Banner {i + 1}</strong>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Tiêu đề" required>
+                  <Field label="Tiêu đề (mô tả ảnh)" required>
                     <input value={b.label} onChange={(e) => update({ label: e.target.value })} className={INPUT} />
                   </Field>
                   <Field label="Link khi bấm">
                     <input value={b.href} onChange={(e) => update({ href: e.target.value })} className={INPUT} />
                   </Field>
                 </div>
-                <ImageField label="Ảnh nền" value={b.image} onChange={(v) => update({ image: v })} maxSize={1000} />
+                <ImageField
+                  label="Ảnh banner (khuyên dùng 1200 × 440)"
+                  value={b.image}
+                  onChange={(v) => update({ image: v })}
+                  maxSize={1200}
+                />
+                <label className="flex cursor-pointer items-center gap-2 text-[11px] text-[#5b5b5b]">
+                  <input
+                    type="checkbox"
+                    checked={!!b.showText}
+                    onChange={(e) => update({ showText: e.target.checked })}
+                    className="h-3.5 w-3.5 accent-[#2b2b2b]"
+                  />
+                  Hiện tiêu đề đè lên ảnh (mặc định tắt: chỉ hiện ảnh bạn tự thiết kế)
+                </label>
               </div>
             );
           })}

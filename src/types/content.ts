@@ -16,9 +16,12 @@ export interface FeatureItem {
 }
 
 export interface BannerItem {
+  /** Tên banner — luôn dùng làm mô tả ảnh (alt); chỉ hiện chữ trên ảnh khi bật showText */
   label: string;
   href: string;
   image: string;
+  /** Hiện chữ + lớp phủ trắng đè lên ảnh. Mặc định tắt: chỉ hiện ảnh admin tự thiết kế. */
+  showText?: boolean;
 }
 
 export interface GalleryImage {

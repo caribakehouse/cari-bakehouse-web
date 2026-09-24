@@ -4,11 +4,12 @@ import Link from "next/link";
 import Image from "@/components/ui/SafeImage";
 import { useHomeContent } from "@/lib/db";
 
-// Lớp phủ trắng mờ cho nền sáng (ảnh vẫn hiện rõ phía sau); chữ màu xanh thương hiệu
+// Lớp phủ trắng mờ cho nền sáng (ảnh vẫn hiện rõ phía sau); chữ màu xanh thương hiệu — chỉ dùng khi bật "Hiện tiêu đề"
 const OVERLAY = "from-white/60 via-white/40 to-[#FFF8EF]/60";
 
 export default function DualBanner() {
-  // Banner đôi Bánh / Đồ uống do admin chỉnh ở /admin/noi-dung-trang-chu
+  // Banner đôi Bánh / Đồ uống do admin chỉnh ở /admin/noi-dung-trang-chu.
+  // Khung luôn giữ tỉ lệ 1200 × 440 nên ảnh admin tự thiết kế hiện trọn vẹn, không bị cắt mép trên mọi màn hình.
   const { banners } = useHomeContent();
 
   return (
@@ -18,32 +19,31 @@ export default function DualBanner() {
           <Link
             key={`${b.label}-${i}`}
             href={b.href}
-            className="group relative flex min-h-[180px] sm:min-h-[220px] items-center justify-center overflow-hidden rounded-2xl border border-[#E5D9C3] shadow-md transition-all duration-300 hover:shadow-xl"
+            aria-label={b.label}
+            className="group relative flex aspect-[30/11] items-center justify-center overflow-hidden rounded-2xl border border-[#E5D9C3] shadow-md transition-all duration-300 hover:shadow-xl active:scale-[0.98]"
           >
-            {/* Background Image with hover zoom & brightness effect */}
             <div className="absolute inset-0 overflow-hidden">
               <Image
                 src={b.image}
                 alt={b.label}
                 fill
-                className="object-cover transition-all duration-700 ease-out group-hover:scale-108 group-hover:brightness-105"
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 sizes="(max-width: 640px) 100vw, 50vw"
               />
             </div>
 
-            {/* Gradient Overlay */}
-            <div
-              className={`absolute inset-0 bg-gradient-to-tr ${OVERLAY} transition-opacity duration-300 group-hover:opacity-85`}
-            />
-
-            {/* Title only (no description, no button) */}
-            <div className="relative z-10 text-center px-4">
-              <h2
-                className={`font-heading text-4xl sm:text-5xl font-black text-[#1B4B5A] tracking-wide [text-shadow:0_1px_12px_rgba(255,255,255,0.9)] transition-transform duration-300 group-hover:scale-105`}
-              >
-                {b.label}
-              </h2>
-            </div>
+            {b.showText && (
+              <>
+                <div
+                  className={`absolute inset-0 bg-gradient-to-tr ${OVERLAY} transition-opacity duration-300 group-hover:opacity-85`}
+                />
+                <div className="relative z-10 px-4 text-center">
+                  <h2 className="font-heading text-4xl font-black tracking-wide text-[#1B4B5A] [text-shadow:0_1px_12px_rgba(255,255,255,0.9)] transition-transform duration-300 group-hover:scale-105 sm:text-5xl">
+                    {b.label}
+                  </h2>
+                </div>
+              </>
+            )}
           </Link>
         ))}
       </div>
