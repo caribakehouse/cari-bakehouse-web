@@ -7,11 +7,12 @@ import ImageField from "@/components/admin/ImageField";
 import ProductPicker from "@/components/admin/ProductPicker";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { BTN_ICON, BTN_OUTLINE, BTN_SOLID, Card, Field, INPUT } from "@/components/admin/ui";
-import { allReviews, saveHomeContent, useHomeContent } from "@/lib/db";
+import { saveHomeContent, useHomeContent, useReviews } from "@/lib/db";
 import type { HomeContent } from "@/types/content";
 
 function HomeContentForm({ initial }: { initial: HomeContent }) {
   const { toast } = useAdmin();
+  const reviews = useReviews();
   const [draft, setDraft] = useState<HomeContent>(() => structuredClone(initial));
   const [error, setError] = useState("");
 
@@ -25,7 +26,7 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
     return next;
   };
 
-  const save = () => {
+  const save = async () => {
     if (draft.heroSlides.some((s) => !s.image.trim())) {
       setError("Mỗi slide trong hero cần có ảnh.");
       return;
@@ -35,7 +36,8 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
       return;
     }
     setError("");
-    saveHomeContent({ ...draft, gallery: draft.gallery.filter((g) => g.image.trim()) });
+    const saveError = await saveHomeContent({ ...draft, gallery: draft.gallery.filter((g) => g.image.trim()) });
+    if (saveError) return toast(saveError, "error");
     toast("Đã lưu nội dung trang chủ — mở cửa hàng để xem thay đổi");
   };
 
@@ -219,7 +221,7 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
       {/* 8. Đánh giá nổi bật */}
       <Card title="8. Đánh giá nổi bật">
         <div className="space-y-2">
-          {allReviews.map((r) => (
+          {reviews.map((r) => (
             <label key={r.id} className="flex cursor-pointer items-start gap-3 rounded-md border border-[#e3e3e3] bg-white p-3 text-[12px]">
               <input
                 type="checkbox"

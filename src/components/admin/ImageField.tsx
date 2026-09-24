@@ -4,18 +4,19 @@ import { useRef, useState } from "react";
 import { ImagePlus, Trash2 } from "lucide-react";
 import SafeImage from "@/components/ui/SafeImage";
 import { BTN_OUTLINE, INPUT } from "@/components/admin/ui";
-import { readImageFile } from "@/lib/utils";
+import { uploadImage } from "@/lib/storage";
 
 const IS_UPLOADED = (v: string) => v.startsWith("data:");
 
 /**
- * Ô nhập ảnh: dán link ảnh (https://...) hoặc tải ảnh từ máy (được thu nhỏ rồi lưu vào dữ liệu mẫu).
+ * Ô nhập ảnh: dán link ảnh (https://...) hoặc tải ảnh từ máy (thu nhỏ rồi đẩy lên Supabase Storage,
+ * ô link tự điền link ảnh vừa tải).
  */
 export default function ImageField({
   label,
   value,
   onChange,
-  maxSize = 720,
+  maxSize = 1200,
 }: {
   label: string;
   value: string;
@@ -31,7 +32,7 @@ export default function ImageField({
     setError("");
     setLoading(true);
     try {
-      onChange(await readImageFile(file, maxSize));
+      onChange(await uploadImage(file, maxSize));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không đọc được ảnh");
     } finally {
@@ -74,7 +75,7 @@ export default function ImageField({
             />
             <button type="button" className={BTN_OUTLINE} onClick={() => fileRef.current?.click()} disabled={loading}>
               <ImagePlus className="h-3.5 w-3.5" />
-              {loading ? "Đang xử lý..." : "Tải ảnh từ máy"}
+              {loading ? "Đang tải lên..." : "Tải ảnh từ máy"}
             </button>
             {value && (
               <button type="button" className={BTN_OUTLINE} onClick={() => onChange("")}>

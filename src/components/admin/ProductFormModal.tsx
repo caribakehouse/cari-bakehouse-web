@@ -87,7 +87,10 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
   const validSizePrices = draft.sizes.map((s) => toInt(s.price)).filter((n) => Number.isFinite(n) && n > 0);
   const minSizePrice = validSizePrices.length ? Math.min(...validSizePrices) : undefined;
 
-  const handleSave = () => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (saving) return;
     const next: Errors = {};
     if (!draft.name.trim()) next.name = "Vui lòng nhập tên sản phẩm";
 
@@ -108,7 +111,8 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    saveProduct({
+    setSaving(true);
+    const saveError = await saveProduct({
       id: product?.id,
       name: draft.name.trim(),
       description: draft.description.trim() || undefined,
@@ -122,6 +126,8 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
       badge: draft.badge.trim() || undefined,
       sizes: hasSizes ? draft.sizes.map((s) => ({ label: s.label.trim(), price: toInt(s.price) })) : undefined,
     });
+    setSaving(false);
+    if (saveError) return toast(saveError, "error");
     toast(product ? "Đã cập nhật sản phẩm" : "Đã thêm sản phẩm mới");
     onClose();
   };
@@ -137,8 +143,8 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
           <button type="button" className={BTN_OUTLINE} onClick={onClose}>
             Hủy
           </button>
-          <button type="button" className={BTN_SOLID} onClick={handleSave}>
-            {product ? "Lưu thay đổi" : "Thêm sản phẩm"}
+          <button type="button" className={`${BTN_SOLID} disabled:opacity-60`} onClick={handleSave} disabled={saving}>
+            {saving ? "Đang lưu..." : product ? "Lưu thay đổi" : "Thêm sản phẩm"}
           </button>
         </>
       }

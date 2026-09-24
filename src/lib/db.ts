@@ -1,51 +1,102 @@
 // ============================================================
-//  Lớp truy cập dữ liệu mẫu dùng chung — cửa hàng và khu admin cùng đọc/ghi ở đây.
+//  Lớp truy cập dữ liệu dùng chung — cửa hàng và khu admin cùng đọc/ghi ở đây.
 //
-//  Dữ liệu gốc (seed) nằm DUY NHẤT trong src/lib/mock-data.ts. Vì trình duyệt không thể ghi ngược vào
-//  file .ts, mọi chỉnh sửa (từ admin hoặc từ khách đặt hàng) được lưu chồng lên trên bằng localStorage,
-//  theo từng "bảng" (khóa `cari-db:<bảng>`). Bảng chưa từng bị sửa thì đọc thẳng từ seed.
-//  Muốn quay lại dữ liệu gốc: /admin/cai-dat → "Khôi phục dữ liệu mẫu".
-//  TODO: thay toàn bộ file này bằng truy vấn database thật (Supabase) ở Giai đoạn 4.
+//  ĐÃ LÊN SUPABASE: sản phẩm, nhóm sản phẩm, đánh giá, nội dung trang, cài đặt.
+//    - Layout gốc tải sẵn trên server (src/app/layout.tsx → PublicDataProvider) nên trang hiện dữ liệu thật ngay.
+//    - Admin lưu → ghi Supabase (RLS chỉ cho admin) → cập nhật bản sao trong trình duyệt để giao diện đổi ngay.
+//  CHƯA LÊN SUPABASE (phần 3): đơn hàng, khách hàng, điểm, yêu cầu đặt bánh — vẫn lưu tạm localStorage
+//    (khóa `cari-db:<bảng>`), dữ liệu gốc lấy từ src/lib/mock-data.ts.
 // ============================================================
 
 import { useMemo, useSyncExternalStore } from "react";
+import { usePublicData } from "@/components/PublicDataProvider";
 import { createPersistentStore, type PersistentStore } from "@/lib/persistent-store";
 import {
-  PRODUCT_GROUP_META,
-  SEED_ABOUT_CONTENT,
   SEED_CUSTOM_REQUESTS,
   SEED_CUSTOMERS,
-  SEED_HOME_CONTENT,
   SEED_ORDERS,
   SEED_POINT_LOGS,
-  SEED_PRODUCTS,
-  SEED_PRODUCTS_PAGE_CONTENT,
-  SEED_SITE_SETTINGS,
-  reviews as SEED_REVIEWS,
   type Product,
   type ProductCategoryGroup,
   type ProductStatus,
   type Review,
 } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/client";
+import { fetchProducts, productToRow, type PublicData } from "@/lib/supabase/public-data";
 import { todayISO } from "@/lib/utils";
-import type { AboutContent, HomeContent, ProductsPageContent, SiteSettings } from "@/types/content";
+import type { AboutContent, HomeContent, ProductGroupContent, ProductsPageContent, SiteSettings } from "@/types/content";
 import type { CustomOrderRequest, CustomOrderStatus } from "@/types/custom-order";
 import type { Order, OrderStatus } from "@/types/order";
 import type { Customer, PointTransaction } from "@/types/user";
 
-// ─── Tạo store cho từng bảng ─────────────────────────────────
+// ─── Dữ liệu trên Supabase ───────────────────────────────────
+// Bản sao trong trình duyệt: undefined = chưa sửa gì trong phiên này → dùng dữ liệu layout đã tải sẵn.
+
+interface RemoteStore<T> {
+  get: () => T | undefined;
+  set: (value: T) => void;
+  subscribe: (listener: () => void) => () => void;
+}
+
+function createRemoteStore<T>(): RemoteStore<T> {
+  let value: T | undefined;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => value,
+    set: (next) => {
+      value = next;
+      listeners.forEach((l) => l());
+    },
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
+
+const productsRemote = createRemoteStore<Product[]>();
+const groupsRemote = createRemoteStore<ProductGroupContent[]>();
+const homeRemote = createRemoteStore<HomeContent>();
+const aboutRemote = createRemoteStore<AboutContent>();
+const settingsRemote = createRemoteStore<SiteSettings>();
+const pickerLabelRemote = createRemoteStore<string>();
+
+const noValue = () => undefined;
+
+function useRemote<T>(store: RemoteStore<T>, pick: (data: PublicData) => T): T {
+  const initial = pick(usePublicData());
+  const local = useSyncExternalStore(store.subscribe, store.get, noValue);
+  return local ?? initial;
+}
+
+let supabase: ReturnType<typeof createClient> | null = null;
+const sb = () => (supabase ??= createClient());
+
+/** Kết quả ghi dữ liệu: null = thành công, chuỗi = thông báo lỗi để hiện cho admin */
+export type SaveResult = string | null;
+
+function saveError(error: { code?: string; message?: string } | null): SaveResult {
+  if (!error) return null;
+  console.error(error);
+  if (error.code === "42501") return "Bạn không có quyền sửa dữ liệu này — hãy đăng nhập bằng tài khoản quản trị";
+  if (error.code === "23503") return "Không thể xóa: vẫn còn sản phẩm thuộc nhóm này";
+  if (error.code === "23505") return "Dữ liệu bị trùng (ví dụ tên sản phẩm đã tồn tại)";
+  return "Lưu thất bại, vui lòng thử lại";
+}
+
+async function saveContent(key: string, value: unknown): Promise<SaveResult> {
+  const { error } = await sb()
+    .from("site_content")
+    .upsert({ key, value, updated_at: new Date().toISOString() });
+  return saveError(error);
+}
+
+// ─── Dữ liệu còn lưu tạm localStorage (phần 3 sẽ chuyển lên Supabase) ───
 const asArray =
   <T,>(seed: T[]) =>
   (value: unknown): T[] =>
     Array.isArray(value) ? (value as T[]) : seed;
 
-/** Nội dung dạng object: gộp với seed để không vỡ khi thiếu trường */
-const asObject =
-  <T extends object>(seed: T) =>
-  (value: unknown): T =>
-    value && typeof value === "object" && !Array.isArray(value) ? { ...seed, ...(value as Partial<T>) } : seed;
-
-const productsStore = createPersistentStore<Product[]>("cari-db:products", SEED_PRODUCTS, asArray(SEED_PRODUCTS));
 const ordersStore = createPersistentStore<Order[]>("cari-db:orders", SEED_ORDERS, asArray(SEED_ORDERS));
 const customersStore = createPersistentStore<Customer[]>("cari-db:customers", SEED_CUSTOMERS, asArray(SEED_CUSTOMERS));
 const pointLogsStore = createPersistentStore<PointTransaction[]>(
@@ -58,38 +109,24 @@ const requestsStore = createPersistentStore<CustomOrderRequest[]>(
   SEED_CUSTOM_REQUESTS,
   asArray(SEED_CUSTOM_REQUESTS),
 );
-const homeStore = createPersistentStore<HomeContent>("cari-db:home", SEED_HOME_CONTENT, asObject(SEED_HOME_CONTENT));
-const aboutStore = createPersistentStore<AboutContent>("cari-db:about", SEED_ABOUT_CONTENT, asObject(SEED_ABOUT_CONTENT));
-const settingsStore = createPersistentStore<SiteSettings>(
-  "cari-db:settings",
-  SEED_SITE_SETTINGS,
-  asObject(SEED_SITE_SETTINGS),
-);
-const productsPageStore = createPersistentStore<ProductsPageContent>(
-  "cari-db:products-page",
-  SEED_PRODUCTS_PAGE_CONTENT,
-  asObject(SEED_PRODUCTS_PAGE_CONTENT),
-);
 
-const allStores: PersistentStore<unknown>[] = [
-  productsStore,
+const localStores: PersistentStore<unknown>[] = [
   ordersStore,
   customersStore,
   pointLogsStore,
   requestsStore,
-  homeStore,
-  aboutStore,
-  settingsStore,
-  productsPageStore,
 ] as PersistentStore<unknown>[];
 
 function useStore<T>(store: PersistentStore<T>): T {
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 }
 
-/** Xóa mọi chỉnh sửa, quay về dữ liệu gốc trong mock-data.ts */
+/**
+ * Xóa dữ liệu thử (đơn hàng, khách hàng, điểm, yêu cầu đặt bánh) trên trình duyệt này, quay về dữ liệu mẫu.
+ * Không đụng tới sản phẩm, nội dung và cài đặt — những phần đó đã lưu thật trên Supabase.
+ */
 export function resetAllData() {
-  allStores.forEach((s) => s.reset());
+  localStores.forEach((s) => s.reset());
 }
 
 const emailKey = (email: string | undefined) => (email ?? "").trim().toLowerCase();
@@ -106,11 +143,12 @@ function nextCode(prefix: string, existing: string[], width: number): string {
 // ═════════════════════════ SẢN PHẨM ═════════════════════════
 
 export function useProducts(): Product[] {
-  return useStore(productsStore);
+  return useRemote(productsRemote, (d) => d.products);
 }
 
-export function getProducts(): Product[] {
-  return productsStore.getSnapshot();
+/** Tải lại danh sách sản phẩm từ Supabase sau khi admin thêm/sửa/xóa */
+async function reloadProducts() {
+  productsRemote.set(await fetchProducts(sb()));
 }
 
 /** Trạng thái hiệu lực: hết tồn kho thì coi như hết hàng */
@@ -136,19 +174,23 @@ export function defaultSize(p: Pick<Product, "sizes">): string | undefined {
   return p.sizes?.[0]?.label;
 }
 
+function useGroups(): ProductGroupContent[] {
+  return useRemote(groupsRemote, (d) => d.groups);
+}
+
 /**
  * Các nhóm sản phẩm hiển thị ở cửa hàng: bỏ sản phẩm ẩn và nhóm rỗng.
  * Danh sách nhóm (thêm/xóa/đổi tên/sắp xếp) do admin toàn quyền quản lý ở
- * /admin/noi-dung-trang-san-pham — đây là nguồn duy nhất cho việc nhóm nào tồn tại.
+ * /admin/noi-dung-trang-san-pham — bảng product_groups là nguồn duy nhất cho việc nhóm nào tồn tại.
  * Sản phẩm được xếp vào nhóm qua product.subcategory === group.id (id cố định, không đổi khi
  * admin đổi tên nhóm), nên đổi tên nhóm không làm sản phẩm "lạc" khỏi nhóm của nó.
  */
 export function useProductGroups(category: "Bánh" | "Đồ uống"): ProductCategoryGroup[] {
   const products = useProducts();
-  const content = useStore(productsPageStore);
+  const groups = useGroups();
   return useMemo(
     () =>
-      content.groups
+      groups
         .filter((g) => g.category === category)
         .map((g) => ({
           id: g.id,
@@ -158,13 +200,13 @@ export function useProductGroups(category: "Bánh" | "Đồ uống"): ProductCat
           products: products.filter((p) => p.subcategory === g.id && getProductStatus(p) !== "hidden"),
         }))
         .filter((g) => g.products.length > 0),
-    [products, content, category],
+    [products, groups, category],
   );
 }
 
 /** Nhãn nhỏ phía trên 2 badge chọn danh mục ở trang /san-pham */
 export function useCategoryPickerLabel(): string {
-  return useStore(productsPageStore).categoryPickerLabel;
+  return useRemote(pickerLabelRemote, (d) => d.categoryPickerLabel);
 }
 
 export interface ProductGroupOption {
@@ -178,11 +220,8 @@ export interface ProductGroupOption {
 
 /** Danh sách nhóm để chọn khi thêm/sửa sản phẩm ở admin (theo đúng danh sách nhóm hiện có) */
 export function useProductGroupOptions(): ProductGroupOption[] {
-  const content = useStore(productsPageStore);
-  return useMemo(
-    () => content.groups.map((g) => ({ id: g.id, category: g.category, value: g.id, label: g.title })),
-    [content],
-  );
+  const groups = useGroups();
+  return useMemo(() => groups.map((g) => ({ id: g.id, category: g.category, value: g.id, label: g.title })), [groups]);
 }
 
 /** Số sản phẩm hiện đang thuộc một nhóm (id) — dùng để chặn xóa nhóm còn sản phẩm */
@@ -225,37 +264,43 @@ export type ProductInput = Omit<Product, "id" | "slug" | "rating" | "reviews"> &
   reviews?: number;
 };
 
-/** Thêm mới (không có id) hoặc cập nhật sản phẩm. Trả về sản phẩm đã lưu. */
-export function saveProduct(input: ProductInput): Product {
-  const products = productsStore.getSnapshot();
+/** Thêm mới (không có id) hoặc cập nhật sản phẩm trên Supabase. */
+export async function saveProduct(input: ProductInput): Promise<SaveResult> {
   const sizes = input.sizes?.filter((s) => s.label.trim());
   const price = sizes && sizes.length > 0 ? Math.min(...sizes.map((s) => s.price)) : input.price;
-  const base = { ...input, sizes: sizes && sizes.length > 0 ? sizes : undefined, price };
+  const row = productToRow({ ...input, sizes, price });
 
   if (input.id !== undefined) {
-    const existing = products.find((p) => p.id === input.id);
-    if (existing) {
-      const updated: Product = { ...existing, ...base, id: existing.id, slug: existing.slug };
-      productsStore.set(products.map((p) => (p.id === existing.id ? updated : p)));
-      return updated;
-    }
+    const { error } = await sb().from("products").update(row).eq("id", input.id);
+    if (error) return saveError(error);
+  } else {
+    const { data: existing, error: slugError } = await sb().from("products").select("slug");
+    if (slugError) return saveError(slugError);
+    const used = new Set((existing as { slug: string }[]).map((r) => r.slug));
+    const baseSlug = slugify(input.name) || `san-pham-${Date.now().toString(36)}`;
+    let slug = baseSlug;
+    for (let i = 2; used.has(slug); i++) slug = `${baseSlug}-${i}`;
+    const { error } = await sb()
+      .from("products")
+      .insert({ ...row, slug, rating: input.rating ?? 5, reviews: input.reviews ?? 0 });
+    if (error) return saveError(error);
   }
-
-  const id = products.reduce((m, p) => Math.max(m, p.id), 0) + 1;
-  const baseSlug = slugify(input.name) || `san-pham-${id}`;
-  let slug = baseSlug;
-  for (let i = 2; products.some((p) => p.slug === slug); i++) slug = `${baseSlug}-${i}`;
-  const created: Product = { ...base, id, slug, rating: input.rating ?? 5, reviews: input.reviews ?? 0 };
-  productsStore.set([...products, created]);
-  return created;
+  await reloadProducts();
+  return null;
 }
 
-export function deleteProducts(ids: number[]) {
-  productsStore.set(productsStore.getSnapshot().filter((p) => !ids.includes(p.id)));
+export async function deleteProducts(ids: number[]): Promise<SaveResult> {
+  const { error } = await sb().from("products").delete().in("id", ids);
+  if (error) return saveError(error);
+  await reloadProducts();
+  return null;
 }
 
-export function setProductsStatus(ids: number[], status: ProductStatus) {
-  productsStore.set(productsStore.getSnapshot().map((p) => (ids.includes(p.id) ? { ...p, status } : p)));
+export async function setProductsStatus(ids: number[], status: ProductStatus): Promise<SaveResult> {
+  const { error } = await sb().from("products").update({ status }).in("id", ids);
+  if (error) return saveError(error);
+  await reloadProducts();
+  return null;
 }
 
 // ═════════════════════════ KHÁCH HÀNG & ĐIỂM ═════════════════════════
@@ -452,35 +497,64 @@ export type { CustomOrderStatus };
 // ═════════════════════════ NỘI DUNG & CÀI ĐẶT ═════════════════════════
 
 export function useHomeContent(): HomeContent {
-  return useStore(homeStore);
+  return useRemote(homeRemote, (d) => d.home);
 }
-export function saveHomeContent(content: HomeContent) {
-  homeStore.set(content);
+export async function saveHomeContent(content: HomeContent): Promise<SaveResult> {
+  const error = await saveContent("home", content);
+  if (!error) homeRemote.set(content);
+  return error;
 }
 
 export function useAboutContent(): AboutContent {
-  return useStore(aboutStore);
+  return useRemote(aboutRemote, (d) => d.about);
 }
-export function saveAboutContent(content: AboutContent) {
-  aboutStore.set(content);
+export async function saveAboutContent(content: AboutContent): Promise<SaveResult> {
+  const error = await saveContent("about", content);
+  if (!error) aboutRemote.set(content);
+  return error;
 }
 
+/** Nội dung trang /san-pham: nhãn chọn danh mục (site_content) + danh sách nhóm (bảng product_groups) */
 export function useProductsPageContent(): ProductsPageContent {
-  return useStore(productsPageStore);
+  const categoryPickerLabel = useCategoryPickerLabel();
+  const groups = useGroups();
+  return useMemo(() => ({ categoryPickerLabel, groups }), [categoryPickerLabel, groups]);
 }
-export function saveProductsPageContent(content: ProductsPageContent) {
-  productsPageStore.set(content);
+
+/**
+ * Lưu nhãn + đồng bộ danh sách nhóm: thêm/sửa/sắp xếp theo thứ tự admin đặt, xóa nhóm không còn trong danh sách.
+ * Database chặn xóa nhóm vẫn còn sản phẩm (khóa ngoại) → trả về lỗi thay vì làm lạc sản phẩm.
+ */
+export async function saveProductsPageContent(content: ProductsPageContent): Promise<SaveResult> {
+  const labelError = await saveContent("products_page", { categoryPickerLabel: content.categoryPickerLabel });
+  if (labelError) return labelError;
+  pickerLabelRemote.set(content.categoryPickerLabel);
+
+  const rows = content.groups.map((g, i) => ({ ...g, sort_order: i }));
+  if (rows.length > 0) {
+    const { error } = await sb().from("product_groups").upsert(rows);
+    if (error) return saveError(error);
+  }
+  const keep = content.groups.map((g) => g.id);
+  let removal = sb().from("product_groups").delete();
+  removal = keep.length > 0 ? removal.not("id", "in", `(${keep.map((id) => `"${id}"`).join(",")})`) : removal.neq("id", "");
+  const { error: deleteError } = await removal;
+  if (deleteError) return saveError(deleteError);
+
+  groupsRemote.set(content.groups);
+  return null;
 }
 
 export function useSiteSettings(): SiteSettings {
-  return useStore(settingsStore);
+  return useRemote(settingsRemote, (d) => d.settings);
 }
-export function getSiteSettings(): SiteSettings {
-  return settingsStore.getSnapshot();
-}
-export function saveSiteSettings(settings: SiteSettings) {
-  settingsStore.set(settings);
+export async function saveSiteSettings(settings: SiteSettings): Promise<SaveResult> {
+  const error = await saveContent("settings", settings);
+  if (!error) settingsRemote.set(settings);
+  return error;
 }
 
-/** Danh sách đánh giá gốc (để admin chọn đánh giá nổi bật) */
-export const allReviews: Review[] = SEED_REVIEWS;
+/** Danh sách đánh giá (để trang chủ hiện và admin chọn đánh giá nổi bật) */
+export function useReviews(): Review[] {
+  return usePublicData().reviews;
+}

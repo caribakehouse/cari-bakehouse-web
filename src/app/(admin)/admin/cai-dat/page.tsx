@@ -30,7 +30,7 @@ function SettingsForm({ initial }: { initial: SiteSettings }) {
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
-  const save = () => {
+  const save = async () => {
     const next: Errors = {};
     const hotlineDigits = draft.hotline.replace(/\D/g, "");
     if (hotlineDigits.length < 9 || hotlineDigits.length > 11) next.hotline = "Hotline cần 9–11 chữ số";
@@ -43,7 +43,7 @@ function SettingsForm({ initial }: { initial: SiteSettings }) {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    saveSiteSettings({
+    const error = await saveSiteSettings({
       hotline: hotlineDigits,
       email: draft.email.trim(),
       zalo: draft.zalo.trim(),
@@ -52,6 +52,7 @@ function SettingsForm({ initial }: { initial: SiteSettings }) {
       tiktok: draft.tiktok.trim(),
       threads: draft.threads.trim(),
     });
+    if (error) return toast(error, "error");
     toast("Đã lưu cài đặt chung");
   };
 
@@ -130,12 +131,11 @@ export default function AdminSettingsPage() {
     <div className="mx-auto max-w-4xl space-y-5">
       <SettingsForm initial={settings} />
 
-      <Card title="Dữ liệu mẫu">
+      <Card title="Dữ liệu thử (đơn hàng, khách hàng, điểm)">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="max-w-xl text-[12px] leading-relaxed text-[#5b5b5b]">
-            Dữ liệu gốc nằm trong <code className="rounded bg-[#f0f0f0] px-1">src/lib/mock-data.ts</code>. Mọi chỉnh sửa ở khu admin
-            (sản phẩm, đơn hàng, khách hàng, điểm, yêu cầu bánh, nội dung, cài đặt) được lưu chồng lên trong trình duyệt này. Khôi phục
-            sẽ xóa các chỉnh sửa đó và quay về dữ liệu gốc.
+            Sản phẩm, nội dung trang và cài đặt đã lưu thật trên database — nút này không đụng tới. Riêng đơn hàng, khách hàng, điểm và
+            yêu cầu đặt bánh vẫn đang lưu tạm trong trình duyệt này; khôi phục sẽ xóa các chỉnh sửa đó và quay về dữ liệu mẫu.
           </p>
           <button type="button" className={BTN_DANGER} onClick={() => setResetOpen(true)}>
             <RotateCcw className="h-3.5 w-3.5" />
@@ -149,7 +149,7 @@ export default function AdminSettingsPage() {
         danger
         title="Khôi phục dữ liệu mẫu"
         confirmLabel="Khôi phục"
-        message="Toàn bộ chỉnh sửa (sản phẩm, đơn hàng, điểm, nội dung, cài đặt...) sẽ bị xóa và quay về dữ liệu mẫu ban đầu. Giỏ hàng và trạng thái đăng nhập không bị ảnh hưởng."
+        message="Các chỉnh sửa đơn hàng, khách hàng, điểm và yêu cầu đặt bánh trên trình duyệt này sẽ bị xóa và quay về dữ liệu mẫu. Sản phẩm, nội dung, cài đặt, giỏ hàng và trạng thái đăng nhập không bị ảnh hưởng."
         onConfirm={() => {
           resetAllData();
           toast("Đã khôi phục dữ liệu mẫu");

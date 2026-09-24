@@ -30,7 +30,7 @@ function AboutForm({ initial }: { initial: AboutContent }) {
 
   const set = <K extends keyof AboutContent>(key: K, value: AboutContent[K]) => setDraft((d) => ({ ...d, [key]: value }));
 
-  const save = () => {
+  const save = async () => {
     if (!draft.storyTitle.trim() || !draft.storyBody.trim()) {
       setError("Khối câu chuyện thương hiệu cần có tiêu đề và nội dung.");
       return;
@@ -44,7 +44,8 @@ function AboutForm({ initial }: { initial: AboutContent }) {
       return;
     }
     setError("");
-    saveAboutContent(draft);
+    const saveError = await saveAboutContent(draft);
+    if (saveError) return toast(saveError, "error");
     toast("Đã lưu — mở trang Giới thiệu để xem thay đổi");
   };
 

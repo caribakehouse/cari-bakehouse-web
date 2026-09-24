@@ -1,7 +1,7 @@
 import Image, { type ImageProps } from "next/image";
 
 // Các host đã khai báo trong next.config.ts (images.remotePatterns) — chỉ những host này đi qua bộ tối ưu ảnh của Next.
-const OPTIMIZED_HOSTS = new Set(["images.unsplash.com", "placehold.co"]);
+const OPTIMIZED_HOSTS = new Set(["images.unsplash.com", "placehold.co", "wuweacflzhlsbwhpsdfv.supabase.co"]);
 
 function needsUnoptimized(src: string): boolean {
   if (src.startsWith("/")) return false;

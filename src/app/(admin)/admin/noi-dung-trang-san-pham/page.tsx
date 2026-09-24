@@ -137,7 +137,7 @@ function ProductsPageForm({ initial }: { initial: ProductsPageContent }) {
 
   const setGroups = (groups: ProductGroupContent[]) => setDraft((d) => ({ ...d, groups }));
 
-  const save = () => {
+  const save = async () => {
     if (!draft.categoryPickerLabel.trim()) {
       setError("Vui lòng nhập nhãn phía trên 2 danh mục.");
       return;
@@ -155,11 +155,12 @@ function ProductsPageForm({ initial }: { initial: ProductsPageContent }) {
       return;
     }
     setError("");
-    saveProductsPageContent({
+    const saveError = await saveProductsPageContent({
       ...draft,
       categoryPickerLabel: draft.categoryPickerLabel.trim(),
       groups: draft.groups.map((g) => ({ ...g, title: g.title.trim(), description: g.description.trim() })),
     });
+    if (saveError) return toast(saveError, "error");
     toast("Đã lưu nội dung trang sản phẩm — mở /san-pham để xem thay đổi");
   };
 

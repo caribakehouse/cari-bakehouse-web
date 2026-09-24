@@ -2,14 +2,16 @@
 
 import Image from "next/image";
 import { Star } from "lucide-react";
-import { allReviews, useHomeContent } from "@/lib/db";
+import { useHomeContent, useReviews } from "@/lib/db";
+import type { Review } from "@/lib/mock-data";
 
 export default function Reviews() {
   // Đánh giá nổi bật do admin chọn ở /admin/noi-dung-trang-chu
   const { featuredReviewIds } = useHomeContent();
+  const allReviews = useReviews();
   const reviews = featuredReviewIds
     .map((id) => allReviews.find((r) => r.id === id))
-    .filter((r): r is (typeof allReviews)[number] => !!r);
+    .filter((r): r is Review => !!r);
   if (reviews.length === 0) return null;
 
   return (

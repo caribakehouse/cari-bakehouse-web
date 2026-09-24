@@ -54,8 +54,8 @@ export function isHttpUrl(value: string): boolean {
 }
 
 /**
- * Đọc file ảnh, thu nhỏ (cạnh dài nhất ≤ maxSize) và trả về data URL JPEG để lưu vào dữ liệu mẫu.
- * Ảnh được thu nhỏ để không làm đầy localStorage.
+ * Đọc file ảnh, thu nhỏ (cạnh dài nhất ≤ maxSize) và trả về data URL JPEG.
+ * Admin: src/lib/storage.ts đẩy ảnh này lên Supabase Storage. Form đặt bánh theo yêu cầu vẫn lưu data URL (phần 3).
  */
 export function readImageFile(file: File, maxSize = 720): Promise<string> {
   return new Promise((resolve, reject) => {

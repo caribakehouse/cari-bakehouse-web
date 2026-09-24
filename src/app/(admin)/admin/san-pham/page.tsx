@@ -112,8 +112,9 @@ export default function AdminProductsPage() {
               <button
                 type="button"
                 className={BTN_OUTLINE}
-                onClick={() => {
-                  setProductsStatus(selected, "hidden");
+                onClick={async () => {
+                  const error = await setProductsStatus(selected, "hidden");
+                  if (error) return toast(error, "error");
                   toast(`Đã ẩn ${selected.length} sản phẩm khỏi cửa hàng`);
                   setSelected([]);
                 }}
@@ -231,15 +232,17 @@ export default function AdminProductsPage() {
         message={
           <>
             Xóa <strong>{deleteIds?.length ?? 0}</strong> sản phẩm khỏi dữ liệu? Sản phẩm sẽ biến mất khỏi cửa hàng và
-            các khối trang chủ đang dùng nó. Hành động này không hoàn tác được (chỉ có thể khôi phục toàn bộ dữ liệu mẫu ở
-            màn hình Cài đặt).
+            các khối trang chủ đang dùng nó. Hành động này không hoàn tác được — nếu chỉ muốn tạm ngừng bán, hãy chọn
+            &quot;Ẩn&quot;.
           </>
         }
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!deleteIds) return;
-          deleteProducts(deleteIds);
-          setSelected((prev) => prev.filter((id) => !deleteIds.includes(id)));
-          toast(`Đã xóa ${deleteIds.length} sản phẩm`);
+          const ids = deleteIds;
+          const error = await deleteProducts(ids);
+          if (error) return toast(error, "error");
+          setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+          toast(`Đã xóa ${ids.length} sản phẩm`);
         }}
         onClose={() => setDeleteIds(null)}
       />
