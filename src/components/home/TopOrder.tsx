@@ -21,7 +21,7 @@ export default function TopOrder() {
   const router = useRouter();
   // Sản phẩm nổi bật do admin chọn ở /admin/noi-dung-trang-chu (giá/ảnh/trạng thái lấy từ /admin/san-pham)
   const { topOrderSlugs } = useHomeContent();
-  const topProducts = useProductsBySlugs(topOrderSlugs);
+  const topProducts = useProductsBySlugs(topOrderSlugs, 3);
   if (topProducts.length === 0) return null;
 
   return (

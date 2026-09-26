@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/form-styles";
 import { PageSpinner, SignedOutNotice } from "@/components/account/PageSpinner";
 import { useRequireAuth } from "@/lib/auth";
-import { clearCart, useCart } from "@/lib/cart";
+import { cartLineKey, clearCart, useCart } from "@/lib/cart";
 import PackingAnimation, { type PackingItemKind } from "@/components/order/PackingAnimation";
 import { checkVoucher, placeOrder, useProducts, useSiteSettings } from "@/lib/db";
 import { openZaloChat } from "@/lib/zalo";
@@ -35,7 +35,9 @@ import {
   FULFILLMENT_LABELS,
   PAYMENT_LABELS,
   buildOrderMessage,
+  cartOptionsText,
   copyToClipboard,
+  orderOptionsText,
 } from "@/lib/orders";
 import { formatDateVN, formatVND, todayISO } from "@/lib/utils";
 import type { FulfillmentMethod, Order, PaymentMethod, Voucher } from "@/types/order";
@@ -174,7 +176,7 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setSubmitError("");
     const result = await placeOrder({
-      items: items.map(({ slug, size, quantity }) => ({ slug, size, quantity })),
+      items: items.map(({ slug, size, quantity, options }) => ({ slug, size, quantity, options })),
       voucherCode: appliedVoucher?.code,
       fulfillment,
       address: fulfillment === "delivery" ? address.trim() : undefined,
@@ -262,6 +264,9 @@ export default function CheckoutPage() {
                     <span className="text-[#2b2b2b]">
                       {item.name}
                       {item.size ? <span className="text-text-muted"> ({item.size})</span> : null}
+                      {item.options && item.options.length > 0 && (
+                        <span className="block text-xs text-text-muted">{orderOptionsText(item.options)}</span>
+                      )}
                       <span className="text-text-muted"> × {item.quantity}</span>
                     </span>
                     <span className="shrink-0 font-semibold">{formatVND(item.price * item.quantity)}</span>
@@ -549,7 +554,7 @@ export default function CheckoutPage() {
 
             <ul className="mt-4 max-h-72 space-y-3 overflow-y-auto pr-1">
               {items.map((item) => (
-                <li key={`${item.slug}::${item.size ?? ""}`} className="flex items-center gap-3">
+                <li key={cartLineKey(item)} className="flex items-center gap-3">
                   <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#FCE9C6]">
                     <Image src={item.image} alt={item.name} fill sizes="56px" className="object-cover" />
                   </div>
@@ -558,6 +563,7 @@ export default function CheckoutPage() {
                     <div className="text-xs text-text-muted">
                       Cỡ: {item.size ?? "Tiêu chuẩn"} • SL: {item.quantity}
                     </div>
+                    {item.options && <div className="text-xs text-text-muted">{cartOptionsText(item.options)}</div>}
                   </div>
                   <div className="shrink-0 text-sm font-bold text-[#1B4B5A]">
                     {formatVND(item.price * item.quantity)}

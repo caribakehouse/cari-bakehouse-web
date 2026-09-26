@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import ContentTabs from "@/components/admin/ContentTabs";
 import { useAdmin } from "@/components/admin/AdminContext";
@@ -129,6 +129,16 @@ function ProductsPageForm({ initial }: { initial: ProductsPageContent }) {
   const products = useProducts();
   const [draft, setDraft] = useState<ProductsPageContent>(() => structuredClone(initial));
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+
+  // Còn thay đổi chưa lưu mà đóng tab / tải lại trang → trình duyệt hỏi lại
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   const productCounts = products.reduce<Record<string, number>>((acc, p) => {
     if (p.subcategory) acc[p.subcategory] = (acc[p.subcategory] ?? 0) + 1;
@@ -155,12 +165,17 @@ function ProductsPageForm({ initial }: { initial: ProductsPageContent }) {
       return;
     }
     setError("");
+    setSaving(true);
     const saveError = await saveProductsPageContent({
       ...draft,
       categoryPickerLabel: draft.categoryPickerLabel.trim(),
       groups: draft.groups.map((g) => ({ ...g, title: g.title.trim(), description: g.description.trim() })),
     });
-    if (saveError) return toast(saveError, "error");
+    setSaving(false);
+    if (saveError) {
+      setError(saveError);
+      return toast(saveError, "error");
+    }
     toast("Đã lưu nội dung trang sản phẩm — mở /san-pham để xem thay đổi");
   };
 
@@ -187,15 +202,18 @@ function ProductsPageForm({ initial }: { initial: ProductsPageContent }) {
 
       <div className="fixed right-0 bottom-0 left-0 z-30 border-t border-[#d6d6d6] bg-white/95 px-4 py-3 backdrop-blur lg:left-[220px]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <p className={`text-[11px] ${error ? "text-rose-600" : "text-[#7a7a7a]"}`}>
-            {error || "Thêm/xóa/đổi tên nhóm chỉ có hiệu lực sau khi bấm Lưu. Không thể xóa nhóm còn sản phẩm."}
+          <p className={`text-[11px] ${error ? "text-rose-600" : dirty ? "font-bold text-amber-700" : "text-[#7a7a7a]"}`}>
+            {error ||
+              (dirty
+                ? "Bạn có thay đổi chưa lưu — bấm Lưu để áp dụng lên web."
+                : "Thêm/xóa/đổi tên nhóm chỉ có hiệu lực sau khi bấm Lưu. Không thể xóa nhóm còn sản phẩm.")}
           </p>
           <div className="flex gap-2">
             <button type="button" className={BTN_OUTLINE} onClick={() => setDraft(structuredClone(initial))}>
               Hoàn tác
             </button>
-            <button type="button" className={BTN_SOLID} onClick={save}>
-              Lưu nội dung trang sản phẩm
+            <button type="button" className={`${BTN_SOLID} disabled:opacity-60`} onClick={save} disabled={saving}>
+              {saving ? "Đang lưu..." : "Lưu nội dung trang sản phẩm"}
             </button>
           </div>
         </div>
@@ -209,7 +227,8 @@ export default function AdminProductsPageContentPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <ContentTabs active="products" />
-      <ProductsPageForm initial={content} />
+      {/* Dữ liệu trên database đổi (vừa lưu, sửa ở tab khác...) → dựng lại form theo dữ liệu mới nhất */}
+      <ProductsPageForm key={JSON.stringify(content)} initial={content} />
     </div>
   );
 }

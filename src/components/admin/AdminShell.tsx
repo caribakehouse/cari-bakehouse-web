@@ -23,7 +23,7 @@ import {
 import { AdminContext, type ToastTone } from "@/components/admin/AdminContext";
 import { PageSpinner } from "@/components/account/PageSpinner";
 import { logout, useRequireAuth } from "@/lib/auth";
-import { useCustomRequests, useOrders } from "@/lib/db";
+import { refreshCatalog, useCustomRequests, useOrders } from "@/lib/db";
 
 interface MenuItem {
   href: string;
@@ -97,6 +97,16 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  // Luôn lấy sản phẩm / nhóm / nội dung mới nhất từ database khi chuyển màn hình admin và khi quay lại tab
+  useEffect(() => {
+    void refreshCatalog();
+  }, [pathname]);
+  useEffect(() => {
+    const onFocus = () => void refreshCatalog();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
 
   if (auth.status === "loading") return <PageSpinner />;
 

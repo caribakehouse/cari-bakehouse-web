@@ -1,9 +1,8 @@
-// Giỏ hàng dùng chung toàn site, lưu trong localStorage.
-// TODO: đồng bộ giỏ hàng với backend khi có tài khoản thật.
+// Giỏ hàng dùng chung toàn site, lưu trong localStorage (giá chỉ để hiển thị — database tính lại khi đặt hàng).
 
 import { useSyncExternalStore } from "react";
 import { createPersistentStore } from "@/lib/persistent-store";
-import { defaultSize, priceForSize } from "@/lib/db";
+import { defaultOptions, defaultSize, unitPriceFor } from "@/lib/db";
 import type { CartItem } from "@/types/cart";
 import type { Product } from "@/lib/mock-data";
 
@@ -27,53 +26,59 @@ function sanitizeCart(value: unknown): CartItem[] {
 
 const cartStore = createPersistentStore<CartItem[]>("cari-cart", EMPTY_CART, sanitizeCart);
 
-const isSameLine = (item: CartItem, slug: string, size?: string) =>
-  item.slug === slug && item.size === size;
+/** Khóa phân biệt từng dòng giỏ hàng: cùng sản phẩm nhưng khác cỡ / khác tùy chọn là 2 dòng riêng */
+export function cartLineKey(item: Pick<CartItem, "slug" | "size" | "options">): string {
+  const options = item.options
+    ? Object.keys(item.options)
+        .sort()
+        .map((k) => `${k}=${item.options![k]}`)
+        .join("|")
+    : "";
+  return `${item.slug}::${item.size ?? ""}::${options}`;
+}
 
 export function addToCart(
-  product: Pick<Product, "slug" | "name" | "image" | "price" | "sizes">,
+  product: Pick<Product, "slug" | "name" | "image" | "price" | "sizes" | "options">,
   quantity = 1,
   size?: string,
+  options?: Record<string, string>,
 ) {
-  // Sản phẩm có nhiều cỡ: không chọn cỡ thì lấy cỡ đầu tiên; giá theo cỡ đã chọn
+  // Không chọn cỡ / tùy chọn thì lấy cỡ đầu tiên / lựa chọn đầu tiên của mỗi nhóm
   size = size ?? defaultSize(product);
-  const price = priceForSize(product, size);
+  options = options ?? defaultOptions(product);
+  const price = unitPriceFor(product, size, options);
+  const line: CartItem = {
+    slug: product.slug,
+    name: product.name,
+    image: product.image,
+    price,
+    size,
+    options,
+    quantity: Math.min(MAX_ITEM_QUANTITY, quantity),
+  };
+  const key = cartLineKey(line);
   const items = cartStore.getSnapshot();
-  const existing = items.find((i) => isSameLine(i, product.slug, size));
+  const existing = items.find((i) => cartLineKey(i) === key);
   if (existing) {
     cartStore.set(
       items.map((i) =>
-        i === existing
-          ? { ...i, quantity: Math.min(MAX_ITEM_QUANTITY, i.quantity + quantity) }
-          : i,
+        i === existing ? { ...i, quantity: Math.min(MAX_ITEM_QUANTITY, i.quantity + quantity) } : i,
       ),
     );
     return;
   }
-  cartStore.set([
-    ...items,
-    {
-      slug: product.slug,
-      name: product.name,
-      image: product.image,
-      price,
-      size,
-      quantity: Math.min(MAX_ITEM_QUANTITY, quantity),
-    },
-  ]);
+  cartStore.set([...items, line]);
 }
 
-export function updateCartQuantity(slug: string, size: string | undefined, quantity: number) {
+export function updateCartQuantity(item: CartItem, quantity: number) {
   const next = Math.max(1, Math.min(MAX_ITEM_QUANTITY, quantity));
-  cartStore.set(
-    cartStore
-      .getSnapshot()
-      .map((i) => (isSameLine(i, slug, size) ? { ...i, quantity: next } : i)),
-  );
+  const key = cartLineKey(item);
+  cartStore.set(cartStore.getSnapshot().map((i) => (cartLineKey(i) === key ? { ...i, quantity: next } : i)));
 }
 
-export function removeFromCart(slug: string, size: string | undefined) {
-  cartStore.set(cartStore.getSnapshot().filter((i) => !isSameLine(i, slug, size)));
+export function removeFromCart(item: CartItem) {
+  const key = cartLineKey(item);
+  cartStore.set(cartStore.getSnapshot().filter((i) => cartLineKey(i) !== key));
 }
 
 export function clearCart() {

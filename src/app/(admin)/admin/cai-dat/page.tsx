@@ -126,7 +126,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <SettingsForm initial={settings} />
+      <SettingsForm key={JSON.stringify(settings)} initial={settings} />
     </div>
   );
 }

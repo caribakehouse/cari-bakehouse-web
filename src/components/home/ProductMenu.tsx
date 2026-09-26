@@ -15,7 +15,7 @@ export default function ProductMenu() {
   const router = useRouter();
   // Thực đơn do admin chọn ở /admin/noi-dung-trang-chu (giá/ảnh/trạng thái lấy từ /admin/san-pham)
   const { menuSlugs } = useHomeContent();
-  const menuProducts = useProductsBySlugs(menuSlugs);
+  const menuProducts = useProductsBySlugs(menuSlugs, 8);
 
   return (
     <section className="py-14">

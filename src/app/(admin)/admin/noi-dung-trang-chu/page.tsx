@@ -1,20 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import ContentTabs from "@/components/admin/ContentTabs";
 import ImageField from "@/components/admin/ImageField";
 import ProductPicker from "@/components/admin/ProductPicker";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { BTN_ICON, BTN_OUTLINE, BTN_SOLID, Card, Field, INPUT } from "@/components/admin/ui";
-import { saveHomeContent, useHomeContent, useReviews } from "@/lib/db";
+import { saveHomeContent, useHomeContent, useProducts, useReviews } from "@/lib/db";
 import type { BannerOverlay, HomeContent } from "@/types/content";
 
 function HomeContentForm({ initial }: { initial: HomeContent }) {
   const { toast } = useAdmin();
   const reviews = useReviews();
-  const [draft, setDraft] = useState<HomeContent>(() => structuredClone(initial));
+  const products = useProducts();
+  // Bỏ sẵn các món đã bị xóa khỏi Top order / Thực đơn (không thì chúng chiếm chỗ, không thêm được món mới)
+  const [draft, setDraft] = useState<HomeContent>(() => {
+    const exists = (slug: string) => products.some((p) => p.slug === slug);
+    const d = structuredClone(initial);
+    return { ...d, topOrderSlugs: d.topOrderSlugs.filter(exists), menuSlugs: d.menuSlugs.filter(exists) };
+  });
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+
+  // Còn thay đổi chưa lưu mà đóng tab / tải lại trang → trình duyệt hỏi lại
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const fail = (message: string) => {
+    setError(message);
+    toast(message, "error");
+  };
 
   const set = <K extends keyof HomeContent>(key: K, value: HomeContent[K]) => setDraft((d) => ({ ...d, [key]: value }));
 
@@ -27,17 +48,15 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
   };
 
   const save = async () => {
-    if (draft.heroSlides.some((s) => !s.image.trim())) {
-      setError("Mỗi slide trong hero cần có ảnh.");
-      return;
-    }
+    if (draft.heroSlides.some((s) => !s.image.trim())) return fail("Mỗi slide trong hero cần có ảnh.");
     if (draft.features.some((f) => !f.title.trim()) || draft.banners.some((b) => !b.label.trim() || !b.image.trim())) {
-      setError("Dải tính năng và banner đôi không được để trống tiêu đề/ảnh.");
-      return;
+      return fail("Dải tính năng và banner đôi không được để trống tiêu đề/ảnh.");
     }
     setError("");
+    setSaving(true);
     const saveError = await saveHomeContent({ ...draft, gallery: draft.gallery.filter((g) => g.image.trim()) });
-    if (saveError) return toast(saveError, "error");
+    setSaving(false);
+    if (saveError) return fail(saveError);
     toast("Đã lưu nội dung trang chủ — mở cửa hàng để xem thay đổi");
   };
 
@@ -270,15 +289,15 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
       {/* Thanh lưu cố định */}
       <div className="fixed right-0 bottom-0 left-0 z-30 border-t border-[#d6d6d6] bg-white/95 px-4 py-3 backdrop-blur lg:left-[220px]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <p className={`text-[11px] ${error ? "text-rose-600" : "text-[#7a7a7a]"}`}>
-            {error || "Thay đổi chỉ có hiệu lực sau khi bấm Lưu."}
+          <p className={`text-[11px] ${error ? "font-bold text-rose-600" : dirty ? "font-bold text-amber-700" : "text-[#7a7a7a]"}`}>
+            {error || (dirty ? "Bạn có thay đổi chưa lưu — bấm Lưu để áp dụng lên web." : "Thay đổi chỉ có hiệu lực sau khi bấm Lưu.")}
           </p>
           <div className="flex gap-2">
             <button type="button" className={BTN_OUTLINE} onClick={() => setDraft(structuredClone(initial))}>
               Hoàn tác
             </button>
-            <button type="button" className={BTN_SOLID} onClick={save}>
-              Lưu nội dung trang chủ
+            <button type="button" className={`${BTN_SOLID} disabled:opacity-60`} onClick={save} disabled={saving}>
+              {saving ? "Đang lưu..." : "Lưu nội dung trang chủ"}
             </button>
           </div>
         </div>
@@ -292,7 +311,7 @@ export default function AdminHomeContentPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <ContentTabs active="home" />
-      <HomeContentForm initial={content} />
+      <HomeContentForm key={JSON.stringify(content)} initial={content} />
     </div>
   );
 }

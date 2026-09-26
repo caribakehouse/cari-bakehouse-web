@@ -250,12 +250,12 @@ function ProductsContent() {
               )}
             </div>
 
-            {/* Lưới sản phẩm: 3 cột desktop, 2 cột tablet, 1 cột mobile */}
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
+            {/* Lưới sản phẩm: 3 cột desktop, 2 cột tablet, 1 cột mobile — căn giữa khi nhóm ít món / hàng cuối chưa đủ */}
+            <div className="flex flex-wrap justify-center gap-5 sm:gap-6">
               {group.products.map((product) => (
                 <div
                   key={product.id}
-                  className="group relative flex flex-col overflow-hidden rounded-3xl bg-white border border-[#E5D9C3]/70 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-[#1B4B5A]/20"
+                  className="group relative flex w-full flex-col overflow-hidden rounded-3xl bg-white border sm:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-3rem)/3)] border-[#E5D9C3]/70 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-[#1B4B5A]/20"
                 >
                   {/* Ảnh sản phẩm + Badge */}
                   <Link
@@ -301,7 +301,7 @@ function ProductsContent() {
                     )}
 
                     {/* Chọn cỡ bánh (chỉ khi sản phẩm có nhiều cỡ) */}
-                    {product.sizes && product.sizes.length > 0 && (
+                    {product.sizes && product.sizes.length > 1 && (
                       <div className="mt-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label={`Chọn cỡ ${product.name}`}>
                         {product.sizes.map((size) => {
                           const active = chosenSize(product) === size.label;
@@ -311,6 +311,7 @@ function ProductsContent() {
                               type="button"
                               role="radio"
                               aria-checked={active}
+                              title={size.dimension}
                               onClick={() => setSizeChoice((prev) => ({ ...prev, [product.slug]: size.label }))}
                               className={`cursor-pointer rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
                                 active

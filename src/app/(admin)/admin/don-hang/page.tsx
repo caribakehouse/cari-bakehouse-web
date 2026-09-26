@@ -22,7 +22,7 @@ import {
   Toolbar,
 } from "@/components/admin/ui";
 import { pointsForOrder, setOrderStatus, useOrders } from "@/lib/db";
-import { FULFILLMENT_LABELS, PAYMENT_LABELS } from "@/lib/orders";
+import { FULFILLMENT_LABELS, PAYMENT_LABELS, orderOptionsText } from "@/lib/orders";
 import { formatDateVN, formatVND } from "@/lib/utils";
 import type { Order, OrderStatus } from "@/types/order";
 
@@ -202,6 +202,9 @@ export default function AdminOrdersPage() {
                     <td className={TD}>
                       {item.name}
                       {item.size ? ` (${item.size})` : ""}
+                      {item.options && item.options.length > 0 && (
+                        <span className="block text-[11px] text-[#7a7a7a]">{orderOptionsText(item.options)}</span>
+                      )}
                     </td>
                     <td className={`${TD} text-right`}>{item.quantity}</td>
                     <td className={`${TD} text-right`}>{formatVND(item.price * item.quantity)}</td>

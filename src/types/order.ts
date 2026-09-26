@@ -4,11 +4,21 @@ export type OrderStatus = "Chờ xử lý" | "Đã giao" | "Đã hủy";
 export type FulfillmentMethod = "delivery" | "pickup";
 export type PaymentMethod = "cod" | "bank";
 
+/** Tùy chọn khách đã chọn cho một món trong đơn, vd { group: "Sốt đi kèm", choice: "Caramel muối", price: 6000 } */
+export interface OrderItemOption {
+  group: string;
+  choice: string;
+  /** Phụ thu (đồng) */
+  price: number;
+}
+
 export interface OrderItem {
   name: string;
   size?: string;
   quantity: number;
+  /** Đơn giá đã gồm phụ thu tùy chọn */
   price: number;
+  options?: OrderItemOption[];
 }
 
 export interface Order {

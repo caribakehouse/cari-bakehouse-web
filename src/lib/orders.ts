@@ -4,7 +4,19 @@
 import { useMemo } from "react";
 import { useOrders } from "@/lib/db";
 import { formatDateVN, formatVND } from "@/lib/utils";
-import type { FulfillmentMethod, Order, PaymentMethod } from "@/types/order";
+import type { FulfillmentMethod, Order, OrderItemOption, PaymentMethod } from "@/types/order";
+
+/** Tùy chọn trong giỏ hàng → "Sốt đi kèm: Caramel muối · Lượng đường: 50%" */
+export function cartOptionsText(options: Record<string, string> | undefined): string {
+  return options ? Object.entries(options).map(([group, choice]) => `${group}: ${choice}`).join(" · ") : "";
+}
+
+/** Tùy chọn trong đơn hàng → "Sốt đi kèm: Caramel muối (+6.000đ) · Lượng đường: 50%" */
+export function orderOptionsText(options: OrderItemOption[] | undefined): string {
+  return (options ?? [])
+    .map((o) => `${o.group}: ${o.choice}${o.price > 0 ? ` (+${formatVND(o.price)})` : ""}`)
+    .join(" · ");
+}
 
 export const FULFILLMENT_LABELS: Record<FulfillmentMethod, string> = {
   delivery: "Giao tận nơi",
@@ -44,6 +56,8 @@ export function buildOrderMessage(order: Order): string {
     lines.push(
       `${idx + 1}. ${item.name}${size} x${item.quantity} - ${formatVND(item.price * item.quantity)}`,
     );
+    const options = orderOptionsText(item.options);
+    if (options) lines.push(`   + ${options}`);
   });
   lines.push("");
   lines.push(`Tạm tính: ${formatVND(order.subtotal)}`);

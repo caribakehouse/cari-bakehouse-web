@@ -184,7 +184,7 @@ export default function AdminAboutPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <ContentTabs active="about" />
-      <AboutForm initial={content} />
+      <AboutForm key={JSON.stringify(content)} initial={content} />
     </div>
   );
 }

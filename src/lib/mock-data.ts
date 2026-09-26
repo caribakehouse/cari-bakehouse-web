@@ -25,6 +25,22 @@ export type ProductStatus = "active" | "soldout" | "hidden";
 export interface ProductSize {
   label: string;
   price: number;
+  /** Kích thước / khẩu phần của cỡ này, vd "Ø20cm · 8–10 người" (tùy chọn) */
+  dimension?: string;
+}
+
+/** Một lựa chọn trong nhóm tùy chọn, vd "Sốt Caramel muối" phụ thu 6.000đ */
+export interface ProductOptionChoice {
+  label: string;
+  /** Phụ thu (đồng), 0 = không thêm phí */
+  price: number;
+}
+
+/** Nhóm tùy chọn thêm của sản phẩm (khách chọn đúng 1 lựa chọn; lựa chọn đầu tiên là mặc định) */
+export interface ProductOptionGroup {
+  /** Tên nhóm, vd "Sốt đi kèm", "Lượng đường" */
+  name: string;
+  choices: ProductOptionChoice[];
 }
 
 export interface HeroSlide {
@@ -58,6 +74,8 @@ export interface Product {
   reviews: number;
   /** Các cỡ bánh kèm giá riêng. Nếu có, `price` = giá thấp nhất trong các cỡ. */
   sizes?: ProductSize[];
+  /** Tùy chọn thêm (sốt, loại sữa, % đường...) — khách chọn ở trang chi tiết */
+  options?: ProductOptionGroup[];
   /** Tồn kho (mặc định 20 trong dữ liệu mẫu) */
   stock?: number;
   /** Bỏ trống = "active" */

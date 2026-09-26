@@ -8,6 +8,8 @@ import {
   SEED_PRODUCTS_PAGE_CONTENT,
   SEED_SITE_SETTINGS,
   type Product,
+  type ProductOptionGroup,
+  type ProductSize,
   type Review,
 } from "@/lib/mock-data";
 import type { AboutContent, HomeContent, ProductGroupContent, SiteSettings } from "@/types/content";
@@ -35,7 +37,8 @@ export interface ProductRow {
   badge: string | null;
   rating: number | string;
   reviews: number;
-  sizes: { label: string; price: number }[] | null;
+  sizes: ProductSize[] | null;
+  options: ProductOptionGroup[] | null;
   stock: number | null;
   status: "active" | "soldout" | "hidden";
 }
@@ -55,6 +58,7 @@ export function productFromRow(r: ProductRow): Product {
     rating: Number(r.rating),
     reviews: r.reviews,
     sizes: r.sizes && r.sizes.length > 0 ? r.sizes : undefined,
+    options: r.options && r.options.length > 0 ? r.options : undefined,
     stock: r.stock ?? undefined,
     status: r.status,
   };
@@ -71,6 +75,7 @@ export function productToRow(p: Omit<Product, "id" | "slug" | "rating" | "review
     image: p.image,
     badge: p.badge ?? null,
     sizes: p.sizes && p.sizes.length > 0 ? p.sizes : null,
+    options: p.options && p.options.length > 0 ? p.options : null,
     stock: p.stock ?? null,
     status: p.status ?? "active",
   };

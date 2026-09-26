@@ -13,7 +13,7 @@ import { usePublicData } from "@/components/PublicDataProvider";
 import { useAuth } from "@/lib/auth";
 import type { Product, ProductCategoryGroup, ProductStatus, Review } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/client";
-import { fetchProducts, productToRow, type PublicData } from "@/lib/supabase/public-data";
+import { fetchProducts, fetchPublicData, productToRow, type PublicData } from "@/lib/supabase/public-data";
 import type { AboutContent, HomeContent, ProductGroupContent, ProductsPageContent, SiteSettings } from "@/types/content";
 import type { CustomOrderRequest, CustomOrderStatus } from "@/types/custom-order";
 import type { FulfillmentMethod, Order, OrderStatus, PaymentMethod } from "@/types/order";
@@ -73,6 +73,10 @@ function saveError(error: { code?: string; message?: string } | null): SaveResul
   if (error.code === "42501") return "Bạn không có quyền sửa dữ liệu này — hãy đăng nhập bằng tài khoản quản trị";
   if (error.code === "23503") return "Không thể xóa: vẫn còn sản phẩm thuộc nhóm này";
   if (error.code === "23505") return "Dữ liệu bị trùng (ví dụ tên sản phẩm đã tồn tại)";
+  // Thiếu cột / bảng: web đã cập nhật nhưng database chưa chạy file SQL mới trong supabase/migrations
+  if (error.code === "PGRST204" || error.code === "42703" || error.code === "PGRST202" || error.code === "42P01") {
+    return "Database chưa được cập nhật — cần chạy file SQL mới nhất trong supabase/migrations trên Supabase";
+  }
   return "Lưu thất bại, vui lòng thử lại";
 }
 
@@ -288,6 +292,24 @@ async function reloadProducts() {
   productsRemote.set(await fetchProducts(sb()));
 }
 
+/**
+ * Tải lại toàn bộ sản phẩm, nhóm, nội dung trang, cài đặt từ Supabase — để khu admin luôn khớp với database
+ * (sửa ở tab khác, lần lưu trước bị lỗi giữa chừng...). Khu admin gọi khi chuyển trang và khi quay lại tab.
+ */
+export async function refreshCatalog() {
+  try {
+    const data = await fetchPublicData(sb());
+    productsRemote.set(data.products);
+    groupsRemote.set(data.groups);
+    homeRemote.set(data.home);
+    aboutRemote.set(data.about);
+    settingsRemote.set(data.settings);
+    pickerLabelRemote.set(data.categoryPickerLabel);
+  } catch (error) {
+    console.error("Không tải lại được dữ liệu từ Supabase", error);
+  }
+}
+
 /** Trạng thái hiệu lực: hết tồn kho thì coi như hết hàng */
 export function getProductStatus(p: Product): ProductStatus {
   if (p.status === "hidden") return "hidden";
@@ -309,6 +331,30 @@ export function priceForSize(p: Pick<Product, "price" | "sizes">, size?: string)
 /** Cỡ mặc định khi thêm nhanh vào giỏ: cỡ đầu tiên (nếu có) */
 export function defaultSize(p: Pick<Product, "sizes">): string | undefined {
   return p.sizes?.[0]?.label;
+}
+
+/** Tùy chọn mặc định (lựa chọn đầu tiên của mỗi nhóm) — dùng khi thêm nhanh vào giỏ */
+export function defaultOptions(p: Pick<Product, "options">): Record<string, string> | undefined {
+  const groups = (p.options ?? []).filter((g) => g.choices.length > 0);
+  if (groups.length === 0) return undefined;
+  return Object.fromEntries(groups.map((g) => [g.name, g.choices[0].label]));
+}
+
+/** Tổng phụ thu của các tùy chọn đã chọn (nhóm nào chưa chọn thì tính lựa chọn đầu tiên) */
+export function optionsExtra(p: Pick<Product, "options">, chosen?: Record<string, string>): number {
+  return (p.options ?? []).reduce((sum, g) => {
+    const label = chosen?.[g.name] ?? g.choices[0]?.label;
+    return sum + (g.choices.find((c) => c.label === label)?.price ?? 0);
+  }, 0);
+}
+
+/** Đơn giá theo cỡ + tùy chọn đã chọn */
+export function unitPriceFor(
+  p: Pick<Product, "price" | "sizes" | "options">,
+  size?: string,
+  chosen?: Record<string, string>,
+): number {
+  return priceForSize(p, size) + optionsExtra(p, chosen);
 }
 
 function useGroups(): ProductGroupContent[] {
@@ -371,16 +417,20 @@ export function generateGroupId(): string {
   return `nhom-${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
 }
 
-/** Tra sản phẩm theo danh sách slug (giữ thứ tự, bỏ sản phẩm ẩn / không còn tồn tại) */
-export function useProductsBySlugs(slugs: string[]): Product[] {
+/**
+ * Tra sản phẩm theo danh sách slug (giữ thứ tự, bỏ sản phẩm ẩn / không còn tồn tại).
+ * fallbackCount: nếu không còn món nào hợp lệ (vd admin xóa hết sản phẩm cũ mà chưa chọn lại) thì lấy
+ * tạm các món đang bán đầu tiên, để khối trên trang chủ không bị trống.
+ */
+export function useProductsBySlugs(slugs: string[], fallbackCount?: number): Product[] {
   const products = useProducts();
-  return useMemo(
-    () =>
-      slugs
-        .map((slug) => products.find((p) => p.slug === slug))
-        .filter((p): p is Product => !!p && getProductStatus(p) !== "hidden"),
-    [products, slugs],
-  );
+  return useMemo(() => {
+    const picked = slugs
+      .map((slug) => products.find((p) => p.slug === slug))
+      .filter((p): p is Product => !!p && getProductStatus(p) !== "hidden");
+    if (picked.length > 0 || !fallbackCount) return picked;
+    return products.filter((p) => getProductStatus(p) !== "hidden").slice(0, fallbackCount);
+  }, [products, slugs, fallbackCount]);
 }
 
 export function slugify(text: string): string {
@@ -512,7 +562,7 @@ export function useOrders(): Order[] {
 }
 
 export interface PlaceOrderInput {
-  items: { slug: string; size?: string; quantity: number }[];
+  items: { slug: string; size?: string; quantity: number; options?: Record<string, string> }[];
   voucherCode?: string;
   fulfillment: FulfillmentMethod;
   address?: string;
@@ -645,9 +695,23 @@ export function useProductsPageContent(): ProductsPageContent {
  * Database chặn xóa nhóm vẫn còn sản phẩm (khóa ngoại) → trả về lỗi thay vì làm lạc sản phẩm.
  */
 export async function saveProductsPageContent(content: ProductsPageContent): Promise<SaveResult> {
+  const result = await writeProductsPageContent(content);
+  // Lưu xong (kể cả lỗi giữa chừng) luôn đọc lại từ database để giao diện admin khớp với dữ liệu thật
+  await refreshCatalog();
+  if (result) return result;
+
+  // Đối chiếu: tên / thứ tự nhóm trên database phải đúng như admin vừa lưu
+  const { data, error } = await sb().from("product_groups").select("id, title").order("sort_order").order("id");
+  if (error) return saveError(error);
+  const saved = (data as { id: string; title: string }[]).map((g) => `${g.id}|${g.title}`).join(",");
+  const wanted = content.groups.map((g) => `${g.id}|${g.title}`).join(",");
+  if (saved !== wanted) return "Chưa lưu được hết thay đổi của nhóm — vui lòng tải lại trang và thử lại";
+  return null;
+}
+
+async function writeProductsPageContent(content: ProductsPageContent): Promise<SaveResult> {
   const labelError = await saveContent("products_page", { categoryPickerLabel: content.categoryPickerLabel });
   if (labelError) return labelError;
-  pickerLabelRemote.set(content.categoryPickerLabel);
 
   const rows = content.groups.map((g, i) => ({ ...g, sort_order: i }));
   if (rows.length > 0) {
@@ -658,10 +722,7 @@ export async function saveProductsPageContent(content: ProductsPageContent): Pro
   let removal = sb().from("product_groups").delete();
   removal = keep.length > 0 ? removal.not("id", "in", `(${keep.map((id) => `"${id}"`).join(",")})`) : removal.neq("id", "");
   const { error: deleteError } = await removal;
-  if (deleteError) return saveError(deleteError);
-
-  groupsRemote.set(content.groups);
-  return null;
+  return saveError(deleteError);
 }
 
 export function useSiteSettings(): SiteSettings {

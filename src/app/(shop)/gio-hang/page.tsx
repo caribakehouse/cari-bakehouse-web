@@ -7,12 +7,14 @@ import { ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useAuth, useHydrated } from "@/lib/auth";
 import {
   MAX_ITEM_QUANTITY,
+  cartLineKey,
   clearCart,
   removeFromCart,
   updateCartQuantity,
   useCart,
 } from "@/lib/cart";
 import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/form-styles";
+import { cartOptionsText } from "@/lib/orders";
 import { formatVND } from "@/lib/utils";
 
 export default function CartPage() {
@@ -86,7 +88,7 @@ export default function CartPage() {
                 const lineTotal = item.price * item.quantity;
                 return (
                   <li
-                    key={`${item.slug}::${item.size ?? ""}`}
+                    key={cartLineKey(item)}
                     className="grid grid-cols-[72px_1fr] gap-x-4 gap-y-3 px-4 py-4 sm:px-5 md:grid-cols-[1fr_100px_120px_110px_36px] md:items-center"
                   >
                     {/* Ảnh + tên + cỡ */}
@@ -105,6 +107,9 @@ export default function CartPage() {
                           {item.name}
                         </h3>
                         <p className="mt-0.5 text-xs text-text-muted">Cỡ: {item.size ?? "Tiêu chuẩn"}</p>
+                        {item.options && (
+                          <p className="mt-0.5 text-xs text-text-muted">{cartOptionsText(item.options)}</p>
+                        )}
                         <p className="mt-1 text-xs font-semibold text-[#1B4B5A] md:hidden">
                           {formatVND(item.price)}
                         </p>
@@ -121,7 +126,7 @@ export default function CartPage() {
                       <div className="inline-flex items-center rounded-full border border-border bg-[#FFF8EF]/60">
                         <button
                           type="button"
-                          onClick={() => updateCartQuantity(item.slug, item.size, item.quantity - 1)}
+                          onClick={() => updateCartQuantity(item, item.quantity - 1)}
                           disabled={item.quantity <= 1}
                           aria-label={`Giảm số lượng ${item.name}`}
                           className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#1B4B5A] transition-colors hover:bg-[#1B4B5A]/10 disabled:cursor-not-allowed disabled:opacity-35"
@@ -136,7 +141,7 @@ export default function CartPage() {
                         </span>
                         <button
                           type="button"
-                          onClick={() => updateCartQuantity(item.slug, item.size, item.quantity + 1)}
+                          onClick={() => updateCartQuantity(item, item.quantity + 1)}
                           disabled={item.quantity >= MAX_ITEM_QUANTITY}
                           aria-label={`Tăng số lượng ${item.name}`}
                           className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-[#1B4B5A] transition-colors hover:bg-[#1B4B5A]/10 disabled:cursor-not-allowed disabled:opacity-35"
@@ -150,7 +155,7 @@ export default function CartPage() {
                         <span className="text-sm font-black text-[#1B4B5A]">{formatVND(lineTotal)}</span>
                         <button
                           type="button"
-                          onClick={() => removeFromCart(item.slug, item.size)}
+                          onClick={() => removeFromCart(item)}
                           aria-label={`Xóa ${item.name} khỏi giỏ`}
                           className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-text-muted transition-colors hover:bg-rose-50 hover:text-rose-600"
                         >
@@ -166,7 +171,7 @@ export default function CartPage() {
                     <div className="hidden md:block">
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.slug, item.size)}
+                        onClick={() => removeFromCart(item)}
                         aria-label={`Xóa ${item.name} khỏi giỏ`}
                         className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-text-muted transition-colors hover:bg-rose-50 hover:text-rose-600"
                       >
