@@ -1,15 +1,63 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Award, LogOut, Mail, Phone, Receipt, User } from "lucide-react";
+import { Award, Cake, LogOut, Mail, Phone, Receipt, User } from "lucide-react";
 import PointCard from "@/components/account/PointCard";
 import { PageSpinner, SignedOutNotice } from "@/components/account/PageSpinner";
-import { logout, useRequireAuth } from "@/lib/auth";
-import { usePoints } from "@/lib/db";
+import { logout, saveBirthday, useRequireAuth } from "@/lib/auth";
+import { useMembership } from "@/lib/db";
 import { useMyOrders } from "@/lib/orders";
 import { formatDateVN, formatVND } from "@/lib/utils";
 import type { OrderStatus } from "@/types/order";
+
+/** Ô ngày sinh: đã lưu thì chỉ hiển thị; chưa có thì cho nhập 1 lần */
+function BirthdayField({ birthday }: { birthday?: string }) {
+  const [value, setValue] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  if (birthday) return <>{formatDateVN(birthday)}</>;
+
+  const save = async () => {
+    if (!value) return setError("Vui lòng chọn ngày sinh");
+    if (value > new Date().toISOString().slice(0, 10)) return setError("Ngày sinh chưa hợp lệ");
+    if (!window.confirm(`Lưu ngày sinh ${formatDateVN(value)}? Sau khi lưu, muốn sửa bạn cần nhắn tiệm.`)) return;
+    setSaving(true);
+    const saveError = await saveBirthday(value);
+    setSaving(false);
+    if (saveError) setError(saveError);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="date"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError("");
+          }}
+          aria-label="Ngày sinh"
+          className="rounded-lg border border-border bg-white px-2.5 py-1.5 text-sm font-normal"
+        />
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="cursor-pointer rounded-full bg-[#1B4B5A] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#123640] disabled:opacity-60"
+        >
+          {saving ? "Đang lưu..." : "Lưu"}
+        </button>
+      </div>
+      <p className="text-[11px] font-normal text-text-muted">
+        {error ? <span className="text-rose-600">{error}</span> : "Chỉ lưu được 1 lần — VIP nhận ưu đãi trong tháng sinh nhật."}
+      </p>
+    </div>
+  );
+}
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
   "Chờ xử lý": "bg-amber-50 text-amber-800 border-amber-200",
@@ -22,7 +70,7 @@ export default function AccountPage() {
   // Chỉ vào được khi đã đăng nhập
   const { status, user } = useRequireAuth("/tai-khoan");
   const orders = useMyOrders(user?.email);
-  const points = usePoints(user?.email);
+  const membership = useMembership(user?.email);
 
   if (status === "signed-out") return <SignedOutNotice />;
   if (!user) return <PageSpinner />;
@@ -36,6 +84,7 @@ export default function AccountPage() {
     { icon: User, label: "Họ và tên", value: user.fullName },
     { icon: Mail, label: "Email", value: user.email },
     { icon: Phone, label: "Số điện thoại", value: user.phone || "Chưa cập nhật" },
+    { icon: Cake, label: "Ngày sinh", value: <BirthdayField birthday={user.birthday} /> },
   ];
 
   return (
@@ -68,7 +117,7 @@ export default function AccountPage() {
             <User className="h-5 w-5" />
             Thông tin cá nhân
           </h2>
-          <div className="grid grid-cols-1 gap-4 rounded-2xl border border-border/80 bg-white p-5 shadow-xs sm:grid-cols-3 sm:p-6">
+          <div className="grid grid-cols-1 gap-4 rounded-2xl border border-border/80 bg-white p-5 shadow-xs sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
             {infoRows.map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FCE9C6] text-[#1B4B5A]">
@@ -99,8 +148,16 @@ export default function AccountPage() {
               Xem chương trình tích điểm
             </Link>
           </div>
-          {/* Điểm = tổng lịch sử điểm của khách trong dữ liệu chung (admin cộng/trừ ở /admin/khach-hang) */}
-          <PointCard data={{ currentPoints: points, tier: "Thành viên mới" }} />
+          {/* Điểm khả dụng + hạng (theo tổng điểm đã tích) — quy tắc admin chỉnh ở /admin/tich-diem */}
+          <PointCard
+            data={{
+              currentPoints: membership.balance,
+              tier: membership.tier.name,
+              nextTier: membership.tier.nextTier,
+              pointsNeeded: membership.tier.pointsNeeded,
+              progressPercentage: membership.tier.progressPercentage,
+            }}
+          />
         </section>
 
         {/* Lịch sử đơn hàng */}

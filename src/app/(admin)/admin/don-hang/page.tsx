@@ -21,8 +21,8 @@ import {
   TH,
   Toolbar,
 } from "@/components/admin/ui";
-import { pointsForOrder, setOrderStatus, useOrders } from "@/lib/db";
-import { FULFILLMENT_LABELS, PAYMENT_LABELS, orderOptionsText } from "@/lib/orders";
+import { pointsForOrder, setOrderStatus, useLoyaltyConfig, useOrders } from "@/lib/db";
+import { FULFILLMENT_LABELS, PAYMENT_LABELS, orderDiscountLines, orderOptionsText } from "@/lib/orders";
 import { formatDateVN, formatVND } from "@/lib/utils";
 import type { Order, OrderStatus } from "@/types/order";
 
@@ -38,6 +38,7 @@ const PAGE_SIZE = 10;
 export default function AdminOrdersPage() {
   const { query, toast } = useAdmin();
   const orders = useOrders();
+  const loyalty = useLoyaltyConfig();
 
   const [filter, setFilter] = useState<Filter>("all");
   const [page, setPage] = useState(1);
@@ -218,19 +219,20 @@ export default function AdminOrdersPage() {
                 <span>Tạm tính</span>
                 <span>{formatVND(detail.subtotal)}</span>
               </div>
-              {detail.voucherCode && detail.discount > 0 && (
-                <div className="flex justify-between text-emerald-700">
-                  <span>Voucher {detail.voucherCode}</span>
-                  <span>-{formatVND(detail.discount)}</span>
+              {orderDiscountLines(detail).map((d) => (
+                <div key={d.label} className="flex justify-between gap-3 text-emerald-700">
+                  <span>{d.label}</span>
+                  <span className="shrink-0">-{formatVND(d.amount)}</span>
                 </div>
-              )}
+              ))}
               <div className="flex justify-between text-sm font-bold text-[#2b2b2b]">
                 <span>Tổng tiền</span>
                 <span>{formatVND(detail.total)}</span>
               </div>
               {detail.status === "Chờ xử lý" && (
                 <div className="text-[11px] text-[#7a7a7a]">
-                  Khi đánh dấu “Đã giao”, khách được cộng {pointsForOrder(detail.total).toLocaleString("vi-VN")} điểm.
+                  Khi đánh dấu “Đã giao”, khách được cộng {pointsForOrder(detail.total, loyalty).toLocaleString("vi-VN")} điểm.
+                  {detail.pointsRedeemed ? ` Nếu hủy đơn, khách được hoàn lại ${detail.pointsRedeemed} điểm đã đổi.` : ""}
                 </div>
               )}
             </div>
@@ -276,12 +278,14 @@ export default function AdminOrdersPage() {
                 <>
                   Đơn <strong>{confirm.order.id}</strong> ({formatVND(confirm.order.total)}) đã giao thành công? Khách{" "}
                   <strong>{confirm.order.customerName ?? "—"}</strong> sẽ được cộng{" "}
-                  <strong>{pointsForOrder(confirm.order.total).toLocaleString("vi-VN")} điểm</strong> (1.000đ = 1 điểm).
+                  <strong>{pointsForOrder(confirm.order.total, loyalty).toLocaleString("vi-VN")} điểm</strong> (
+                  {loyalty.pointRateVnd.toLocaleString("vi-VN")}đ = 1 điểm).
                 </>
               ) : (
                 <>
                   Hủy đơn <strong>{confirm.order.id}</strong>? Đơn bị hủy sẽ <strong>không</strong> được cộng điểm và
                   không thể chuyển lại trạng thái khác.
+                  {confirm.order.pointsRedeemed ? ` Khách được hoàn lại ${confirm.order.pointsRedeemed} điểm đã đổi.` : ""}
                 </>
               )}
             </>

@@ -14,9 +14,16 @@ import { useAuth } from "@/lib/auth";
 import type { Product, ProductCategoryGroup, ProductStatus, Review } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/client";
 import { fetchProducts, fetchPublicData, productToRow, type PublicData } from "@/lib/supabase/public-data";
-import type { AboutContent, HomeContent, ProductGroupContent, ProductsPageContent, SiteSettings } from "@/types/content";
+import type {
+  AboutContent,
+  HomeContent,
+  LoyaltyConfig,
+  ProductGroupContent,
+  ProductsPageContent,
+  SiteSettings,
+} from "@/types/content";
 import type { CustomOrderRequest, CustomOrderStatus } from "@/types/custom-order";
-import type { FulfillmentMethod, Order, OrderStatus, PaymentMethod } from "@/types/order";
+import type { FulfillmentMethod, Order, OrderDiscount, OrderStatus, PaymentMethod } from "@/types/order";
 import type { Customer, PointTransaction } from "@/types/user";
 
 // ─── Dữ liệu trên Supabase ───────────────────────────────────
@@ -49,6 +56,7 @@ const groupsRemote = createRemoteStore<ProductGroupContent[]>();
 const homeRemote = createRemoteStore<HomeContent>();
 const aboutRemote = createRemoteStore<AboutContent>();
 const settingsRemote = createRemoteStore<SiteSettings>();
+const loyaltyRemote = createRemoteStore<LoyaltyConfig>();
 const pickerLabelRemote = createRemoteStore<string>();
 
 const noValue = () => undefined;
@@ -173,6 +181,8 @@ interface OrderRow {
   customer_name: string | null;
   customer_phone: string | null;
   customer_email: string | null;
+  discount_details: OrderDiscount[] | null;
+  points_redeemed: number | null;
 }
 
 function orderFromRow(r: OrderRow): Order {
@@ -194,6 +204,8 @@ function orderFromRow(r: OrderRow): Order {
     customerName: r.customer_name ?? undefined,
     customerPhone: r.customer_phone ?? undefined,
     customerEmail: r.customer_email ?? undefined,
+    discountDetails: r.discount_details && r.discount_details.length > 0 ? r.discount_details : undefined,
+    pointsRedeemed: r.points_redeemed ?? undefined,
   };
 }
 
@@ -304,6 +316,7 @@ export async function refreshCatalog() {
     homeRemote.set(data.home);
     aboutRemote.set(data.about);
     settingsRemote.set(data.settings);
+    loyaltyRemote.set(data.loyalty);
     pickerLabelRemote.set(data.categoryPickerLabel);
   } catch (error) {
     console.error("Không tải lại được dữ liệu từ Supabase", error);
@@ -530,8 +543,58 @@ export function usePoints(email: string | undefined): number {
 }
 
 /** Quy tắc tích điểm: 1.000đ = 1 điểm (chỉ cộng khi đơn "Đã giao") — database dùng đúng quy tắc này */
-export const POINT_RATE_VND = 1000;
-export const pointsForOrder = (total: number) => Math.floor(total / POINT_RATE_VND);
+// ─── Chương trình thành viên (cấu hình: site_content 'loyalty', admin sửa ở /admin/tich-diem) ───
+
+export function useLoyaltyConfig(): LoyaltyConfig {
+  return useRemote(loyaltyRemote, (d) => d.loyalty);
+}
+
+export async function saveLoyaltyConfig(config: LoyaltyConfig): Promise<SaveResult> {
+  const error = await saveContent("loyalty", config);
+  if (!error) loyaltyRemote.set(config);
+  return error;
+}
+
+/** Số điểm nhận được cho một đơn (database cộng đúng theo công thức này khi đơn "Đã giao") */
+export const pointsForOrder = (total: number, config: Pick<LoyaltyConfig, "pointRateVnd">) =>
+  Math.floor(total / Math.max(1, config.pointRateVnd));
+
+/** Tổng điểm đã tích (xét hạng) — không trừ điểm đã đổi quà, không tính điểm hoàn lại */
+export function lifetimePoints(logs: PointTransaction[], email: string | undefined): number {
+  const key = emailKey(email);
+  return logs
+    .filter((l) => emailKey(l.email) === key && l.points > 0 && l.kind !== "redeem")
+    .reduce((sum, l) => sum + l.points, 0);
+}
+
+export type TierKey = "new" | "loyal" | "vip";
+export const TIER_NAMES: Record<TierKey, string> = { new: "Thành viên mới", loyal: "Thân thiết", vip: "VIP" };
+
+export function tierFor(lifetime: number, config: LoyaltyConfig) {
+  const key: TierKey =
+    lifetime >= config.vipMinPoints ? "vip" : lifetime >= config.loyalMinPoints ? "loyal" : "new";
+  const nextMin = key === "new" ? config.loyalMinPoints : key === "loyal" ? config.vipMinPoints : undefined;
+  const prevMin = key === "loyal" ? config.loyalMinPoints : 0;
+  return {
+    key,
+    name: TIER_NAMES[key],
+    nextTier: key === "new" ? TIER_NAMES.loyal : key === "loyal" ? TIER_NAMES.vip : undefined,
+    pointsNeeded: nextMin !== undefined ? Math.max(0, nextMin - lifetime) : undefined,
+    progressPercentage:
+      nextMin !== undefined ? Math.min(100, Math.round(((lifetime - prevMin) / Math.max(1, nextMin - prevMin)) * 100)) : undefined,
+  };
+}
+
+/** Điểm, hạng và quyền lợi của tài khoản đang đăng nhập */
+export function useMembership(email: string | undefined) {
+  const logs = usePointLogs();
+  const config = useLoyaltyConfig();
+  return useMemo(() => {
+    const balance = pointBalance(logs, email);
+    const lifetime = lifetimePoints(logs, email);
+    return { balance, lifetime, tier: tierFor(lifetime, config), config };
+  }, [logs, email, config]);
+}
 
 /** Admin cộng (points > 0) hoặc trừ (points < 0) điểm thủ công, kèm lý do. Database chặn trừ quá số dư. */
 export async function adjustPoints(
@@ -570,9 +633,13 @@ export interface PlaceOrderInput {
   receiveTime: string;
   note?: string;
   paymentMethod: PaymentMethod;
+  /** Vị trí món trong items muốn đổi điểm lấy 1 cái miễn phí */
+  redeemIndex?: number;
+  /** Dùng ưu đãi sinh nhật VIP cho đơn này */
+  useBirthday?: boolean;
 }
 
-/** Đặt đơn: database tự tính giá, giảm giá, tổng tiền và gán đơn cho tài khoản đang đăng nhập. */
+/** Đặt đơn: database tự tính giá, đổi điểm, ưu đãi thành viên, voucher, tổng tiền và gán đơn cho tài khoản đang đăng nhập. */
 export async function placeOrder(input: PlaceOrderInput): Promise<{ order: Order } | { error: string }> {
   const { data, error } = await sb().rpc("place_order", {
     p_items: input.items,
@@ -583,9 +650,12 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{ order: Order
     p_receive_time: input.receiveTime,
     p_note: input.note ?? null,
     p_payment: input.paymentMethod,
+    p_redeem_index: input.redeemIndex ?? null,
+    p_use_birthday: input.useBirthday ?? false,
   });
   if (error) return { error: saveError(error) ?? "Đặt hàng thất bại, vui lòng thử lại" };
   void ordersQuery.reload();
+  if (input.redeemIndex !== undefined) void pointLogsQuery.reload();
   return { order: orderFromRow(data as OrderRow) };
 }
 
@@ -601,7 +671,8 @@ export async function checkVoucher(code: string): Promise<number | null> {
 
 /**
  * Đổi trạng thái đơn: chỉ từ "Chờ xử lý" → "Đã giao" hoặc "Đã hủy" (database chặn đổi đơn đã kết thúc).
- * Khi sang "Đã giao", database tự cộng điểm cho khách (1.000đ = 1 điểm, mỗi đơn một lần).
+ * Khi sang "Đã giao", database tự cộng điểm cho khách (theo cấu hình tích điểm, mỗi đơn một lần);
+ * khi "Đã hủy", database hoàn lại điểm khách đã đổi trong đơn.
  */
 export async function setOrderStatus(
   orderId: string,
@@ -611,12 +682,21 @@ export async function setOrderStatus(
     .from("orders")
     .update({ status: next })
     .eq("id", orderId)
-    .select("total, customer_email")
+    .select("id")
     .maybeSingle();
   if (error) return { ok: false, error: saveError(error) ?? "Lưu thất bại" };
   if (!data) return { ok: false, error: "Không tìm thấy đơn hàng" };
   await Promise.all([ordersQuery.reload(), pointLogsQuery.reload(), customersQuery.reload()]);
-  const pointsAwarded = next === "Đã giao" && data.customer_email ? pointsForOrder(data.total) : 0;
+  let pointsAwarded = 0;
+  if (next === "Đã giao") {
+    const { data: log } = await sb()
+      .from("point_logs")
+      .select("points")
+      .eq("order_id", orderId)
+      .eq("kind", "order")
+      .maybeSingle();
+    pointsAwarded = log?.points ?? 0;
+  }
   return { ok: true, pointsAwarded };
 }
 

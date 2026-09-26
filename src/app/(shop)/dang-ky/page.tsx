@@ -22,6 +22,7 @@ interface FormValues {
   fullName: string;
   email: string;
   phone: string;
+  birthday: string;
   password: string;
   confirmPassword: string;
 }
@@ -36,6 +37,7 @@ export default function RegisterPage() {
     fullName: "",
     email: "",
     phone: "",
+    birthday: "",
     password: "",
     confirmPassword: "",
   });
@@ -56,6 +58,9 @@ export default function RegisterPage() {
     if (!EMAIL_PATTERN.test(values.email.trim())) nextErrors.email = "Vui lòng nhập email hợp lệ";
     if (!PHONE_PATTERN.test(values.phone.replace(/[\s.-]/g, ""))) {
       nextErrors.phone = "Số điện thoại chưa hợp lệ (ví dụ: 0901234567)";
+    }
+    if (values.birthday && values.birthday > new Date().toISOString().slice(0, 10)) {
+      nextErrors.birthday = "Ngày sinh chưa hợp lệ";
     }
     if (values.password.length < 6) nextErrors.password = "Mật khẩu cần ít nhất 6 ký tự";
     if (!values.confirmPassword) {
@@ -95,6 +100,13 @@ export default function RegisterPage() {
     { key: "fullName", label: "Họ và tên", type: "text", autoComplete: "name", placeholder: "Nguyễn Văn A" },
     { key: "email", label: "Email", type: "email", autoComplete: "email", placeholder: "ban@example.com" },
     { key: "phone", label: "Số điện thoại", type: "tel", autoComplete: "tel", placeholder: "0901234567" },
+    {
+      key: "birthday",
+      label: "Ngày sinh (không bắt buộc — thành viên VIP nhận ưu đãi tháng sinh nhật)",
+      type: "date",
+      autoComplete: "bday",
+      placeholder: "",
+    },
     { key: "password", label: "Mật khẩu", type: "password", autoComplete: "new-password", placeholder: "Ít nhất 6 ký tự" },
     {
       key: "confirmPassword",

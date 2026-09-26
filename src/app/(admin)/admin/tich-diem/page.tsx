@@ -5,10 +5,15 @@ import Link from "next/link";
 import { Award, Coins, Users } from "lucide-react";
 import { matchesQuery, useAdmin } from "@/components/admin/AdminContext";
 import {
+  BTN_OUTLINE,
+  BTN_SOLID,
   Card,
   Chip,
   ChipRow,
   EmptyRow,
+  Field,
+  INPUT,
+  INPUT_INVALID,
   Pagination,
   StatCard,
   StatusPill,
@@ -18,7 +23,17 @@ import {
   TH,
   type Tone,
 } from "@/components/admin/ui";
-import { POINT_RATE_VND, pointBalance, useCustomers, usePointLogs } from "@/lib/db";
+import {
+  lifetimePoints,
+  pointBalance,
+  saveLoyaltyConfig,
+  tierFor,
+  useCustomers,
+  useLoyaltyConfig,
+  usePointLogs,
+  useProductGroupOptions,
+} from "@/lib/db";
+import type { LoyaltyConfig } from "@/types/content";
 import { formatDateVN } from "@/lib/utils";
 import type { PointTransactionKind } from "@/types/user";
 
@@ -30,6 +45,109 @@ const KIND_LABELS: Record<PointTransactionKind, { label: string; tone: Tone }> =
 };
 
 type Filter = "all" | PointTransactionKind;
+
+type NumberKey = Exclude<keyof LoyaltyConfig, "redeemGroupId">;
+
+const NUMBER_FIELDS: { key: NumberKey; label: string; hint: string; suffix: string }[] = [
+  { key: "pointRateVnd", label: "Tích điểm", hint: "Bao nhiêu đồng được 1 điểm (tính trên tổng tiền đơn sau giảm)", suffix: "đ = 1 điểm" },
+  { key: "redeemPoints", label: "Đổi quà", hint: "Số điểm đổi 1 món miễn phí trong nhóm bên cạnh", suffix: "điểm" },
+  { key: "loyalMinPoints", label: "Hạng Thân thiết từ", hint: "Tổng điểm đã tích (đổi quà không làm tụt hạng)", suffix: "điểm" },
+  { key: "vipMinPoints", label: "Hạng VIP từ", hint: "Tổng điểm đã tích", suffix: "điểm" },
+  { key: "vipCakeDiscountPercent", label: "VIP giảm tiền bánh", hint: "Tự áp dụng mỗi đơn (không tính đồ uống)", suffix: "%" },
+  { key: "birthdayCakeDiscountPercent", label: "VIP tháng sinh nhật", hint: "1 đơn trong tháng sinh nhật, thay cho mức VIP", suffix: "%" },
+];
+
+/** Cấu hình chương trình thành viên — database dùng đúng các số này khi đặt hàng / cộng điểm */
+function LoyaltyForm({ initial }: { initial: LoyaltyConfig }) {
+  const { toast } = useAdmin();
+  const groups = useProductGroupOptions();
+  const [draft, setDraft] = useState<Record<NumberKey, string> & { redeemGroupId: string }>(() => ({
+    ...(Object.fromEntries(NUMBER_FIELDS.map((f) => [f.key, String(initial[f.key])])) as Record<NumberKey, string>),
+    redeemGroupId: initial.redeemGroupId,
+  }));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const num = (key: NumberKey) => (draft[key].trim() === "" ? NaN : Number(draft[key]));
+  const dirty = NUMBER_FIELDS.some((f) => num(f.key) !== initial[f.key]) || draft.redeemGroupId !== initial.redeemGroupId;
+
+  const save = async () => {
+    const bad = NUMBER_FIELDS.find((f) => !Number.isInteger(num(f.key)) || num(f.key) < 0);
+    if (bad) return setError(`"${bad.label}" phải là số nguyên từ 0`);
+    if (num("pointRateVnd") < 1) return setError("Tích điểm phải từ 1đ trở lên");
+    if (num("vipCakeDiscountPercent") > 100 || num("birthdayCakeDiscountPercent") > 100) {
+      return setError("Phần trăm giảm tối đa 100%");
+    }
+    if (num("loyalMinPoints") >= num("vipMinPoints")) return setError("Mốc VIP phải lớn hơn mốc Thân thiết");
+    if (!draft.redeemGroupId) return setError("Vui lòng chọn nhóm sản phẩm được đổi điểm");
+    setError("");
+    setSaving(true);
+    const config = {
+      ...(Object.fromEntries(NUMBER_FIELDS.map((f) => [f.key, num(f.key)])) as Record<NumberKey, number>),
+      redeemGroupId: draft.redeemGroupId,
+    };
+    const saveError = await saveLoyaltyConfig(config);
+    setSaving(false);
+    if (saveError) {
+      setError(saveError);
+      return toast(saveError, "error");
+    }
+    toast("Đã lưu quy tắc chương trình thành viên");
+  };
+
+  return (
+    <Card title="Quy tắc chương trình thành viên">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {NUMBER_FIELDS.map((f) => (
+          <Field key={f.key} label={`${f.label} (${f.suffix})`} hint={f.hint}>
+            <input
+              value={draft[f.key]}
+              inputMode="numeric"
+              onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value.replace(/[^\d]/g, "") }))}
+              className={`${INPUT} ${error.includes(f.label) ? INPUT_INVALID : ""}`}
+            />
+          </Field>
+        ))}
+        <Field label="Nhóm được đổi điểm" hint="Khách dùng điểm đổi 1 món bất kỳ (cỡ nào cũng được) trong nhóm này">
+          <select
+            value={draft.redeemGroupId}
+            onChange={(e) => setDraft((d) => ({ ...d, redeemGroupId: e.target.value }))}
+            className={INPUT}
+          >
+            <option value="">— Chọn nhóm —</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.category} · {g.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3e3e3] pt-3">
+        <p className={`text-[11px] ${error ? "font-bold text-rose-600" : dirty ? "font-bold text-amber-700" : "text-[#7a7a7a]"}`}>
+          {error || (dirty ? "Bạn có thay đổi chưa lưu." : "Áp dụng ngay cho các đơn đặt sau khi lưu.")}
+        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className={BTN_OUTLINE}
+            onClick={() =>
+              setDraft({
+                ...(Object.fromEntries(NUMBER_FIELDS.map((f) => [f.key, String(initial[f.key])])) as Record<NumberKey, string>),
+                redeemGroupId: initial.redeemGroupId,
+              })
+            }
+          >
+            Hoàn tác
+          </button>
+          <button type="button" className={`${BTN_SOLID} disabled:opacity-60`} onClick={save} disabled={saving}>
+            {saving ? "Đang lưu..." : "Lưu quy tắc"}
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
 const PAGE_SIZE = 10;
 
 // Tổng quan chương trình tích điểm — đọc từ cùng dữ liệu điểm với /admin/khach-hang
@@ -37,6 +155,7 @@ export default function AdminPointsPage() {
   const { query } = useAdmin();
   const logs = usePointLogs();
   const customers = useCustomers();
+  const loyalty = useLoyaltyConfig();
 
   const [filter, setFilter] = useState<Filter>("all");
   const [page, setPage] = useState(1);
@@ -44,9 +163,13 @@ export default function AdminPointsPage() {
   const ranking = useMemo(
     () =>
       customers
-        .map((c) => ({ customer: c, points: pointBalance(logs, c.email) }))
+        .map((c) => ({
+          customer: c,
+          points: pointBalance(logs, c.email),
+          tier: tierFor(lifetimePoints(logs, c.email), loyalty).name,
+        }))
         .sort((a, b) => b.points - a.points),
-    [customers, logs],
+    [customers, logs, loyalty],
   );
   const totalPoints = ranking.reduce((s, r) => s + r.points, 0);
   const withPoints = ranking.filter((r) => r.points > 0).length;
@@ -71,13 +194,14 @@ export default function AdminPointsPage() {
         <StatCard label="Khách đang có điểm" value={`${withPoints}/${customers.length}`} icon={<Users className="h-5 w-5" />} />
         <StatCard
           label="Quy tắc tích điểm"
-          value={`${POINT_RATE_VND.toLocaleString("vi-VN")}đ = 1`}
+          value={`${loyalty.pointRateVnd.toLocaleString("vi-VN")}đ = 1`}
           hint="Chỉ cộng khi đơn chuyển sang “Đã giao”"
           icon={<Award className="h-5 w-5" />}
         />
       </div>
 
-      {/* TODO: quy đổi điểm → voucher và xét hạng thành viên chưa chốt (xem trang /tich-diem) — chưa có màn hình cấu hình. */}
+      <LoyaltyForm key={JSON.stringify(loyalty)} initial={loyalty} />
+
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[320px_1fr]">
         <Card title="Khách nhiều điểm nhất" className="self-start [&>div:last-child]:p-0">
           <ol className="divide-y divide-[#e3e3e3]">
@@ -88,7 +212,9 @@ export default function AdminPointsPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-semibold text-[#2b2b2b]">{r.customer.fullName}</div>
-                  <div className="truncate text-[10px] text-[#9a9a9a]">{r.customer.email}</div>
+                  <div className="truncate text-[10px] text-[#9a9a9a]">
+                    {r.tier} · {r.customer.email}
+                  </div>
                 </div>
                 <strong className="text-[#2b2b2b]">{r.points.toLocaleString("vi-VN")}</strong>
               </li>

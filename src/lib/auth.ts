@@ -34,13 +34,14 @@ function client() {
 /** Ghép thông tin đăng nhập với hồ sơ (tên, sđt, vai trò) trong bảng profiles */
 async function loadUser(user: User | null): Promise<AuthUser | null> {
   if (!user) return null;
-  const { data } = await client().from("profiles").select("full_name, phone, role").eq("id", user.id).maybeSingle();
+  const { data } = await client().from("profiles").select("full_name, phone, role, birthday").eq("id", user.id).maybeSingle();
   const meta = user.user_metadata ?? {};
   return {
     fullName: data?.full_name || meta.full_name || user.email?.split("@")[0] || "Khách",
     email: user.email ?? "",
     phone: data?.phone || meta.phone || "",
     role: data?.role === "admin" ? "admin" : undefined,
+    birthday: data?.birthday ?? undefined,
   };
 }
 
@@ -125,12 +126,14 @@ export async function signUp(info: {
   email: string;
   phone: string;
   password: string;
+  /** yyyy-mm-dd, tùy chọn */
+  birthday?: string;
 }): Promise<{ needsConfirmation: boolean } | { error: string }> {
   const { data, error } = await client().auth.signUp({
     email: info.email.trim(),
     password: info.password,
     options: {
-      data: { full_name: info.fullName.trim(), phone: info.phone.trim() },
+      data: { full_name: info.fullName.trim(), phone: info.phone.trim(), birthday: info.birthday || undefined },
       emailRedirectTo: `${window.location.origin}/tai-khoan`,
     },
   });
@@ -140,6 +143,24 @@ export async function signUp(info: {
   if (!data.session) return { needsConfirmation: true };
   await refresh(data.user);
   return { needsConfirmation: false };
+}
+
+/** Lưu ngày sinh (yyyy-mm-dd). Database chỉ cho lưu 1 lần — muốn sửa phải nhắn tiệm. */
+export async function saveBirthday(birthday: string): Promise<string | null> {
+  const sb = client();
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth.user) return "Vui lòng đăng nhập lại";
+  const { error } = await sb.from("profiles").update({ birthday }).eq("id", auth.user.id);
+  if (error) {
+    console.error(error);
+    if (error.code === "P0001" && error.message) return error.message;
+    if (error.code === "PGRST204" || error.code === "42703") {
+      return "Database chưa được cập nhật — cần chạy file SQL mới nhất trong supabase/migrations trên Supabase";
+    }
+    return "Lưu ngày sinh thất bại, vui lòng thử lại";
+  }
+  await refresh(auth.user);
+  return null;
 }
 
 export function logout() {

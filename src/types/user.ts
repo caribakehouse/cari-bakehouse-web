@@ -7,6 +7,8 @@ export interface AuthUser {
   phone: string;
   /** Bỏ trống = khách thường; "admin" lấy từ profiles.role */
   role?: UserRole;
+  /** Ngày sinh yyyy-mm-dd (khách tự nhập 1 lần) */
+  birthday?: string;
 }
 
 /** Hồ sơ khách hàng (bảng customers, khóa theo email) */
@@ -39,7 +41,7 @@ export interface PointTransaction {
 export interface PointCardData {
   currentPoints: number;
   tier: string;
-  // TODO: chưa chốt cách xét hạng thành viên — khi có quy tắc thì điền các trường dưới đây để hiện thanh tiến độ
+  /** Hạng kế tiếp + số điểm còn thiếu (bỏ trống khi đã ở hạng cao nhất) */
   nextTier?: string;
   pointsNeeded?: number;
   progressPercentage?: number;

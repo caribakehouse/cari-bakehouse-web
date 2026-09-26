@@ -2,43 +2,40 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  Award,
-  Coins,
-  ChevronDown,
-  Gift,
-  History,
-  ShieldCheck,
-  HelpCircle,
-  Clock,
-  ArrowRight,
-  CheckCircle2,
-} from "lucide-react";
+import { Award, Cake, Coins, ChevronDown, Crown, Gift, History, HelpCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 import PointCard from "@/components/account/PointCard";
 import { useAuth } from "@/lib/auth";
-import { pointBalance, pointHistory, usePointLogs } from "@/lib/db";
+import { TIER_NAMES, pointHistory, useMembership, usePointLogs, useProductsPageContent } from "@/lib/db";
+import type { LoyaltyConfig } from "@/types/content";
 import { formatDateVN } from "@/lib/utils";
 
-// =============================================================================
-// FAQ DỮ LIỆU THẬT
-// =============================================================================
-const FAQ_ITEMS = [
-  {
-    question: "Làm sao để tích điểm?",
-    answer:
-      "Cứ mỗi 1.000đ chi tiêu, bạn nhận được 1 điểm. Điểm được cộng tự động khi đơn hàng chuyển sang trạng thái \"đã giao\".",
-  },
-  {
-    question: "Điểm dùng để làm gì?",
-    answer:
-      "Điểm có thể dùng để quy đổi voucher giảm giá. Chi tiết mức quy đổi sẽ được cập nhật sớm.",
-  },
-  {
-    question: "Vì sao đặt hàng xong chưa thấy cộng điểm ngay?",
-    answer:
-      "Điểm chỉ được cộng khi tiệm xác nhận đơn đã giao thành công, để tránh trường hợp đơn bị hủy hoặc chưa thanh toán.",
-  },
-];
+// Câu hỏi thường gặp — số liệu lấy theo quy tắc admin cài ở /admin/tich-diem
+function faqItems(c: LoyaltyConfig, redeemGroup: string) {
+  const vnd = (n: number) => n.toLocaleString("vi-VN") + "đ";
+  return [
+    {
+      question: "Làm sao để tích điểm?",
+      answer: `Cứ mỗi ${vnd(c.pointRateVnd)} chi tiêu, bạn nhận được 1 điểm (tính trên tổng tiền đơn sau giảm giá). Điểm được cộng tự động khi đơn hàng chuyển sang trạng thái "Đã giao".`,
+    },
+    {
+      question: "Điểm dùng để làm gì?",
+      answer: `Đủ ${c.redeemPoints} điểm, bạn được đổi 1 bánh ${redeemGroup} bất kỳ miễn phí (cỡ nào cũng được). Chọn "Đổi điểm" ngay ở bước đặt hàng — phụ thu tùy chọn thêm (nếu có) vẫn tính như bình thường.`,
+    },
+    {
+      question: "Hạng thành viên được xét thế nào?",
+      answer: `Hạng xét theo tổng điểm bạn đã tích từ trước đến nay, đổi quà không làm tụt hạng: ${TIER_NAMES.new} dưới ${c.loyalMinPoints} điểm, ${TIER_NAMES.loyal} từ ${c.loyalMinPoints} điểm, VIP từ ${c.vipMinPoints} điểm.`,
+    },
+    {
+      question: "Ưu đãi sinh nhật VIP dùng thế nào?",
+      answer: `Thành viên VIP nhập ngày sinh ở trang Tài khoản. Trong tháng sinh nhật, ở bước đặt hàng bạn chọn "Ưu đãi sinh nhật" để được giảm ${c.birthdayCakeDiscountPercent}% tiền bánh cho 1 đơn (thay cho mức giảm VIP ${c.vipCakeDiscountPercent}% của đơn đó).`,
+    },
+    {
+      question: "Vì sao đặt hàng xong chưa thấy cộng điểm ngay?",
+      answer:
+        "Điểm chỉ được cộng khi tiệm xác nhận đơn đã giao thành công, để tránh trường hợp đơn bị hủy hoặc chưa thanh toán. Đơn có đổi điểm mà bị hủy thì điểm được hoàn lại.",
+    },
+  ];
+}
 
 // Điểm và lịch sử điểm lấy từ dữ liệu chung (src/lib/db.ts); admin cộng/trừ điểm ở /admin/khach-hang.
 
@@ -49,7 +46,11 @@ export default function TichDiemPage() {
   const { user, hydrated } = useAuth();
   const email = user?.email;
   const logs = usePointLogs();
-  const currentPoints = useMemo(() => pointBalance(logs, email), [logs, email]);
+  const membership = useMembership(email);
+  const config = membership.config;
+  const { groups } = useProductsPageContent();
+  const redeemGroup = groups.find((g) => g.id === config.redeemGroupId)?.title ?? "trong nhóm được chọn";
+  const FAQ_ITEMS = faqItems(config, redeemGroup);
   const history = useMemo(
     () =>
       pointHistory(logs, email).map((l) => ({
@@ -100,7 +101,9 @@ export default function TichDiemPage() {
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-muted">Quy tắc tích điểm</span>
                   <div className="flex items-center justify-center md:justify-start gap-3 mt-1">
-                    <span className="font-heading text-2xl sm:text-3xl font-black text-[#1B4B5A]">1.000đ</span>
+                    <span className="font-heading text-2xl sm:text-3xl font-black text-[#1B4B5A]">
+                      {config.pointRateVnd.toLocaleString("vi-VN")}đ
+                    </span>
                     <span className="text-xl sm:text-2xl font-bold text-muted">=</span>
                     <span className="font-heading text-2xl sm:text-3xl font-black text-[#1B4B5A] bg-[#FCE9C6]/60 px-3 py-0.5 rounded-lg border border-[#F6CE8B]/50">
                       1 điểm
@@ -130,7 +133,15 @@ export default function TichDiemPage() {
           </div>
 
           {user ? (
-            <PointCard data={{ currentPoints, tier: "Thành viên mới" }} />
+            <PointCard
+              data={{
+                currentPoints: membership.balance,
+                tier: membership.tier.name,
+                nextTier: membership.tier.nextTier,
+                pointsNeeded: membership.tier.pointsNeeded,
+                progressPercentage: membership.tier.progressPercentage,
+              }}
+            />
           ) : hydrated ? (
             <div className="rounded-2xl border border-border/80 bg-white p-6 text-center shadow-xs">
               <p className="text-sm text-[#2b2b2b]/80">Đăng nhập để xem điểm và lịch sử tích điểm của bạn.</p>
@@ -145,171 +156,129 @@ export default function TichDiemPage() {
           ) : null}
         </section>
 
-        {/* 4. BẢNG QUY ĐỔI ĐIỂM VÀ HẠNG THÀNH VIÊN */}
-        {/* TODO: chưa chốt cách quy đổi điểm và hạng thành viên cụ thể — điền khi có quyết định, không tự đặt số. */}
+        {/* 4. ĐỔI ĐIỂM & HẠNG THÀNH VIÊN — số liệu theo quy tắc admin cài ở /admin/tich-diem */}
         <section className="space-y-8">
-          {/* 4.1 Bảng quy đổi điểm */}
+          {/* 4.1 Đổi điểm */}
           <div className="space-y-4">
             <div>
-              <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#1B4B5A]">
-                Đổi điểm lấy ưu đãi
-              </h2>
-              <p className="text-xs sm:text-sm text-muted mt-1">
-                Các mức quy đổi điểm thưởng sang voucher giảm giá hoặc quà tặng hấp dẫn.
-              </p>
+              <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#1B4B5A]">Đổi điểm lấy quà</h2>
+              <p className="text-xs sm:text-sm text-muted mt-1">Dùng điểm tích lũy đổi bánh miễn phí ngay khi đặt hàng.</p>
             </div>
-
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs">
-              <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                <thead>
-                  <tr className="border-b border-border/80 bg-[#FCE9C6]/50 text-[#1B4B5A] font-bold">
-                    <th className="py-3.5 px-4 sm:px-6">Số điểm</th>
-                    <th className="py-3.5 px-4 sm:px-6">Ưu đãi nhận được</th>
-                    <th className="py-3.5 px-4 sm:px-6 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60 text-[#2b2b2b]">
-                  {/* Hàng 1 */}
-                  <tr className="hover:bg-[#FFF8EF]/50 transition-colors">
-                    <td className="py-4 px-4 sm:px-6 font-bold text-[#1B4B5A]">
-                      {/* TODO: số điểm quy đổi cụ thể */}
-                      <span className="inline-block rounded-md bg-amber-50 px-2.5 py-1 text-amber-900 border border-amber-200">
-                        Chờ công bố
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 sm:px-6 text-muted italic">
-                      {/* TODO: ưu đãi quy đổi cụ thể */}
-                      Đang cập nhật chi tiết voucher...
-                    </td>
-                    <td className="py-4 px-4 sm:px-6 text-right">
-                      <button
-                        disabled
-                        className="cursor-not-allowed rounded-lg border border-border bg-slate-100 px-3 py-1.5 text-xs text-muted"
-                      >
-                        Sắp mở
-                      </button>
-                    </td>
-                  </tr>
-                  {/* Hàng 2 */}
-                  <tr className="hover:bg-[#FFF8EF]/50 transition-colors">
-                    <td className="py-4 px-4 sm:px-6 font-bold text-[#1B4B5A]">
-                      <span className="inline-block rounded-md bg-amber-50 px-2.5 py-1 text-amber-900 border border-amber-200">
-                        Chờ công bố
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 sm:px-6 text-muted italic">
-                      Đang cập nhật chi tiết voucher...
-                    </td>
-                    <td className="py-4 px-4 sm:px-6 text-right">
-                      <button
-                        disabled
-                        className="cursor-not-allowed rounded-lg border border-border bg-slate-100 px-3 py-1.5 text-xs text-muted"
-                      >
-                        Sắp mở
-                      </button>
-                    </td>
-                  </tr>
-                  {/* Hàng 3 */}
-                  <tr className="hover:bg-[#FFF8EF]/50 transition-colors">
-                    <td className="py-4 px-4 sm:px-6 font-bold text-[#1B4B5A]">
-                      <span className="inline-block rounded-md bg-amber-50 px-2.5 py-1 text-amber-900 border border-amber-200">
-                        Chờ công bố
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 sm:px-6 text-muted italic">
-                      Đang cập nhật quà tặng / bánh mini...
-                    </td>
-                    <td className="py-4 px-4 sm:px-6 text-right">
-                      <button
-                        disabled
-                        className="cursor-not-allowed rounded-lg border border-border bg-slate-100 px-3 py-1.5 text-xs text-muted"
-                      >
-                        Sắp mở
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="bg-[#FFF8EF]/80 px-4 py-3 text-center text-xs text-muted border-t border-border/60">
-                {/* TODO: chưa chốt cách quy đổi điểm và hạng thành viên cụ thể — điền khi có quyết định, không tự đặt số. */}
-                Chính sách đổi điểm chi tiết sẽ được công bố chính thức tới quý khách trong thời gian sớm nhất.
+            <div className="flex flex-col items-center gap-5 rounded-2xl border border-border/80 bg-white p-6 shadow-xs sm:flex-row sm:p-8">
+              <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-2xl border border-[#F6CE8B] bg-[#FCE9C6] text-[#1B4B5A]">
+                <span className="font-heading text-3xl font-black leading-none">{config.redeemPoints}</span>
+                <span className="text-[11px] font-bold">điểm</span>
               </div>
+              <div className="flex-1 text-center sm:text-left">
+                <p className="font-heading text-lg font-black text-[#1B4B5A]">
+                  <Gift className="mr-1.5 inline h-5 w-5 text-[#C97B3D]" />1 bánh {redeemGroup} miễn phí
+                </p>
+                <p className="mt-1 text-xs sm:text-sm text-[#2b2b2b]/75">
+                  Chọn bánh bất kỳ trong nhóm {redeemGroup}, cỡ nào cũng được. Thêm bánh vào giỏ, rồi bấm &quot;Đổi điểm&quot; ở
+                  bước đặt hàng.
+                </p>
+              </div>
+              <Link
+                href="/san-pham"
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#1B4B5A] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#123640]"
+              >
+                Chọn bánh
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
 
           {/* 4.2 Hạng thành viên */}
           <div className="space-y-4">
             <div>
-              <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#1B4B5A]">
-                Hạng thành viên
-              </h2>
+              <h2 className="font-heading text-xl sm:text-2xl font-bold text-[#1B4B5A]">Hạng thành viên</h2>
               <p className="text-xs sm:text-sm text-muted mt-1">
-                Tích lũy chi tiêu để nâng hạng và nhận đặc quyền riêng từ Cari Bakehouse.
+                Xét theo tổng điểm đã tích từ trước đến nay — đổi quà không làm tụt hạng.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Card 1: Thành viên mới */}
-              <div className="rounded-2xl border border-border/80 bg-white p-6 shadow-xs flex flex-col justify-between">
+              <div className={`rounded-2xl ${membership.tier.key === "new" && user ? "border-2 border-[#1B4B5A]" : "border border-border/80"} bg-white p-6 shadow-xs flex flex-col justify-between relative`}>
+                {membership.tier.key === "new" && user && (
+                  <span className="absolute -top-3 right-6 rounded-full bg-[#1B4B5A] px-3 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
+                    Hạng của bạn
+                  </span>
+                )}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-heading text-lg font-bold text-[#1B4B5A]">Thành viên mới</span>
+                    <span className="font-heading text-lg font-bold text-[#1B4B5A]">{TIER_NAMES.new}</span>
                     <span className="h-3 w-3 rounded-full bg-slate-300" />
                   </div>
+                  <p className="text-xs font-semibold text-[#C97B3D]">Từ 0 đến {config.loyalMinPoints - 1} điểm</p>
                   <div className="h-px bg-border/60 my-3" />
-                  <div className="space-y-2 text-xs text-muted">
-                    <p className="italic">
-                      {/* TODO: điều kiện & quyền lợi thành viên mới */}
-                      Điều kiện & quyền lợi chi tiết đang cập nhật...
-                    </p>
-                  </div>
+                  <ul className="space-y-2 text-xs text-[#2b2b2b]/80">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>Tích {config.pointRateVnd.toLocaleString("vi-VN")}đ = 1 điểm</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>Đổi {config.redeemPoints} điểm lấy 1 bánh {redeemGroup}</span>
+                    </li>
+                  </ul>
                 </div>
-                <div className="mt-6 rounded-lg bg-cream/70 p-3 text-center text-xs font-semibold text-[#1B4B5A]">
-                  Hạng mặc định
-                </div>
+                <div className="mt-6 rounded-lg bg-cream/70 p-3 text-center text-xs font-semibold text-[#1B4B5A]">Hạng mặc định khi đăng ký</div>
               </div>
-
-              {/* Card 2: Thân thiết */}
-              <div className="rounded-2xl border-2 border-[#1B4B5A] bg-white p-6 shadow-xs flex flex-col justify-between relative">
-                <span className="absolute -top-3 right-6 rounded-full bg-[#1B4B5A] px-3 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
-                  Phổ biến
-                </span>
+              <div className={`rounded-2xl ${membership.tier.key === "loyal" && user ? "border-2 border-[#1B4B5A]" : "border border-border/80"} bg-white p-6 shadow-xs flex flex-col justify-between relative`}>
+                {membership.tier.key === "loyal" && user && (
+                  <span className="absolute -top-3 right-6 rounded-full bg-[#1B4B5A] px-3 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
+                    Hạng của bạn
+                  </span>
+                )}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-heading text-lg font-bold text-[#1B4B5A]">Thân thiết</span>
+                    <span className="font-heading text-lg font-bold text-[#1B4B5A]">{TIER_NAMES.loyal}</span>
                     <span className="h-3 w-3 rounded-full bg-[#F6CE8B]" />
                   </div>
+                  <p className="text-xs font-semibold text-[#C97B3D]">Từ {config.loyalMinPoints} đến {config.vipMinPoints - 1} điểm</p>
                   <div className="h-px bg-border/60 my-3" />
-                  <div className="space-y-2 text-xs text-muted">
-                    <p className="italic">
-                      {/* TODO: điều kiện & quyền lợi thành viên thân thiết */}
-                      Điều kiện & quyền lợi chi tiết đang cập nhật...
-                    </p>
-                  </div>
+                  <ul className="space-y-2 text-xs text-[#2b2b2b]/80">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>Mọi quyền lợi của thành viên mới</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>Chỉ còn một bước nữa để lên VIP</span>
+                    </li>
+                  </ul>
                 </div>
-                <div className="mt-6 rounded-lg bg-[#FCE9C6] p-3 text-center text-xs font-semibold text-[#1B4B5A]">
-                  Đang cập nhật
-                </div>
+                <div className="mt-6 rounded-lg bg-cream/70 p-3 text-center text-xs font-semibold text-[#1B4B5A]">Tích thêm để lên VIP</div>
               </div>
-
-              {/* Card 3: VIP */}
-              <div className="rounded-2xl border border-border/80 bg-white p-6 shadow-xs flex flex-col justify-between">
+              <div className={`rounded-2xl ${membership.tier.key === "vip" && user ? "border-2 border-[#1B4B5A]" : "border border-border/80"} bg-white p-6 shadow-xs flex flex-col justify-between relative`}>
+                {membership.tier.key === "vip" && user && (
+                  <span className="absolute -top-3 right-6 rounded-full bg-[#1B4B5A] px-3 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
+                    Hạng của bạn
+                  </span>
+                )}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-heading text-lg font-bold text-[#1B4B5A]">VIP</span>
+                    <span className="font-heading text-lg font-bold text-[#1B4B5A]"><Crown className="mr-1 inline h-4 w-4 text-amber-500" />VIP</span>
                     <span className="h-3 w-3 rounded-full bg-amber-500" />
                   </div>
+                  <p className="text-xs font-semibold text-[#C97B3D]">Từ {config.vipMinPoints} điểm trở lên</p>
                   <div className="h-px bg-border/60 my-3" />
-                  <div className="space-y-2 text-xs text-muted">
-                    <p className="italic">
-                      {/* TODO: điều kiện & quyền lợi VIP */}
-                      Điều kiện & quyền lợi chi tiết đang cập nhật...
-                    </p>
-                  </div>
+                  <ul className="space-y-2 text-xs text-[#2b2b2b]/80">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>Giảm {config.vipCakeDiscountPercent}% tiền bánh mọi đơn hàng (tự động áp dụng)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>Tháng sinh nhật: 1 đơn giảm {config.birthdayCakeDiscountPercent}% tiền bánh</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>Mọi quyền lợi của hạng Thân thiết</span>
+                    </li>
+                  </ul>
                 </div>
-                <div className="mt-6 rounded-lg bg-cream/70 p-3 text-center text-xs font-semibold text-[#1B4B5A]">
-                  Đang cập nhật
-                </div>
+                <div className="mt-6 rounded-lg bg-cream/70 p-3 text-center text-xs font-semibold text-[#1B4B5A]"><Cake className="mr-1 inline h-4 w-4" />Nhớ nhập ngày sinh ở trang Tài khoản</div>
               </div>
             </div>
           </div>

@@ -29,7 +29,7 @@ import { PageSpinner, SignedOutNotice } from "@/components/account/PageSpinner";
 import { useRequireAuth } from "@/lib/auth";
 import { cartLineKey, clearCart, useCart } from "@/lib/cart";
 import PackingAnimation, { type PackingItemKind } from "@/components/order/PackingAnimation";
-import { checkVoucher, placeOrder, useProducts, useSiteSettings } from "@/lib/db";
+import { checkVoucher, placeOrder, priceForSize, useMembership, useProducts, useSiteSettings } from "@/lib/db";
 import { openZaloChat } from "@/lib/zalo";
 import {
   FULFILLMENT_LABELS,
@@ -37,7 +37,9 @@ import {
   buildOrderMessage,
   cartOptionsText,
   copyToClipboard,
+  orderDiscountLines,
   orderOptionsText,
+  useMyOrders,
 } from "@/lib/orders";
 import { formatDateVN, formatVND, todayISO } from "@/lib/utils";
 import type { FulfillmentMethod, Order, PaymentMethod, Voucher } from "@/types/order";
@@ -118,9 +120,50 @@ export default function CheckoutPage() {
   const products = useProducts();
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
 
+  // ─── Ưu đãi thành viên (số ở đây chỉ để khách xem trước — database tính lại chính xác khi đặt hàng) ───
+  const membership = useMembership(user?.email);
+  const loyalty = membership.config;
+  const myOrders = useMyOrders(user?.email);
+  const [redeemIndex, setRedeemIndex] = useState<number | null>(null);
+  const [useBirthday, setUseBirthday] = useState(true);
+
+  const lines = items.map((item, index) => {
+    const product = products.find((p) => p.slug === item.slug);
+    return {
+      item,
+      index,
+      isCake: product?.category !== "Đồ uống",
+      redeemable: !!product && !!loyalty.redeemGroupId && product.subcategory === loyalty.redeemGroupId,
+      sizePrice: product ? priceForSize(product, item.size) : item.price,
+    };
+  });
+  const redeemableLines = lines.filter((l) => l.redeemable);
+  const canRedeem = membership.balance >= loyalty.redeemPoints && redeemableLines.length > 0;
+  const redeemLine = canRedeem ? redeemableLines.find((l) => l.index === redeemIndex) : undefined;
+  const redeemAmount = redeemLine?.sizePrice ?? 0;
+
+  const isVip = membership.tier.key === "vip";
+  const thisMonth = todayISO().slice(0, 7);
+  const birthdayUsed = myOrders.some(
+    (o) =>
+      o.status !== "Đã hủy" &&
+      o.createdAt.startsWith(thisMonth) &&
+      (o.discountDetails ?? []).some((d) => d.label.toLowerCase().includes("sinh nhật")),
+  );
+  const birthdayAvailable = isVip && !!user?.birthday && user.birthday.slice(5, 7) === thisMonth.slice(5, 7) && !birthdayUsed;
+  const applyBirthday = birthdayAvailable && useBirthday;
+
+  const cakeTotal = lines.filter((l) => l.isCake).reduce((sum, l) => sum + l.item.price * l.item.quantity, 0);
+  const cakeAfterRedeem = Math.max(0, cakeTotal - (redeemLine?.isCake ? redeemAmount : 0));
+  const memberPercent = applyBirthday ? loyalty.birthdayCakeDiscountPercent : isVip ? loyalty.vipCakeDiscountPercent : 0;
+  const memberAmount = Math.floor((cakeAfterRedeem * memberPercent) / 100);
+  const memberLabel = applyBirthday
+    ? `Ưu đãi sinh nhật VIP -${loyalty.birthdayCakeDiscountPercent}% tiền bánh`
+    : `Ưu đãi VIP -${loyalty.vipCakeDiscountPercent}% tiền bánh`;
+
   // Voucher không bao giờ làm tổng tiền âm
-  const discount = appliedVoucher ? Math.min(appliedVoucher.discount, subtotal) : 0;
-  const total = subtotal - discount;
+  const discount = appliedVoucher ? Math.min(appliedVoucher.discount, Math.max(0, subtotal - redeemAmount - memberAmount)) : 0;
+  const total = Math.max(0, subtotal - redeemAmount - memberAmount - discount);
 
   // ─── Voucher ───────────────────────────────────────────────
   const handleApplyVoucher = async () => {
@@ -184,6 +227,8 @@ export default function CheckoutPage() {
       receiveTime,
       note: note.trim() || undefined,
       paymentMethod: payment,
+      redeemIndex: redeemLine?.index,
+      useBirthday: applyBirthday,
     });
     setSubmitting(false);
     if ("error" in result) {
@@ -280,12 +325,12 @@ export default function CheckoutPage() {
                 <span className="text-text-muted">Tạm tính</span>
                 <span className="font-semibold">{formatVND(o.subtotal)}</span>
               </div>
-              {o.voucherCode && o.discount > 0 && (
-                <div className="flex justify-between text-emerald-700">
-                  <span>Voucher đã áp dụng: {o.voucherCode}</span>
-                  <span className="font-semibold">-{formatVND(o.discount)}</span>
+              {orderDiscountLines(o).map((d) => (
+                <div key={d.label} className="flex justify-between gap-3 text-emerald-700">
+                  <span>{d.label}</span>
+                  <span className="shrink-0 font-semibold">-{formatVND(d.amount)}</span>
                 </div>
-              )}
+              ))}
               <div className="flex items-center justify-between border-t border-border/60 pt-3">
                 <span className="font-heading text-base font-bold text-[#1B4B5A]">Tổng tiền</span>
                 <span className="font-heading text-xl font-black text-[#1B4B5A]">{formatVND(o.total)}</span>
@@ -577,8 +622,97 @@ export default function CheckoutPage() {
               <span className="font-semibold text-[#2b2b2b]">{formatVND(subtotal)}</span>
             </div>
 
+            {/* Ưu đãi thành viên: đổi điểm, VIP, sinh nhật */}
+            <div className="mt-4 space-y-2.5 rounded-xl border border-[#F6CE8B] bg-[#FCE9C6]/40 p-3.5 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-[#1B4B5A]">Ưu đãi thành viên</span>
+                <span className="rounded-full bg-[#1B4B5A] px-2.5 py-0.5 text-[11px] font-bold text-[#F6CE8B]">
+                  {membership.tier.name} · {membership.balance.toLocaleString("vi-VN")} điểm
+                </span>
+              </div>
+
+              {canRedeem ? (
+                <div className="space-y-1.5">
+                  <p className="text-xs text-[#2b2b2b]/80">
+                    Đổi <strong>{loyalty.redeemPoints} điểm</strong> lấy 1 cái miễn phí:
+                  </p>
+                  <label className="flex cursor-pointer items-center gap-2 text-xs">
+                    <input
+                      type="radio"
+                      name="redeem"
+                      checked={redeemLine === undefined}
+                      onChange={() => setRedeemIndex(null)}
+                      className="accent-[#1B4B5A]"
+                    />
+                    Không đổi điểm lần này
+                  </label>
+                  {redeemableLines.map((l) => (
+                    <label key={l.index} className="flex cursor-pointer items-center gap-2 text-xs">
+                      <input
+                        type="radio"
+                        name="redeem"
+                        checked={redeemLine?.index === l.index}
+                        onChange={() => setRedeemIndex(l.index)}
+                        className="accent-[#1B4B5A]"
+                      />
+                      <span>
+                        1 {l.item.name}
+                        {l.item.size ? ` (${l.item.size})` : ""} —{" "}
+                        <strong className="text-emerald-700">-{formatVND(l.sizePrice)}</strong>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-text-muted">
+                  {membership.balance >= loyalty.redeemPoints
+                    ? "Thêm bánh thuộc nhóm được đổi điểm vào giỏ để dùng điểm đổi 1 cái miễn phí."
+                    : `Đủ ${loyalty.redeemPoints} điểm là đổi được 1 bánh miễn phí (bạn đang có ${membership.balance} điểm).`}
+                </p>
+              )}
+
+              {birthdayAvailable && (
+                <label className="flex cursor-pointer items-start gap-2 border-t border-[#F6CE8B]/60 pt-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={useBirthday}
+                    onChange={(e) => setUseBirthday(e.target.checked)}
+                    className="mt-0.5 accent-[#1B4B5A]"
+                  />
+                  <span>
+                    🎂 Dùng <strong>ưu đãi sinh nhật VIP</strong> cho đơn này: giảm {loyalty.birthdayCakeDiscountPercent}% tiền bánh
+                    (mỗi tháng sinh nhật 1 đơn, thay cho mức VIP {loyalty.vipCakeDiscountPercent}%)
+                  </span>
+                </label>
+              )}
+              {isVip && !applyBirthday && (
+                <p className="border-t border-[#F6CE8B]/60 pt-2 text-xs text-[#2b2b2b]/80">
+                  Thành viên VIP được tự động giảm {loyalty.vipCakeDiscountPercent}% tiền bánh.
+                </p>
+              )}
+            </div>
+
+            {/* Các khoản giảm */}
+            {(redeemAmount > 0 || memberAmount > 0) && (
+              <div className="mt-3 space-y-1.5 text-sm">
+                {redeemLine && (
+                  <div className="flex justify-between gap-3 text-emerald-700">
+                    <span>
+                      Đổi {loyalty.redeemPoints} điểm: 1 {redeemLine.item.name} miễn phí
+                    </span>
+                    <span className="shrink-0 font-semibold">-{formatVND(redeemAmount)}</span>
+                  </div>
+                )}
+                {memberAmount > 0 && (
+                  <div className="flex justify-between gap-3 text-emerald-700">
+                    <span>{memberLabel}</span>
+                    <span className="shrink-0 font-semibold">-{formatVND(memberAmount)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Ô nhập mã voucher — ngay phía trên dòng tổng tiền */}
-            {/* TODO: nối với hệ thống voucher/điểm thật khi có quyết định cụ thể (số điểm ứng mỗi mức giảm chưa chốt) */}
             <div className="mt-4">
               {appliedVoucher ? (
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5">

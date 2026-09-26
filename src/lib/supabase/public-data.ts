@@ -12,7 +12,18 @@ import {
   type ProductSize,
   type Review,
 } from "@/lib/mock-data";
-import type { AboutContent, HomeContent, ProductGroupContent, SiteSettings } from "@/types/content";
+import type { AboutContent, HomeContent, LoyaltyConfig, ProductGroupContent, SiteSettings } from "@/types/content";
+
+/** Giá trị mặc định khi database chưa có cấu hình (khớp supabase/migrations/0006_loyalty.sql) */
+export const DEFAULT_LOYALTY: LoyaltyConfig = {
+  pointRateVnd: 10000,
+  redeemPoints: 68,
+  redeemGroupId: "",
+  loyalMinPoints: 31,
+  vipMinPoints: 100,
+  vipCakeDiscountPercent: 10,
+  birthdayCakeDiscountPercent: 50,
+};
 
 export interface PublicData {
   products: Product[];
@@ -22,6 +33,7 @@ export interface PublicData {
   about: AboutContent;
   settings: SiteSettings;
   categoryPickerLabel: string;
+  loyalty: LoyaltyConfig;
 }
 
 export interface ProductRow {
@@ -115,6 +127,7 @@ export async function fetchSiteContent(sb: SupabaseClient) {
     home: mergeObject(SEED_HOME_CONTENT, byKey.get("home")),
     about: mergeObject(SEED_ABOUT_CONTENT, byKey.get("about")),
     settings: mergeObject(SEED_SITE_SETTINGS, byKey.get("settings")),
+    loyalty: mergeObject(DEFAULT_LOYALTY, byKey.get("loyalty")),
     categoryPickerLabel: mergeObject(
       { categoryPickerLabel: SEED_PRODUCTS_PAGE_CONTENT.categoryPickerLabel },
       byKey.get("products_page"),

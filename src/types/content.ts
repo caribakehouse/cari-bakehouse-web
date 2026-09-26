@@ -108,3 +108,21 @@ export interface SiteSettings {
   tiktok: string;
   threads: string;
 }
+
+/** Chương trình thành viên — admin chỉnh ở /admin/tich-diem (lưu site_content key 'loyalty'; database dùng đúng các số này) */
+export interface LoyaltyConfig {
+  /** Bao nhiêu đồng thì được 1 điểm */
+  pointRateVnd: number;
+  /** Số điểm đổi 1 món miễn phí */
+  redeemPoints: number;
+  /** Nhóm sản phẩm được đổi điểm (id nhóm), vd nhóm Cheesecake */
+  redeemGroupId: string;
+  /** Tổng điểm đã tích tối thiểu để lên hạng Thân thiết */
+  loyalMinPoints: number;
+  /** Tổng điểm đã tích tối thiểu để lên hạng VIP */
+  vipMinPoints: number;
+  /** VIP được giảm bao nhiêu % tiền bánh */
+  vipCakeDiscountPercent: number;
+  /** VIP tháng sinh nhật: 1 đơn giảm bao nhiêu % tiền bánh */
+  birthdayCakeDiscountPercent: number;
+}

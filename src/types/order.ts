@@ -44,6 +44,15 @@ export interface Order {
   customerPhone?: string;
   /** Khóa liên kết với khách hàng */
   customerEmail?: string;
+  /** Chi tiết từng khoản giảm (đổi điểm, ưu đãi VIP, sinh nhật, voucher); discount = tổng các khoản */
+  discountDetails?: OrderDiscount[];
+  /** Số điểm khách đã đổi trong đơn này (hoàn lại nếu đơn bị hủy) */
+  pointsRedeemed?: number;
+}
+
+export interface OrderDiscount {
+  label: string;
+  amount: number;
 }
 
 export interface Voucher {

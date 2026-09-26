@@ -17,6 +17,7 @@ import {
   pointsForOrder,
   priceForSize,
   unitPriceFor,
+  useLoyaltyConfig,
   useProducts,
   useProductsPageContent,
 } from "@/lib/db";
@@ -27,6 +28,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
   const { isAdmin } = useAuth();
   const products = useProducts();
   const { groups } = useProductsPageContent();
+  const loyalty = useLoyaltyConfig();
 
   const product = products.find((p) => p.slug === slug);
   const status = product ? getProductStatus(product) : "hidden";
@@ -299,8 +301,8 @@ export default function ProductDetail({ slug }: { slug: string }) {
               </li>
               <li className="flex items-center gap-2">
                 <Gift className="h-4 w-4 shrink-0 text-[#C97B3D]" />
-                Nhận khoảng <strong className="text-[#1B4B5A]">{pointsForOrder(unitPrice * quantity).toLocaleString("vi-VN")} điểm</strong>{" "}
-                khi đơn hoàn tất (1.000đ = 1 điểm)
+                Nhận khoảng <strong className="text-[#1B4B5A]">{pointsForOrder(unitPrice * quantity, loyalty).toLocaleString("vi-VN")} điểm</strong>{" "}
+                khi đơn hoàn tất ({loyalty.pointRateVnd.toLocaleString("vi-VN")}đ = 1 điểm)
               </li>
             </ul>
           </div>

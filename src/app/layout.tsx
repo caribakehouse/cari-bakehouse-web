@@ -12,7 +12,7 @@ import {
   reviews as SEED_REVIEWS,
 } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/server";
-import { fetchPublicData, type PublicData } from "@/lib/supabase/public-data";
+import { DEFAULT_LOYALTY, fetchPublicData, type PublicData } from "@/lib/supabase/public-data";
 
 const lato = Lato({
   weight: ["400", "700", "900"],
@@ -51,6 +51,7 @@ async function loadPublicData(): Promise<PublicData> {
       about: SEED_ABOUT_CONTENT,
       settings: SEED_SITE_SETTINGS,
       categoryPickerLabel: SEED_PRODUCTS_PAGE_CONTENT.categoryPickerLabel,
+      loyalty: DEFAULT_LOYALTY,
     };
   }
 }

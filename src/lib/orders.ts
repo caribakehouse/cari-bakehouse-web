@@ -4,7 +4,7 @@
 import { useMemo } from "react";
 import { useOrders } from "@/lib/db";
 import { formatDateVN, formatVND } from "@/lib/utils";
-import type { FulfillmentMethod, Order, OrderItemOption, PaymentMethod } from "@/types/order";
+import type { FulfillmentMethod, Order, OrderDiscount, OrderItemOption, PaymentMethod } from "@/types/order";
 
 /** Tùy chọn trong giỏ hàng → "Sốt đi kèm: Caramel muối · Lượng đường: 50%" */
 export function cartOptionsText(options: Record<string, string> | undefined): string {
@@ -16,6 +16,12 @@ export function orderOptionsText(options: OrderItemOption[] | undefined): string
   return (options ?? [])
     .map((o) => `${o.group}: ${o.choice}${o.price > 0 ? ` (+${formatVND(o.price)})` : ""}`)
     .join(" · ");
+}
+
+/** Các khoản giảm của đơn (đơn cũ chỉ có voucher → dựng lại từ voucherCode + discount) */
+export function orderDiscountLines(order: Pick<Order, "discountDetails" | "voucherCode" | "discount">): OrderDiscount[] {
+  if (order.discountDetails && order.discountDetails.length > 0) return order.discountDetails;
+  return order.voucherCode && order.discount > 0 ? [{ label: `Voucher ${order.voucherCode}`, amount: order.discount }] : [];
 }
 
 export const FULFILLMENT_LABELS: Record<FulfillmentMethod, string> = {
@@ -61,9 +67,7 @@ export function buildOrderMessage(order: Order): string {
   });
   lines.push("");
   lines.push(`Tạm tính: ${formatVND(order.subtotal)}`);
-  if (order.voucherCode && order.discount > 0) {
-    lines.push(`Voucher ${order.voucherCode}: -${formatVND(order.discount)}`);
-  }
+  orderDiscountLines(order).forEach((d) => lines.push(`${d.label}: -${formatVND(d.amount)}`));
   lines.push(`Tổng tiền: ${formatVND(order.total)}`);
   lines.push("");
   lines.push(`Hình thức nhận: ${FULFILLMENT_LABELS[order.fulfillment]}`);

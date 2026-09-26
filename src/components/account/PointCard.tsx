@@ -23,7 +23,7 @@ export default function PointCard({ data }: { data: PointCardData }) {
             <p className="text-xs sm:text-sm text-white/70 mt-1">Số điểm khả dụng hiện có</p>
           </div>
 
-          {/* Thanh tiến độ hạng: chỉ hiện khi đã có quy tắc xét hạng (TODO: chưa chốt) */}
+          {/* Thanh tiến độ lên hạng (hạng xét theo tổng điểm đã tích, đổi quà không tụt hạng) */}
           {data.pointsNeeded !== undefined && data.progressPercentage !== undefined && (
             <div className="space-y-2 pt-2">
               <div className="flex justify-between text-xs text-white/80">
@@ -31,7 +31,7 @@ export default function PointCard({ data }: { data: PointCardData }) {
                   Hạng hiện tại: <strong className="text-white">{data.tier}</strong>
                 </span>
                 <span>
-                  Cần thêm <strong className="text-[#F6CE8B]">{data.pointsNeeded} điểm</strong>
+                  Tích thêm <strong className="text-[#F6CE8B]">{data.pointsNeeded} điểm</strong>
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/25">
@@ -41,9 +41,12 @@ export default function PointCard({ data }: { data: PointCardData }) {
                 />
               </div>
               <p className="text-[11px] text-white/60">
-                Còn {data.pointsNeeded} điểm nữa để nâng hạng lên {data.nextTier}
+                Tích thêm {data.pointsNeeded} điểm nữa để lên hạng {data.nextTier}
               </p>
             </div>
+          )}
+          {!data.nextTier && data.tier === "VIP" && (
+            <p className="pt-2 text-xs text-[#F6CE8B]">Bạn đang ở hạng cao nhất — tận hưởng ưu đãi VIP nhé!</p>
           )}
         </div>
 
