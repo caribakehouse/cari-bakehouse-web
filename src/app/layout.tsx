@@ -5,6 +5,7 @@ import "./globals.css";
 import { PublicDataProvider } from "@/components/PublicDataProvider";
 import {
   SEED_ABOUT_CONTENT,
+  SEED_CUSTOM_ORDER_CONTENT,
   SEED_HOME_CONTENT,
   SEED_PRODUCTS,
   SEED_PRODUCTS_PAGE_CONTENT,
@@ -52,6 +53,7 @@ async function loadPublicData(): Promise<PublicData> {
       settings: SEED_SITE_SETTINGS,
       categoryPickerLabel: SEED_PRODUCTS_PAGE_CONTENT.categoryPickerLabel,
       loyalty: DEFAULT_LOYALTY,
+      customOrder: SEED_CUSTOM_ORDER_CONTENT,
     };
   }
 }

@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchProducts, fetchPublicData, productToRow, type PublicData } from "@/lib/supabase/public-data";
 import type {
   AboutContent,
+  CustomOrderContent,
   HomeContent,
   LoyaltyConfig,
   ProductGroupContent,
@@ -57,6 +58,7 @@ const homeRemote = createRemoteStore<HomeContent>();
 const aboutRemote = createRemoteStore<AboutContent>();
 const settingsRemote = createRemoteStore<SiteSettings>();
 const loyaltyRemote = createRemoteStore<LoyaltyConfig>();
+const customOrderRemote = createRemoteStore<CustomOrderContent>();
 const pickerLabelRemote = createRemoteStore<string>();
 
 const noValue = () => undefined;
@@ -317,6 +319,7 @@ export async function refreshCatalog() {
     aboutRemote.set(data.about);
     settingsRemote.set(data.settings);
     loyaltyRemote.set(data.loyalty);
+    customOrderRemote.set(data.customOrder);
     pickerLabelRemote.set(data.categoryPickerLabel);
   } catch (error) {
     console.error("Không tải lại được dữ liệu từ Supabase", error);
@@ -803,6 +806,16 @@ async function writeProductsPageContent(content: ProductsPageContent): Promise<S
   removal = keep.length > 0 ? removal.not("id", "in", `(${keep.map((id) => `"${id}"`).join(",")})`) : removal.neq("id", "");
   const { error: deleteError } = await removal;
   return saveError(deleteError);
+}
+
+/** Nội dung trang /dat-theo-yeu-cau */
+export function useCustomOrderContent(): CustomOrderContent {
+  return useRemote(customOrderRemote, (d) => d.customOrder);
+}
+export async function saveCustomOrderContent(content: CustomOrderContent): Promise<SaveResult> {
+  const error = await saveContent("custom_order", content);
+  if (!error) customOrderRemote.set(content);
+  return error;
 }
 
 export function useSiteSettings(): SiteSettings {

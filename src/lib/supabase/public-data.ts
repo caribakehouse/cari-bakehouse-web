@@ -4,6 +4,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   SEED_ABOUT_CONTENT,
+  SEED_CUSTOM_ORDER_CONTENT,
   SEED_HOME_CONTENT,
   SEED_PRODUCTS_PAGE_CONTENT,
   SEED_SITE_SETTINGS,
@@ -12,7 +13,14 @@ import {
   type ProductSize,
   type Review,
 } from "@/lib/mock-data";
-import type { AboutContent, HomeContent, LoyaltyConfig, ProductGroupContent, SiteSettings } from "@/types/content";
+import type {
+  AboutContent,
+  CustomOrderContent,
+  HomeContent,
+  LoyaltyConfig,
+  ProductGroupContent,
+  SiteSettings,
+} from "@/types/content";
 
 /** Giá trị mặc định khi database chưa có cấu hình (khớp supabase/migrations/0006_loyalty.sql) */
 export const DEFAULT_LOYALTY: LoyaltyConfig = {
@@ -34,6 +42,7 @@ export interface PublicData {
   settings: SiteSettings;
   categoryPickerLabel: string;
   loyalty: LoyaltyConfig;
+  customOrder: CustomOrderContent;
 }
 
 export interface ProductRow {
@@ -128,6 +137,7 @@ export async function fetchSiteContent(sb: SupabaseClient) {
     about: mergeObject(SEED_ABOUT_CONTENT, byKey.get("about")),
     settings: mergeObject(SEED_SITE_SETTINGS, byKey.get("settings")),
     loyalty: mergeObject(DEFAULT_LOYALTY, byKey.get("loyalty")),
+    customOrder: mergeObject(SEED_CUSTOM_ORDER_CONTENT, byKey.get("custom_order")),
     categoryPickerLabel: mergeObject(
       { categoryPickerLabel: SEED_PRODUCTS_PAGE_CONTENT.categoryPickerLabel },
       byKey.get("products_page"),

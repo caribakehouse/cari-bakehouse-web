@@ -9,7 +9,13 @@
 import type { AuthUser, Customer, PointTransaction } from "@/types/user";
 import type { Order, Voucher } from "@/types/order";
 import type { CustomOrderRequest } from "@/types/custom-order";
-import type { AboutContent, HomeContent, ProductsPageContent, SiteSettings } from "@/types/content";
+import type {
+  AboutContent,
+  CustomOrderContent,
+  HomeContent,
+  ProductsPageContent,
+  SiteSettings,
+} from "@/types/content";
 
 /** Chuỗi yyyy-mm-dd của "hôm nay + offset ngày" theo giờ địa phương (dùng cho đơn mẫu luôn mới). */
 function dayOffset(offset: number): string {
@@ -871,6 +877,65 @@ export const SEED_ABOUT_CONTENT: AboutContent = {
       answer:
         "Chuyển khoản, tiền mặt khi nhận hàng (COD tại khu vực hỗ trợ), hoặc thanh toán trực tiếp tại cửa hàng.",
     },
+  ],
+};
+
+// ─── Trang Đặt bánh theo yêu cầu (nội dung shop chốt; admin chỉnh ở /admin/noi-dung-dat-theo-yeu-cau) ───
+export const SEED_CUSTOM_ORDER_CONTENT: CustomOrderContent = {
+  tagline: "Indulgence in every bite - Bánh handcrafted tùy chỉnh từ nguyên liệu tự nhiên",
+  title: "Cari.Bakehouse nhận đặt bánh theo yêu cầu",
+  steps: [
+    {
+      title: "Điền form yêu cầu",
+      desc: "Điền form yêu cầu đặt bánh trên website (dịp, ngày nhận, kích thước, vị bánh, ngân sách, ảnh tham khảo).",
+    },
+    { title: "Tiệm liên hệ tư vấn", desc: "Tiệm liên hệ tư vấn và báo giá qua Zalo trong vòng 24 giờ." },
+    {
+      title: "Thống nhất & Đặt cọc",
+      desc: "Hai bên thống nhất thiết kế, số lượng và giá. Bánh đặc biệt cần đặt cọc 100%, bánh kích thước lớn cần đặt trước tối thiểu 12 tiếng và thanh toán trước.",
+    },
+    { title: "Tiệm làm bánh", desc: "Tiệm làm bánh theo đúng yêu cầu đã thống nhất, đảm bảo nguyên liệu tươi mới." },
+    { title: "Nhận bánh", desc: "Giao bánh tận nơi (khu vực toàn Hà Nội) hoặc khách nhận tại tiệm." },
+  ],
+  note: "Đơn đặt trước sẽ được tiệm ghi nhận và giữ phần bánh cho khách. Với các mẫu bánh kích thước lớn, tiệm nhận đặt trước tối thiểu 12 tiếng và cần khách thanh toán trước. Bánh đặc biệt đặt theo yêu cầu riêng cần đặt cọc 100%.",
+  samples: [],
+  priceTiers: [
+    {
+      name: "Bánh vừa",
+      size: "Cheesecake 12cm",
+      image: "",
+      prices: [
+        { label: "Vị Original / Matcha", price: 120000 },
+        { label: "Vị Brownies", price: 135000 },
+      ],
+      note: "",
+      highlight: "",
+    },
+    {
+      name: "Bánh lớn",
+      size: "Cheesecake 16cm",
+      image: "",
+      prices: [
+        { label: "Vị Original / Matcha", price: 220000 },
+        { label: "Vị Brownies", price: 240000 },
+      ],
+      note: "Cần đặt trước tối thiểu 12 tiếng và thanh toán trước",
+      highlight: "",
+    },
+  ],
+  priceNote: "Giá thực tế sẽ được báo cụ thể sau khi tiệm tư vấn thiết kế",
+  occasions: ["Sinh nhật", "Kỷ niệm", "Cưới hỏi", "Thôi nôi", "Công ty / Sự kiện", "Dịp khác"],
+  faq: [
+    {
+      question: "Cần đặt bánh trước bao lâu?",
+      answer: "Tối thiểu 12 tiếng đối với bánh kích thước lớn, và cần thanh toán trước khi tiệm bắt đầu làm bánh.",
+    },
+    { question: "Có cần đặt cọc không?", answer: "Bánh đặc biệt/đặt theo yêu cầu riêng cần đặt cọc 100% giá trị đơn." },
+    {
+      question: "Thanh toán bằng cách nào?",
+      answer: "Chuyển khoản hoặc tiền mặt, xác nhận qua Zalo sau khi thống nhất thiết kế và giá.",
+    },
+    { question: "Sau khi gửi form bao lâu thì được phản hồi?", answer: "Tiệm sẽ liên hệ tư vấn và báo giá trong vòng 24 giờ." },
   ],
 };
 

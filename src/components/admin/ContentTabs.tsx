@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-type ContentTabKey = "home" | "products" | "about";
+type ContentTabKey = "home" | "products" | "custom" | "about";
 
 // Tab chuyển giữa các màn hình thuộc mục "Nội dung trang"
 export default function ContentTabs({ active }: { active: ContentTabKey }) {
@@ -18,9 +18,10 @@ export default function ContentTabs({ active }: { active: ContentTabKey }) {
     </Link>
   );
   return (
-    <div className="mb-5 flex border-b border-[#d6d6d6]">
+    <div className="mb-5 flex overflow-x-auto border-b border-[#d6d6d6] whitespace-nowrap">
       {tab("/admin/noi-dung-trang-chu", "Trang chủ", "home")}
       {tab("/admin/noi-dung-trang-san-pham", "Trang sản phẩm", "products")}
+      {tab("/admin/noi-dung-dat-theo-yeu-cau", "Đặt theo yêu cầu", "custom")}
       {tab("/admin/gioi-thieu-chinh-sach", "Giới thiệu & chính sách", "about")}
     </div>
   );

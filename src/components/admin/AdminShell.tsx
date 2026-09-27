@@ -48,7 +48,7 @@ const MENU: MenuItem[] = [
     label: "Nội dung trang",
     title: "Nội dung trang",
     icon: LayoutTemplate,
-    alsoActive: ["/admin/noi-dung-trang-san-pham", "/admin/gioi-thieu-chinh-sach"],
+    alsoActive: ["/admin/noi-dung-trang-san-pham", "/admin/noi-dung-dat-theo-yeu-cau", "/admin/gioi-thieu-chinh-sach"],
   },
   { href: "/admin/cai-dat", label: "Cài đặt", title: "Cài đặt chung", icon: Settings },
 ];
@@ -61,6 +61,7 @@ function isActive(item: MenuItem, pathname: string): boolean {
 function pageTitle(pathname: string): string {
   if (pathname.startsWith("/admin/gioi-thieu-chinh-sach")) return "Giới thiệu & chính sách";
   if (pathname.startsWith("/admin/noi-dung-trang-san-pham")) return "Nội dung trang sản phẩm";
+  if (pathname.startsWith("/admin/noi-dung-dat-theo-yeu-cau")) return "Nội dung trang đặt theo yêu cầu";
   if (pathname.startsWith("/admin/noi-dung-trang-chu")) return "Nội dung trang chủ";
   return MENU.find((m) => isActive(m, pathname))?.title ?? "Khu quản trị";
 }

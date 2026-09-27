@@ -1,5 +1,8 @@
 "use client";
 
+// Trang Đặt bánh theo yêu cầu. Toàn bộ chữ, quy trình, ảnh mẫu, bảng giá, dịp đặt bánh và câu hỏi thường gặp
+// do admin chỉnh ở /admin/noi-dung-dat-theo-yeu-cau (site_content key 'custom_order').
+
 import { useState } from "react";
 import {
   CheckCircle2,
@@ -13,93 +16,20 @@ import {
   Send,
   X,
 } from "lucide-react";
+import Image from "@/components/ui/SafeImage";
 import { useAuth } from "@/lib/auth";
-import { addCustomRequest } from "@/lib/db";
-import { readImageFile } from "@/lib/utils";
+import { addCustomRequest, useCustomOrderContent } from "@/lib/db";
+import { formatVND, readImageFile } from "@/lib/utils";
 
-// =============================================================================
-// FAQ DỮ LIỆU THẬT
-// =============================================================================
-const FAQ_ITEMS = [
-  {
-    question: "Cần đặt bánh trước bao lâu?",
-    answer:
-      "Tối thiểu 12 tiếng đối với bánh kích thước lớn, và cần thanh toán trước khi tiệm bắt đầu làm bánh.",
-  },
-  {
-    question: "Có cần đặt cọc không?",
-    answer:
-      "Bánh đặc biệt/đặt theo yêu cầu riêng cần đặt cọc 100% giá trị đơn.",
-  },
-  {
-    question: "Thanh toán bằng cách nào?",
-    answer:
-      "Chuyển khoản hoặc tiền mặt, xác nhận qua Zalo sau khi thống nhất thiết kế và giá.",
-  },
-  {
-    question: "Sau khi gửi form bao lâu thì được phản hồi?",
-    answer:
-      "Tiệm sẽ liên hệ tư vấn và báo giá trong vòng 24 giờ.",
-  },
-];
+const ALL = "Tất cả";
 
-// =============================================================================
-// QUY TRÌNH 5 BƯỚC ĐÃ CHỐT
-// =============================================================================
-const ORDER_STEPS = [
-  {
-    step: 1,
-    title: "Điền form yêu cầu",
-    desc: "Điền form yêu cầu đặt bánh trên website (dịp, ngày nhận, kích thước, vị bánh, ngân sách, ảnh tham khảo).",
-  },
-  {
-    step: 2,
-    title: "Tiệm liên hệ tư vấn",
-    desc: "Tiệm liên hệ tư vấn và báo giá qua Zalo trong vòng 24 giờ.",
-  },
-  {
-    step: 3,
-    title: "Thống nhất & Đặt cọc",
-    desc: "Hai bên thống nhất thiết kế, số lượng và giá — bánh đặc biệt cần đặt cọc 100%, bánh kích thước lớn cần đặt trước tối thiểu 12 tiếng và thanh toán trước.",
-  },
-  {
-    step: 4,
-    title: "Tiệm làm bánh",
-    desc: "Tiệm làm bánh theo đúng yêu cầu đã thống nhất, đảm bảo nguyên liệu tươi mới.",
-  },
-  {
-    step: 5,
-    title: "Nhận bánh",
-    desc: "Giao bánh tận nơi (khu vực toàn Hà Nội) hoặc khách nhận tại tiệm.",
-  },
-];
-
-// =============================================================================
-// THƯ VIỆN MẪU THAM KHẢO
-// =============================================================================
-const GALLERY_CATEGORIES = [
-  "Tất cả",
-  "Sinh nhật",
-  "Cưới hỏi",
-  "Thôi nôi",
-  "Công ty / sự kiện",
-];
-
-// TODO: thay bằng ảnh mẫu bánh thật khi shop cung cấp.
-const MOCK_GALLERY = [
-  { id: 1, tag: "Sinh nhật", title: "Mẫu bánh sinh nhật Pastel bento" },
-  { id: 2, tag: "Sinh nhật", title: "Mẫu bánh sinh nhật hoa kem tươi" },
-  { id: 3, tag: "Cưới hỏi", title: "Mẫu bánh cưới 2 tầng tối giản sang trọng" },
-  { id: 4, tag: "Thôi nôi", title: "Mẫu bánh thôi nôi động vật ngộ nghĩnh" },
-  { id: 5, tag: "Công ty / sự kiện", title: "Mẫu bánh logo kỷ niệm công ty" },
-  { id: 6, tag: "Sinh nhật", title: "Mẫu bánh Vintage viền ren quý phái" },
-  { id: 7, tag: "Cưới hỏi", title: "Mẫu bánh cưới tone trắng kem hoa tươi" },
-  { id: 8, tag: "Công ty / sự kiện", title: "Set bánh teabreak sự kiện cao cấp" },
-];
+const FIELD_CLASS =
+  "w-full rounded-xl border border-border/80 bg-[#FFF8EF]/50 px-3.5 py-2.5 text-sm text-[#2b2b2b] placeholder:text-muted/60 focus:border-[#1B4B5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4B5A]/10 transition-all";
 
 export default function BanhDatTheoYeuCauPage() {
   const { user } = useAuth();
-  const [activeCategory, setActiveCategory] = useState("Tất cả");
+  const content = useCustomOrderContent();
+  const [activeCategory, setActiveCategory] = useState(ALL);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Form State
@@ -118,10 +48,10 @@ export default function BanhDatTheoYeuCauPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  const filteredGallery =
-    activeCategory === "Tất cả"
-      ? MOCK_GALLERY
-      : MOCK_GALLERY.filter((item) => item.tag === activeCategory);
+  // Nhóm lọc ảnh mẫu lấy từ các ảnh admin đã gắn nhóm
+  const sampleTags = [ALL, ...new Set(content.samples.map((s) => s.tag.trim()).filter(Boolean))];
+  const filteredSamples =
+    activeCategory === ALL ? content.samples : content.samples.filter((s) => s.tag.trim() === activeCategory);
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex((prev) => (prev === index ? null : index));
@@ -183,32 +113,27 @@ export default function BanhDatTheoYeuCauPage() {
   };
 
   const scrollToForm = () => {
-    const el = document.getElementById("form-dat-banh");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
+    document.getElementById("form-dat-banh")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <div className="w-full bg-[#FFF8EF] text-[#2b2b2b] overflow-x-hidden min-h-screen">
-      {/* 1. HERO SECTION (BỎ BREADCRUMB) */}
+      {/* 1. BANNER: tagline + tiêu đề lớn */}
       <section className="relative overflow-hidden bg-[#FCE9C6] py-16 md:py-24 border-b border-[#E5D9C3]/80">
         <div className="absolute -top-16 -right-16 h-72 w-72 rounded-full bg-[#F6CE8B]/40 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-[#1B4B5A]/5 blur-3xl" />
 
         <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8 space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#1B4B5A]/15 bg-white/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#1B4B5A] shadow-xs backdrop-blur-xs">
-            <Cake className="h-3.5 w-3.5 text-[#1B4B5A]" />
-            Bánh thiết kế thủ công
-          </div>
+          {content.tagline && (
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#1B4B5A]/15 bg-white/80 px-4 py-1.5 text-xs font-semibold tracking-wide text-[#1B4B5A] shadow-xs backdrop-blur-xs">
+              <Cake className="h-3.5 w-3.5 shrink-0 text-[#1B4B5A]" />
+              <span>{content.tagline}</span>
+            </div>
+          )}
 
           <h1 className="font-heading text-3xl font-black text-[#1B4B5A] sm:text-4xl md:text-5xl leading-tight">
-            Cari.Bakehouse nhận đặt bánh theo yêu cầu
+            {content.title}
           </h1>
-
-          <p className="mx-auto max-w-2xl text-sm sm:text-base text-[#1B4B5A]/80 leading-relaxed">
-            Từ chiếc bánh sinh nhật ấm cúng, bánh thôi nôi đáng yêu đến tiệc cưới trang trọng. Hãy chia sẻ ý tưởng của bạn, Cari sẽ biến những khoảnh khắc ngọt ngào thành hiện thực!
-          </p>
 
           <div className="pt-2">
             <button
@@ -223,190 +148,171 @@ export default function BanhDatTheoYeuCauPage() {
       </section>
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 space-y-16">
-        {/* 2. QUY TRÌNH ĐẶT BÁNH (5 BƯỚC) */}
-        <section className="space-y-8">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#1B4B5A]">
-              Quy trình đặt bánh theo yêu cầu
-            </h2>
-            <p className="mt-2 text-xs sm:text-sm text-muted">
-              5 bước đơn giản từ lúc gửi ý tưởng đến khi nhận chiếc bánh hoàn hảo
-            </p>
-          </div>
-
-          {/* Grid 5 bước */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {ORDER_STEPS.map((item) => (
-              <div
-                key={item.step}
-                className="relative rounded-2xl border border-border/80 bg-white p-5 shadow-xs flex flex-col items-center text-center hover:border-[#F6CE8B] hover:shadow-sm transition-all"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FCE9C6] text-[#1B4B5A] font-heading font-black text-sm border border-[#F6CE8B] mb-3">
-                  {item.step}
-                </div>
-                <h3 className="font-heading text-sm font-bold text-[#1B4B5A] mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-[#2b2b2b]/75 leading-relaxed">
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* NOTE BOX LƯU Ý */}
-          <div className="rounded-2xl border border-amber-300 bg-[#FBF7EA] p-5 sm:p-6 shadow-xs flex items-start gap-4">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F6CE8B] text-[#1B4B5A] mt-0.5">
-              <AlertCircle className="h-5 w-5" />
-            </div>
-            <div className="text-xs sm:text-sm text-[#2b2b2b]/85 leading-relaxed space-y-1">
-              <strong className="font-bold text-[#1B4B5A] block">Lưu ý quan trọng:</strong>
-              <p>
-                Đơn đặt trước sẽ được tiệm ghi nhận và giữ phần bánh cho khách. Với các mẫu bánh kích thước lớn, tiệm nhận đặt trước tối thiểu 12 tiếng và cần khách thanh toán trước. Bánh đặc biệt đặt theo yêu cầu riêng cần đặt cọc 100%.
+        {/* 2. QUY TRÌNH ĐẶT BÁNH */}
+        {content.steps.length > 0 && (
+          <section className="space-y-8">
+            <div className="text-center max-w-2xl mx-auto">
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#1B4B5A]">Quy trình đặt bánh theo yêu cầu</h2>
+              <p className="mt-2 text-xs sm:text-sm text-muted">
+                {content.steps.length} bước đơn giản từ lúc gửi ý tưởng đến khi nhận chiếc bánh hoàn hảo
               </p>
             </div>
-          </div>
-        </section>
 
-        {/* 3. THƯ VIỆN MẪU THAM KHẢO */}
+            <div className="flex flex-wrap justify-center gap-4">
+              {content.steps.map((item, i) => (
+                <div
+                  key={i}
+                  className="relative flex w-full flex-col items-center rounded-2xl border border-border/80 bg-white p-5 text-center shadow-xs transition-all hover:border-[#F6CE8B] hover:shadow-sm sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-4rem)/5)]"
+                >
+                  <div className="mb-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#F6CE8B] bg-[#FCE9C6] font-heading text-sm font-black text-[#1B4B5A]">
+                    {i + 1}
+                  </div>
+                  <h3 className="mb-2 font-heading text-sm font-bold text-[#1B4B5A]">{item.title}</h3>
+                  <p className="text-xs leading-relaxed text-[#2b2b2b]/75">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {content.note.trim() && (
+              <div className="rounded-2xl border border-amber-300 bg-[#FBF7EA] p-5 sm:p-6 shadow-xs flex items-start gap-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F6CE8B] text-[#1B4B5A] mt-0.5">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div className="text-xs sm:text-sm text-[#2b2b2b]/85 leading-relaxed space-y-1">
+                  <strong className="font-bold text-[#1B4B5A] block">Lưu ý quan trọng:</strong>
+                  <p className="whitespace-pre-line">{content.note}</p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* 3. MỘT SỐ MẪU BÁNH ĐÃ THỰC HIỆN */}
         <section className="space-y-8">
           <div className="text-center max-w-2xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#1B4B5A]">
-              Một số mẫu bánh đã thực hiện
-            </h2>
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#1B4B5A]">Một số mẫu bánh đã thực hiện</h2>
             <p className="mt-2 text-xs sm:text-sm text-muted">
               Tham khảo phong cách trang trí và ý tưởng từ các sản phẩm độc bản tại Cari
             </p>
           </div>
 
-          {/* Filter tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {GALLERY_CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
-                  activeCategory === cat
-                    ? "bg-[#1B4B5A] text-white shadow-xs"
-                    : "border border-border/80 bg-white text-[#2b2b2b]/80 hover:bg-[#FCE9C6]/50"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+          {content.samples.length === 0 ? (
+            <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-[#F6CE8B] bg-white p-8 text-center">
+              <Cake className="mx-auto h-10 w-10 text-[#1B4B5A]/40" />
+              <p className="mt-3 text-sm text-[#2b2b2b]/75">
+                Ảnh mẫu bánh đang được cập nhật — nhắn Zalo cho tiệm để xem thêm các mẫu đã làm nhé!
+              </p>
+            </div>
+          ) : (
+            <>
+              {sampleTags.length > 2 && (
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {sampleTags.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
+                        activeCategory === cat
+                          ? "bg-[#1B4B5A] text-white shadow-xs"
+                          : "border border-border/80 bg-white text-[#2b2b2b]/80 hover:bg-[#FCE9C6]/50"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-          {/* Gallery Grid (8 ảnh placeholder) */}
-          {/* TODO: thay bằng ảnh mẫu bánh thật khi shop cung cấp. */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {filteredGallery.map((item) => (
-              <div
-                key={item.id}
-                className="group overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs hover:border-[#F6CE8B] hover:shadow-md transition-all flex flex-col"
-              >
-                <div className="relative aspect-4/3 w-full bg-[#FCE9C6]/30 flex flex-col items-center justify-center p-4 text-center border-b border-border/60">
-                  <Cake className="h-10 w-10 text-[#1B4B5A]/40 mb-2 group-hover:scale-110 group-hover:text-[#1B4B5A] transition-all" />
-                  <span className="text-[11px] font-semibold text-muted">
-                    {/* TODO: thay bằng ảnh mẫu bánh thật khi shop cung cấp. */}
-                    Ảnh mẫu tham khảo #{item.id}
-                  </span>
-                </div>
-                <div className="p-3.5 space-y-1">
-                  <span className="inline-block rounded-md bg-[#FCE9C6]/60 px-2 py-0.5 text-[10px] font-bold text-[#1B4B5A]">
-                    {item.tag}
-                  </span>
-                  <p className="font-heading text-xs sm:text-sm font-bold text-[#1B4B5A] line-clamp-1">
-                    {item.title}
-                  </p>
-                </div>
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
+                {filteredSamples.map((item) => (
+                  <div
+                    key={item.id}
+                    className="group flex w-[calc((100%-1rem)/2)] flex-col overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-all hover:border-[#F6CE8B] hover:shadow-md sm:w-[calc((100%-3rem)/3)] lg:w-[calc((100%-4.5rem)/4)]"
+                  >
+                    <div className="relative aspect-square w-full overflow-hidden bg-[#FCE9C6]/40">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.title || "Mẫu bánh Cari"}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center">
+                          <Cake className="h-10 w-10 text-[#1B4B5A]/40" />
+                        </div>
+                      )}
+                    </div>
+                    {(item.tag || item.title) && (
+                      <div className="p-3.5 space-y-1">
+                        {item.tag && (
+                          <span className="inline-block rounded-md bg-[#FCE9C6]/60 px-2 py-0.5 text-[10px] font-bold text-[#1B4B5A]">
+                            {item.tag}
+                          </span>
+                        )}
+                        {item.title && (
+                          <p className="font-heading text-xs sm:text-sm font-bold text-[#1B4B5A] line-clamp-2">{item.title}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </section>
 
-        {/* 4. BẢNG GIÁ THAM KHẢO (ĐỂ TRỐNG SỐ TIỀN) */}
-        {/* TODO: chưa có bảng giá thật, chờ file Excel sản phẩm từ shop — không tự đặt giá. */}
-        <section className="space-y-8">
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#1B4B5A]">
-              Giá tham khảo theo kích thước
-            </h2>
-            <p className="mt-2 text-xs sm:text-sm text-muted">
-              Giá thực tế sẽ được báo cụ thể sau khi tiệm tư vấn thiết kế
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1: Size Nhỏ */}
-            <div className="rounded-2xl border border-border/80 bg-white p-6 sm:p-8 text-center shadow-xs flex flex-col justify-between">
-              <div className="space-y-3">
-                <span className="inline-block rounded-full bg-cream px-3 py-1 text-xs font-bold text-[#1B4B5A]">
-                  Kích thước nhỏ
-                </span>
-                <h3 className="font-heading text-lg font-bold text-[#1B4B5A]">
-                  Bánh mini / 1 - 2 người
-                </h3>
-                <p className="text-xs text-muted">Phù hợp tặng sinh nhật thân mật, bánh kem bento dễ thương.</p>
-                <div className="py-4 border-y border-border/60">
-                  {/* TODO: chưa có bảng giá thật, chờ file Excel sản phẩm từ shop — không tự đặt giá. */}
-                  <span className="font-heading text-xl font-bold text-[#1B4B5A] bg-[#FCE9C6]/40 px-4 py-1.5 rounded-xl border border-[#F6CE8B]/40">
-                    Báo giá theo mẫu
-                  </span>
-                </div>
-              </div>
-              <p className="text-[11px] text-muted italic mt-4">
-                Giá thay đổi tùy độ phức tạp của hoa & hình vẽ
-              </p>
+        {/* 4. GIÁ THAM KHẢO THEO KÍCH THƯỚC */}
+        {content.priceTiers.length > 0 && (
+          <section className="space-y-8">
+            <div className="text-center max-w-2xl mx-auto">
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#1B4B5A]">Giá tham khảo theo kích thước</h2>
+              {content.priceNote && <p className="mt-2 text-xs sm:text-sm text-muted">{content.priceNote}</p>}
             </div>
 
-            {/* Card 2: Size Vừa */}
-            <div className="rounded-2xl border-2 border-[#1B4B5A] bg-white p-6 sm:p-8 text-center shadow-xs flex flex-col justify-between relative">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#1B4B5A] px-3.5 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
-                Được đặt nhiều nhất
-              </span>
-              <div className="space-y-3">
-                <span className="inline-block rounded-full bg-[#FCE9C6] px-3 py-1 text-xs font-bold text-[#1B4B5A]">
-                  Kích thước vừa
-                </span>
-                <h3 className="font-heading text-lg font-bold text-[#1B4B5A]">
-                  Bánh 4 - 8 người
-                </h3>
-                <p className="text-xs text-muted">Đường kính phổ biến 16cm - 18cm, hoàn hảo cho tiệc gia đình, bạn bè.</p>
-                <div className="py-4 border-y border-border/60">
-                  {/* TODO: chưa có bảng giá thật, chờ file Excel sản phẩm từ shop — không tự đặt giá. */}
-                  <span className="font-heading text-xl font-bold text-[#1B4B5A] bg-[#FCE9C6]/60 px-4 py-1.5 rounded-xl border border-[#F6CE8B]/60">
-                    Báo giá theo mẫu
-                  </span>
+            <div className="flex flex-wrap justify-center gap-6">
+              {content.priceTiers.map((tier, i) => (
+                <div
+                  key={i}
+                  className={`relative flex w-full flex-col overflow-hidden rounded-2xl bg-white text-center shadow-xs sm:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-3rem)/3)] ${
+                    tier.highlight ? "border-2 border-[#1B4B5A]" : "border border-border/80"
+                  }`}
+                >
+                  {tier.highlight && (
+                    <span className="absolute top-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#1B4B5A] px-3.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">
+                      {tier.highlight}
+                    </span>
+                  )}
+                  <div className="relative aspect-4/3 w-full bg-[#FCE9C6]/40">
+                    {tier.image ? (
+                      <Image src={tier.image} alt={`${tier.name} ${tier.size}`} fill className="object-cover" sizes="(max-width: 640px) 100vw, 33vw" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Cake className="h-12 w-12 text-[#1B4B5A]/35" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col justify-between p-6">
+                    <div className="space-y-3">
+                      <span className="inline-block rounded-full bg-[#FCE9C6] px-3 py-1 text-xs font-bold text-[#1B4B5A]">{tier.name}</span>
+                      {tier.size && <h3 className="font-heading text-lg font-bold text-[#1B4B5A]">{tier.size}</h3>}
+                      <ul className="space-y-2 border-y border-border/60 py-4">
+                        {tier.prices.map((p) => (
+                          <li key={p.label} className="flex items-center justify-between gap-3 text-sm">
+                            <span className="text-left text-[#2b2b2b]/80">{p.label}</span>
+                            <span className="shrink-0 font-heading font-black text-[#1B4B5A]">{formatVND(p.price)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    {tier.note && <p className="mt-4 text-[11px] italic text-muted">{tier.note}</p>}
+                  </div>
                 </div>
-              </div>
-              <p className="text-[11px] text-muted italic mt-4">
-                Miễn phí nến sinh nhật và dao cắt bánh
-              </p>
+              ))}
             </div>
-
-            {/* Card 3: Size Lớn / Nhiều tầng */}
-            <div className="rounded-2xl border border-border/80 bg-white p-6 sm:p-8 text-center shadow-xs flex flex-col justify-between">
-              <div className="space-y-3">
-                <span className="inline-block rounded-full bg-cream px-3 py-1 text-xs font-bold text-[#1B4B5A]">
-                  Kích thước lớn / Tầng
-                </span>
-                <h3 className="font-heading text-lg font-bold text-[#1B4B5A]">
-                  Bánh tiệc 10+ người
-                </h3>
-                <p className="text-xs text-muted">Bánh sự kiện công ty, thôi nôi hoành tráng hoặc bánh cưới 2-3 tầng.</p>
-                <div className="py-4 border-y border-border/60">
-                  {/* TODO: chưa có bảng giá thật, chờ file Excel sản phẩm từ shop — không tự đặt giá. */}
-                  <span className="font-heading text-xl font-bold text-[#1B4B5A] bg-[#FCE9C6]/40 px-4 py-1.5 rounded-xl border border-[#F6CE8B]/40">
-                    Báo giá theo mẫu
-                  </span>
-                </div>
-              </div>
-              <p className="text-[11px] text-muted italic mt-4">
-                Cần đặt trước tối thiểu 12 tiếng & đặt cọc 100%
-              </p>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* 5. FORM GỬI YÊU CẦU ĐẶT BÁNH */}
         <section id="form-dat-banh" className="scroll-mt-24 rounded-3xl border border-border/80 bg-white p-6 sm:p-10 lg:p-12 shadow-md">
@@ -415,9 +321,7 @@ export default function BanhDatTheoYeuCauPage() {
               <FileCheck className="h-3.5 w-3.5 text-[#1B4B5A]" />
               Nhận tư vấn thiết kế độc bản
             </div>
-            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-[#1B4B5A]">
-              Gửi yêu cầu đặt bánh
-            </h2>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-[#1B4B5A]">Gửi yêu cầu đặt bánh</h2>
             <p className="mt-2 text-xs sm:text-sm text-muted">
               Điền thông tin bên dưới, tiệm sẽ liên hệ tư vấn và báo giá trong vòng 24 giờ
             </p>
@@ -427,21 +331,18 @@ export default function BanhDatTheoYeuCauPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Dịp đặt bánh */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1B4B5A]">
-                  Dịp đặt bánh
-                </label>
+                <label className="text-xs font-bold text-[#1B4B5A]">Dịp đặt bánh</label>
                 <select
                   value={formState.occasion}
                   onChange={(e) => setFormState({ ...formState, occasion: e.target.value })}
-                  className="w-full rounded-xl border border-border/80 bg-[#FFF8EF]/50 px-3.5 py-2.5 text-sm text-[#2b2b2b] focus:border-[#1B4B5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4B5A]/10 transition-all"
+                  className={FIELD_CLASS}
                 >
                   <option value="">-- Chọn dịp phù hợp --</option>
-                  <option value="Sinh nhật">Sinh nhật</option>
-                  <option value="Kỷ niệm">Kỷ niệm</option>
-                  <option value="Cưới hỏi">Cưới hỏi</option>
-                  <option value="Thôi nôi">Thôi nôi</option>
-                  <option value="Công ty / Sự kiện">Công ty / Sự kiện</option>
-                  <option value="Khác">Dịp khác...</option>
+                  {content.occasions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -455,49 +356,43 @@ export default function BanhDatTheoYeuCauPage() {
                   required
                   value={formState.deliveryDate}
                   onChange={(e) => setFormState({ ...formState, deliveryDate: e.target.value })}
-                  className="w-full rounded-xl border border-border/80 bg-[#FFF8EF]/50 px-3.5 py-2.5 text-sm text-[#2b2b2b] focus:border-[#1B4B5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4B5A]/10 transition-all"
+                  className={FIELD_CLASS}
                 />
               </div>
 
               {/* Kích thước / số khách dự kiến */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1B4B5A]">
-                  Kích thước / số khách dự kiến
-                </label>
+                <label className="text-xs font-bold text-[#1B4B5A]">Kích thước / số khách dự kiến</label>
                 <input
                   type="text"
                   placeholder="Ví dụ: Size 16cm hoặc tiệc khoảng 6-8 người"
                   value={formState.sizeGuestCount}
                   onChange={(e) => setFormState({ ...formState, sizeGuestCount: e.target.value })}
-                  className="w-full rounded-xl border border-border/80 bg-[#FFF8EF]/50 px-3.5 py-2.5 text-sm text-[#2b2b2b] placeholder:text-muted/60 focus:border-[#1B4B5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4B5A]/10 transition-all"
+                  className={FIELD_CLASS}
                 />
               </div>
 
               {/* Vị bánh mong muốn */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1B4B5A]">
-                  Vị bánh mong muốn
-                </label>
+                <label className="text-xs font-bold text-[#1B4B5A]">Vị bánh mong muốn</label>
                 <input
                   type="text"
-                  placeholder="Ví dụ: Vani kem tươi, Socola đậm vị, Trà xanh..."
+                  placeholder="Ví dụ: Original, Matcha, Brownies..."
                   value={formState.flavor}
                   onChange={(e) => setFormState({ ...formState, flavor: e.target.value })}
-                  className="w-full rounded-xl border border-border/80 bg-[#FFF8EF]/50 px-3.5 py-2.5 text-sm text-[#2b2b2b] placeholder:text-muted/60 focus:border-[#1B4B5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4B5A]/10 transition-all"
+                  className={FIELD_CLASS}
                 />
               </div>
 
               {/* Ngân sách dự kiến */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#1B4B5A]">
-                  Ngân sách dự kiến
-                </label>
+                <label className="text-xs font-bold text-[#1B4B5A]">Ngân sách dự kiến</label>
                 <input
                   type="text"
-                  placeholder="Ví dụ: Khoảng 350.000đ - 500.000đ"
+                  placeholder="Ví dụ: Khoảng 200.000đ - 300.000đ"
                   value={formState.budget}
                   onChange={(e) => setFormState({ ...formState, budget: e.target.value })}
-                  className="w-full rounded-xl border border-border/80 bg-[#FFF8EF]/50 px-3.5 py-2.5 text-sm text-[#2b2b2b] placeholder:text-muted/60 focus:border-[#1B4B5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4B5A]/10 transition-all"
+                  className={FIELD_CLASS}
                 />
               </div>
 
@@ -512,16 +407,14 @@ export default function BanhDatTheoYeuCauPage() {
                   placeholder="Tiệm sẽ liên hệ tư vấn qua số này"
                   value={formState.phoneZalo}
                   onChange={(e) => setFormState({ ...formState, phoneZalo: e.target.value })}
-                  className="w-full rounded-xl border border-border/80 bg-[#FFF8EF]/50 px-3.5 py-2.5 text-sm text-[#2b2b2b] placeholder:text-muted/60 focus:border-[#1B4B5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4B5A]/10 transition-all"
+                  className={FIELD_CLASS}
                 />
               </div>
             </div>
 
-            {/* Ảnh mẫu tham khảo (upload / drag-drop) */}
+            {/* Ảnh mẫu tham khảo */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[#1B4B5A]">
-                Ảnh mẫu tham khảo (nếu có)
-              </label>
+              <label className="text-xs font-bold text-[#1B4B5A]">Ảnh mẫu tham khảo (nếu có)</label>
               <div className="relative rounded-2xl border-2 border-dashed border-border hover:border-[#1B4B5A] bg-[#FFF8EF]/50 p-6 text-center transition-all">
                 <input
                   type="file"
@@ -534,38 +427,34 @@ export default function BanhDatTheoYeuCauPage() {
                     <UploadCloud className="h-6 w-6" />
                   </div>
                   {selectedFileName ? (
-                    <div className="text-xs sm:text-sm font-semibold text-emerald-700">
-                      Đã chọn file: {selectedFileName}
-                    </div>
+                    <div className="text-xs sm:text-sm font-semibold text-emerald-700">Đã chọn file: {selectedFileName}</div>
                   ) : (
                     <>
-                      <p className="text-xs sm:text-sm font-semibold text-[#1B4B5A]">
-                        Kéo thả hoặc bấm để tải ảnh lên
-                      </p>
-                      <p className="text-[11px] text-muted">
-                        Định dạng hỗ trợ: PNG, JPG, WEBP (Tối đa 10MB)
-                      </p>
+                      <p className="text-xs sm:text-sm font-semibold text-[#1B4B5A]">Kéo thả hoặc bấm để tải ảnh lên</p>
+                      <p className="text-[11px] text-muted">Định dạng hỗ trợ: PNG, JPG, WEBP (Tối đa 10MB)</p>
                     </>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Ghi chú thêm */}
+            {/* Ghi chú thêm — tiệm không viết chữ lên bánh, chỉ viết thiệp/note đi kèm */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-[#1B4B5A]">
-                Ghi chú thêm (chữ viết trên bánh, màu sắc, chi tiết trang trí...)
+                Ghi chú thêm (lời chúc viết thiệp/note, màu sắc, chi tiết trang trí...)
               </label>
               <textarea
                 rows={3}
-                placeholder="Ví dụ: Viết chữ 'Happy Birthday Linh 20', tone màu hồng pastel, không dùng hạnh nhân..."
+                placeholder="Ví dụ: Thiệp ghi 'Happy Birthday Linh 20', tone màu hồng pastel, không dùng hạnh nhân..."
                 value={formState.notes}
                 onChange={(e) => setFormState({ ...formState, notes: e.target.value })}
-                className="w-full rounded-xl border border-border/80 bg-[#FFF8EF]/50 px-3.5 py-2.5 text-sm text-[#2b2b2b] placeholder:text-muted/60 focus:border-[#1B4B5A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1B4B5A]/10 transition-all resize-y"
+                className={`${FIELD_CLASS} resize-y`}
               />
+              <p className="text-[11px] text-muted">
+                Tiệm không viết chữ trực tiếp lên bánh — lời chúc sẽ được viết trên thiệp/note đi kèm bánh.
+              </p>
             </div>
 
-            {/* Nút Submit */}
             <div className="pt-4 text-center">
               <button
                 type="submit"
@@ -579,47 +468,42 @@ export default function BanhDatTheoYeuCauPage() {
           </form>
         </section>
 
-        {/* 6. FAQ (DÙNG ĐÚNG NỘI DUNG THẬT) */}
-        <section className="space-y-6 pt-4">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1B4B5A]">
-              <HelpCircle className="h-4 w-4" />
-              Giải đáp thắc mắc
+        {/* 6. CÂU HỎI THƯỜNG GẶP */}
+        {content.faq.length > 0 && (
+          <section className="space-y-6 pt-4">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1B4B5A]">
+                <HelpCircle className="h-4 w-4" />
+                Giải đáp thắc mắc
+              </div>
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#1B4B5A] mt-1">Câu hỏi thường gặp</h2>
             </div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#1B4B5A] mt-1">
-              Câu hỏi thường gặp
-            </h2>
-          </div>
 
-          <div className="space-y-3 max-w-3xl mx-auto">
-            {FAQ_ITEMS.map((item, index) => {
-              const isOpen = openFaqIndex === index;
-              return (
-                <div
-                  key={index}
-                  className="rounded-2xl border border-border/80 bg-white shadow-xs transition-all overflow-hidden"
-                >
-                  <button
-                    onClick={() => toggleFaq(index)}
-                    className="flex w-full items-center justify-between p-5 text-left font-heading text-base font-bold text-[#1B4B5A] hover:bg-[#FFF8EF]/50 transition-colors"
-                  >
-                    <span>{item.question}</span>
-                    <ChevronDown
-                      className={`h-5 w-5 shrink-0 text-muted transition-transform duration-300 ${
-                        isOpen ? "rotate-180 text-[#1B4B5A]" : ""
-                      }`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="px-5 pb-5 pt-1 text-sm text-[#2b2b2b]/85 leading-relaxed border-t border-border/40 bg-[#FFF8EF]/30">
-                      {item.answer}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
+            <div className="space-y-3 max-w-3xl mx-auto">
+              {content.faq.map((item, index) => {
+                const isOpen = openFaqIndex === index;
+                return (
+                  <div key={index} className="rounded-2xl border border-border/80 bg-white shadow-xs transition-all overflow-hidden">
+                    <button
+                      onClick={() => toggleFaq(index)}
+                      className="flex w-full items-center justify-between p-5 text-left font-heading text-base font-bold text-[#1B4B5A] hover:bg-[#FFF8EF]/50 transition-colors"
+                    >
+                      <span>{item.question}</span>
+                      <ChevronDown
+                        className={`h-5 w-5 shrink-0 text-muted transition-transform duration-300 ${isOpen ? "rotate-180 text-[#1B4B5A]" : ""}`}
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className="px-5 pb-5 pt-1 text-sm text-[#2b2b2b]/85 leading-relaxed border-t border-border/40 bg-[#FFF8EF]/30 whitespace-pre-line">
+                        {item.answer}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* MODAL THÀNH CÔNG */}
@@ -628,6 +512,7 @@ export default function BanhDatTheoYeuCauPage() {
           <div className="relative w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 text-center shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
             <button
               onClick={() => setIsSuccessModalOpen(false)}
+              aria-label="Đóng"
               className="absolute top-4 right-4 text-muted hover:text-black p-1 rounded-full hover:bg-slate-100 transition-colors"
             >
               <X className="h-5 w-5" />
@@ -637,12 +522,11 @@ export default function BanhDatTheoYeuCauPage() {
               <CheckCircle2 className="h-10 w-10" />
             </div>
 
-            <h3 className="font-heading text-xl sm:text-2xl font-black text-[#1B4B5A]">
-              Gửi yêu cầu thành công!
-            </h3>
+            <h3 className="font-heading text-xl sm:text-2xl font-black text-[#1B4B5A]">Gửi yêu cầu thành công!</h3>
 
             <p className="text-xs sm:text-sm text-[#2b2b2b]/80 leading-relaxed">
-              Cari Bakehouse đã nhận được thông tin yêu cầu của bạn. Tiệm sẽ liên hệ tư vấn và báo giá qua Zalo trong vòng <strong>24 giờ</strong>.
+              Cari Bakehouse đã nhận được thông tin yêu cầu của bạn. Tiệm sẽ liên hệ tư vấn và báo giá qua Zalo trong vòng{" "}
+              <strong>24 giờ</strong>.
             </p>
 
             <div className="pt-2">

@@ -126,3 +126,45 @@ export interface LoyaltyConfig {
   /** VIP tháng sinh nhật: 1 đơn giảm bao nhiêu % tiền bánh */
   birthdayCakeDiscountPercent: number;
 }
+
+/** Một bước trong quy trình đặt bánh theo yêu cầu */
+export interface CustomOrderStep {
+  title: string;
+  desc: string;
+}
+
+/** Ảnh mẫu bánh đã làm (thư viện ở trang /dat-theo-yeu-cau) */
+export interface CustomOrderSample {
+  id: number;
+  image: string;
+  title: string;
+  /** Nhóm để lọc, vd "Sinh nhật" (bỏ trống = không thuộc nhóm nào) */
+  tag: string;
+}
+
+/** Một mức giá tham khảo theo kích thước, vd "Bánh vừa · 12cm" */
+export interface CustomOrderPriceTier {
+  name: string;
+  size: string;
+  image: string;
+  prices: { label: string; price: number }[];
+  note: string;
+  /** Làm nổi bật thẻ này (viền đậm + nhãn) */
+  highlight: string;
+}
+
+/** Nội dung trang /dat-theo-yeu-cau — admin chỉnh ở /admin/noi-dung-dat-theo-yeu-cau */
+export interface CustomOrderContent {
+  tagline: string;
+  title: string;
+  steps: CustomOrderStep[];
+  /** Hộp "Lưu ý quan trọng" dưới quy trình (bỏ trống = ẩn) */
+  note: string;
+  samples: CustomOrderSample[];
+  priceTiers: CustomOrderPriceTier[];
+  /** Ghi chú dưới tiêu đề bảng giá */
+  priceNote: string;
+  /** Các dịp trong ô chọn "Dịp đặt bánh" */
+  occasions: string[];
+  faq: FaqItem[];
+}
