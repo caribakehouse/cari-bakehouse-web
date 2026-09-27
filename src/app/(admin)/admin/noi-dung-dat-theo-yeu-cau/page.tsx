@@ -181,7 +181,7 @@ function CustomOrderForm({ initial }: { initial: CustomOrderContent }) {
               return (
                 <div key={sample.id} className={ITEM_BOX}>
                   <ItemHeader label={`Mẫu ${i + 1}`} list={draft.samples} index={i} onChange={(v) => set("samples", v)} />
-                  <ImageField label="Ảnh" value={sample.image} onChange={(v) => update({ image: v })} maxSize={1200} />
+                  <ImageField label="Ảnh (khuyên dùng ảnh vuông 1200 × 1200)" value={sample.image} onChange={(v) => update({ image: v })} maxSize={1200} />
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Field label="Tên mẫu (tùy chọn)">
                       <input value={sample.title} onChange={(e) => update({ title: e.target.value })} className={INPUT} />
@@ -246,7 +246,7 @@ function CustomOrderForm({ initial }: { initial: CustomOrderContent }) {
                       <input value={tier.size} onChange={(e) => update({ size: e.target.value })} className={INPUT} placeholder="Cheesecake 12cm" />
                     </Field>
                   </div>
-                  <ImageField label="Ảnh mẫu" value={tier.image} onChange={(v) => update({ image: v })} maxSize={1000} />
+                  <ImageField label="Ảnh mẫu (khuyên dùng 1200 × 900)" value={tier.image} onChange={(v) => update({ image: v })} maxSize={1200} />
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold text-[#5b5b5b]">Bảng giá</span>
                     {tier.prices.map((p, pi) => (

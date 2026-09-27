@@ -234,7 +234,7 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
-                <ImageField label="Ảnh" value={g.image} onChange={(v) => update({ image: v })} maxSize={800} />
+                <ImageField label="Ảnh (khuyên dùng ảnh vuông 1000 × 1000)" value={g.image} onChange={(v) => update({ image: v })} maxSize={1000} />
                 <Field label="Mô tả ảnh (alt)">
                   <input value={g.alt} onChange={(e) => update({ alt: e.target.value })} className={INPUT} />
                 </Field>
@@ -248,7 +248,7 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
       {/* 7. Giới thiệu ngắn */}
       <Card title="7. Đoạn giới thiệu ngắn">
         <div className="space-y-3">
-          <ImageField label="Ảnh bên trái" value={draft.about.image} onChange={(v) => set("about", { ...draft.about, image: v })} maxSize={900} />
+          <ImageField label="Ảnh bên trái (khuyên dùng 1200 × 900)" value={draft.about.image} onChange={(v) => set("about", { ...draft.about, image: v })} maxSize={1200} />
           <Field label="Nhãn trên ảnh">
             <input value={draft.about.badge} onChange={(e) => set("about", { ...draft.about, badge: e.target.value })} className={INPUT} />
           </Field>

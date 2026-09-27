@@ -309,7 +309,7 @@ export default function ProductFormModal({ product, onClose }: { product: Produc
         </Field>
 
         <div className="sm:col-span-2">
-          <ImageField label="Ảnh sản phẩm" value={draft.image} onChange={(v) => set("image", v)} maxSize={720} />
+          <ImageField label="Ảnh sản phẩm (khuyên dùng ảnh vuông 1200 × 1200)" value={draft.image} onChange={(v) => set("image", v)} maxSize={1200} />
           {errors.image && <p className="mt-1 text-[11px] text-rose-600">{errors.image}</p>}
         </div>
 
