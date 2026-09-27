@@ -1,19 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Star, Trash2 } from "lucide-react";
 import ContentTabs from "@/components/admin/ContentTabs";
 import ImageField from "@/components/admin/ImageField";
 import ProductPicker from "@/components/admin/ProductPicker";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { BTN_ICON, BTN_OUTLINE, BTN_SOLID, Card, Field, INPUT } from "@/components/admin/ui";
-import { saveHomeContent, useHomeContent, useProducts, useReviews } from "@/lib/db";
+import { saveHomeContent, saveReviews, useHomeContent, useProducts, useReviews } from "@/lib/db";
+import type { Review } from "@/lib/mock-data";
 import type { BannerOverlay, HomeContent } from "@/types/content";
 
-function HomeContentForm({ initial }: { initial: HomeContent }) {
+function sortForAdmin(list: Review[], featuredIds: number[]): Review[] {
+  const rank = (r: Review) => {
+    const i = featuredIds.indexOf(r.id);
+    return i < 0 ? featuredIds.length + r.id : i;
+  };
+  return structuredClone(list).sort((a, b) => rank(a) - rank(b));
+}
+
+function HomeContentForm({ initial, initialReviews }: { initial: HomeContent; initialReviews: Review[] }) {
   const { toast } = useAdmin();
-  const reviews = useReviews();
   const products = useProducts();
+  // Danh sách đánh giá (bảng reviews) — sửa cùng lúc với nội dung trang chủ, lưu chung 1 nút
+  // Thứ tự trong admin = thứ tự hiện ở trang chủ: đánh giá đang hiện xếp trước (theo thứ tự đã lưu), rồi tới các đánh giá khác
+  const [reviews, setReviews] = useState<Review[]>(() => sortForAdmin(initialReviews, initial.featuredReviewIds));
   // Bỏ sẵn các món đã bị xóa khỏi Top order / Thực đơn (không thì chúng chiếm chỗ, không thêm được món mới)
   const [draft, setDraft] = useState<HomeContent>(() => {
     const exists = (slug: string) => products.some((p) => p.slug === slug);
@@ -22,7 +33,9 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
   });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const dirty =
+    JSON.stringify(draft) !== JSON.stringify(initial) ||
+    JSON.stringify(reviews) !== JSON.stringify(sortForAdmin(initialReviews, initial.featuredReviewIds));
 
   // Còn thay đổi chưa lưu mà đóng tab / tải lại trang → trình duyệt hỏi lại
   useEffect(() => {
@@ -52,9 +65,22 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
     if (draft.features.some((f) => !f.title.trim()) || draft.banners.some((b) => !b.label.trim() || !b.image.trim())) {
       return fail("Dải tính năng và banner đôi không được để trống tiêu đề/ảnh.");
     }
+    if (reviews.some((r) => !r.name.trim() || !r.content.trim())) return fail("Mỗi đánh giá cần có tên khách và nội dung.");
     setError("");
     setSaving(true);
-    const saveError = await saveHomeContent({ ...draft, gallery: draft.gallery.filter((g) => g.image.trim()) });
+    const reviewsError = await saveReviews(
+      reviews.map((r) => ({ ...r, name: r.name.trim(), content: r.content.trim(), date: r.date.trim() })),
+    );
+    if (reviewsError) {
+      setSaving(false);
+      return fail(reviewsError);
+    }
+    const saveError = await saveHomeContent({
+      ...draft,
+      gallery: draft.gallery.filter((g) => g.image.trim()),
+      // Thứ tự hiện ở trang chủ theo đúng thứ tự admin sắp xếp
+      featuredReviewIds: reviews.filter((r) => draft.featuredReviewIds.includes(r.id)).map((r) => r.id),
+    });
     setSaving(false);
     if (saveError) return fail(saveError);
     toast("Đã lưu nội dung trang chủ — mở cửa hàng để xem thay đổi");
@@ -263,26 +289,104 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
         </div>
       </Card>
 
-      {/* 8. Đánh giá nổi bật */}
-      <Card title="8. Đánh giá nổi bật">
-        <div className="space-y-2">
-          {reviews.map((r) => (
-            <label key={r.id} className="flex cursor-pointer items-start gap-3 rounded-md border border-[#e3e3e3] bg-white p-3 text-[12px]">
-              <input
-                type="checkbox"
-                checked={draft.featuredReviewIds.includes(r.id)}
-                onChange={() => reviewToggle(r.id)}
-                className="mt-0.5 h-3.5 w-3.5 accent-[#2b2b2b]"
-              />
-              <span>
-                <strong className="text-[#2b2b2b]">{r.name}</strong>
-                <span className="ml-2 text-[#9a9a9a]">
-                  {"★".repeat(r.rating)} • {r.date}
-                </span>
-                <span className="mt-0.5 block line-clamp-2 text-[#5b5b5b]">{r.content}</span>
-              </span>
-            </label>
-          ))}
+      {/* 8. Đánh giá khách hàng */}
+      <Card
+        title="8. Đánh giá khách hàng"
+        action={
+          <button
+            type="button"
+            className={BTN_OUTLINE}
+            onClick={() => {
+              const id = Math.max(0, ...reviews.map((r) => r.id)) + 1;
+              setReviews([...reviews, { id, name: "", avatar: "", rating: 5, date: "", content: "" }]);
+              set("featuredReviewIds", [...draft.featuredReviewIds, id]);
+            }}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Thêm đánh giá
+          </button>
+        }
+      >
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Tiêu đề khối">
+              <input value={draft.reviewsTitle} onChange={(e) => set("reviewsTitle", e.target.value)} className={INPUT} />
+            </Field>
+            <Field label="Dòng phụ (tùy chọn)">
+              <input value={draft.reviewsSubtitle} onChange={(e) => set("reviewsSubtitle", e.target.value)} className={INPUT} />
+            </Field>
+          </div>
+          <p className="text-[11px] text-[#7a7a7a]">
+            Tick <strong>“Hiện ở trang chủ”</strong> cho đánh giá muốn hiển thị (nên chọn 3). Ảnh đại diện không bắt buộc — bỏ trống sẽ hiện chữ
+            cái đầu của tên.
+          </p>
+          {reviews.map((r, i) => {
+            const update = (patch: Partial<Review>) => setReviews(reviews.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+            const featured = draft.featuredReviewIds.includes(r.id);
+            return (
+              <div key={r.id} className="space-y-3 rounded-md border border-[#e3e3e3] bg-[#fafafa] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-[#2b2b2b]">
+                    <input type="checkbox" checked={featured} onChange={() => reviewToggle(r.id)} className="h-3.5 w-3.5 accent-[#2b2b2b]" />
+                    Hiện ở trang chủ
+                  </label>
+                  <div className="flex gap-1.5">
+                    <button type="button" className={BTN_ICON} aria-label="Đưa lên" disabled={i === 0} onClick={() => setReviews(move(reviews, i, -1))}>
+                      <ArrowUp className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      className={BTN_ICON}
+                      aria-label="Đưa xuống"
+                      disabled={i === reviews.length - 1}
+                      onClick={() => setReviews(move(reviews, i, 1))}
+                    >
+                      <ArrowDown className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      className={BTN_ICON}
+                      aria-label={`Xóa đánh giá của ${r.name || "khách"}`}
+                      onClick={() => {
+                        setReviews(reviews.filter((_, j) => j !== i));
+                        set("featuredReviewIds", draft.featuredReviewIds.filter((x) => x !== r.id));
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_150px_150px]">
+                  <Field label="Tên khách" required>
+                    <input value={r.name} onChange={(e) => update({ name: e.target.value })} className={INPUT} />
+                  </Field>
+                  <Field label="Số sao">
+                    <div className="flex h-[34px] items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          aria-label={`${n} sao`}
+                          onClick={() => update({ rating: n })}
+                          className="cursor-pointer p-0.5"
+                        >
+                          <Star className={`h-4 w-4 ${n <= r.rating ? "fill-[#F6CE8B] text-[#C97B3D]" : "text-[#c4c4c4]"}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Ngày">
+                    <input value={r.date} onChange={(e) => update({ date: e.target.value })} className={INPUT} placeholder="15/09/2026" />
+                  </Field>
+                </div>
+                <Field label="Nội dung đánh giá" required>
+                  <textarea value={r.content} onChange={(e) => update({ content: e.target.value })} rows={3} className={`${INPUT} resize-y`} />
+                </Field>
+                <ImageField label="Ảnh đại diện (tùy chọn, ảnh vuông 200 × 200)" value={r.avatar} onChange={(v) => update({ avatar: v })} maxSize={300} />
+              </div>
+            );
+          })}
+          {reviews.length === 0 && <p className="text-[11px] text-[#9a9a9a]">Chưa có đánh giá nào — khối đánh giá ở trang chủ sẽ bị ẩn.</p>}
         </div>
       </Card>
 
@@ -293,7 +397,14 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
             {error || (dirty ? "Bạn có thay đổi chưa lưu — bấm Lưu để áp dụng lên web." : "Thay đổi chỉ có hiệu lực sau khi bấm Lưu.")}
           </p>
           <div className="flex gap-2">
-            <button type="button" className={BTN_OUTLINE} onClick={() => setDraft(structuredClone(initial))}>
+            <button
+              type="button"
+              className={BTN_OUTLINE}
+              onClick={() => {
+                setDraft(structuredClone(initial));
+                setReviews(sortForAdmin(initialReviews, initial.featuredReviewIds));
+              }}
+            >
               Hoàn tác
             </button>
             <button type="button" className={`${BTN_SOLID} disabled:opacity-60`} onClick={save} disabled={saving}>
@@ -308,10 +419,11 @@ function HomeContentForm({ initial }: { initial: HomeContent }) {
 
 export default function AdminHomeContentPage() {
   const content = useHomeContent();
+  const reviews = useReviews();
   return (
     <div className="mx-auto max-w-5xl">
       <ContentTabs active="home" />
-      <HomeContentForm key={JSON.stringify(content)} initial={content} />
+      <HomeContentForm key={JSON.stringify([content, reviews])} initial={content} initialReviews={reviews} />
     </div>
   );
 }

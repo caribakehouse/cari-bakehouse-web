@@ -828,6 +828,8 @@ export const SEED_HOME_CONTENT: HomeContent = {
       "Cari. bắt đầu từ một tình yêu rất đơn giản: thích làm bánh và thích nhìn mọi người ăn bánh mình làm. Tụi mình làm bánh với mong muốn mang đến những món ngọt thật dễ thương, thật ngon và đủ gần gũi để bạn có thể ghé Cari. bất cứ khi nào muốn tự thưởng cho mình một chút.",
   },
   featuredReviewIds: reviews.map((r) => r.id),
+  reviewsTitle: "Khách hàng nói gì?",
+  reviewsSubtitle: "Những lời nhắn ngọt ngào từ khách hàng của Cari",
 };
 
 // ─── Nội dung trang Giới thiệu & chính sách ──────────────────

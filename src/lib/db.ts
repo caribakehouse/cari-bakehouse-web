@@ -59,6 +59,7 @@ const aboutRemote = createRemoteStore<AboutContent>();
 const settingsRemote = createRemoteStore<SiteSettings>();
 const loyaltyRemote = createRemoteStore<LoyaltyConfig>();
 const customOrderRemote = createRemoteStore<CustomOrderContent>();
+const reviewsRemote = createRemoteStore<Review[]>();
 const pickerLabelRemote = createRemoteStore<string>();
 
 const noValue = () => undefined;
@@ -320,6 +321,7 @@ export async function refreshCatalog() {
     settingsRemote.set(data.settings);
     loyaltyRemote.set(data.loyalty);
     customOrderRemote.set(data.customOrder);
+    reviewsRemote.set(data.reviews);
     pickerLabelRemote.set(data.categoryPickerLabel);
   } catch (error) {
     console.error("Không tải lại được dữ liệu từ Supabase", error);
@@ -829,5 +831,20 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<SaveResu
 
 /** Danh sách đánh giá (để trang chủ hiện và admin chọn đánh giá nổi bật) */
 export function useReviews(): Review[] {
-  return usePublicData().reviews;
+  return useRemote(reviewsRemote, (d) => d.reviews);
+}
+
+/** Lưu toàn bộ danh sách đánh giá: thêm / sửa theo id, xóa đánh giá không còn trong danh sách */
+export async function saveReviews(list: Review[]): Promise<SaveResult> {
+  if (list.length > 0) {
+    const { error } = await sb().from("reviews").upsert(list);
+    if (error) return saveError(error);
+  }
+  let removal = sb().from("reviews").delete();
+  removal = list.length > 0 ? removal.not("id", "in", `(${list.map((r) => r.id).join(",")})`) : removal.gte("id", 0);
+  const { error: deleteError } = await removal;
+  if (deleteError) return saveError(deleteError);
+  const { data, error } = await sb().from("reviews").select("*").order("id");
+  if (!error) reviewsRemote.set(data as Review[]);
+  return null;
 }

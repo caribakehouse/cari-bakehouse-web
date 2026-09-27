@@ -54,6 +54,9 @@ export interface HomeContent {
   about: AboutSnippetContent;
   /** Id các đánh giá được chọn hiển thị */
   featuredReviewIds: number[];
+  /** Tiêu đề + dòng phụ khối đánh giá khách hàng */
+  reviewsTitle: string;
+  reviewsSubtitle: string;
 }
 
 export type AboutIconKey = "shield" | "heart" | "clock" | "calendar";
