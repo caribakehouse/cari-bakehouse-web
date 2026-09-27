@@ -832,6 +832,16 @@ export const SEED_HOME_CONTENT: HomeContent = {
 
 // ─── Nội dung trang Giới thiệu & chính sách ──────────────────
 export const SEED_ABOUT_CONTENT: AboutContent = {
+  heroTitle: "A little bakehouse, made with lots of love.",
+  heroSubtitle: "Cari Bakehouse — Since 2023",
+  heroImage: "",
+  storyImage: "",
+  stats: [{ value: "3+", label: "Năm hoạt động", desc: "Đồng hành và trao gửi yêu thương từ năm 2023" }],
+  spacePhotos: [
+    { image: "", caption: "Không gian mặt tiền & Biển hiệu" },
+    { image: "", caption: "Quầy bánh trưng bày trong ngày" },
+    { image: "", caption: "Góc thưởng thức bánh & thức uống" },
+  ],
   storyBadge: "Câu chuyện của Cari",
   storyTitle: "Vun vén ngọt ngào từ những điều giản dị",
   storyBody:

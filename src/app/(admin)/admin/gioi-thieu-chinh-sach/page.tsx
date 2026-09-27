@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import ContentTabs from "@/components/admin/ContentTabs";
+import ImageField from "@/components/admin/ImageField";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { BTN_ICON, BTN_OUTLINE, BTN_SOLID, Card, Field, INPUT } from "@/components/admin/ui";
 import { saveAboutContent, useAboutContent } from "@/lib/db";
@@ -27,32 +28,68 @@ function AboutForm({ initial }: { initial: AboutContent }) {
   const { toast } = useAdmin();
   const [draft, setDraft] = useState<AboutContent>(() => structuredClone(initial));
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+
+  // Còn thay đổi chưa lưu mà đóng tab / tải lại trang → trình duyệt hỏi lại
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const fail = (message: string) => {
+    setError(message);
+    toast(message, "error");
+  };
 
   const set = <K extends keyof AboutContent>(key: K, value: AboutContent[K]) => setDraft((d) => ({ ...d, [key]: value }));
 
   const save = async () => {
-    if (!draft.storyTitle.trim() || !draft.storyBody.trim()) {
-      setError("Khối câu chuyện thương hiệu cần có tiêu đề và nội dung.");
-      return;
+    if (!draft.heroTitle.trim()) return fail("Banner đầu trang cần có câu chữ lớn.");
+    if (!draft.storyTitle.trim() || !draft.storyBody.trim()) return fail("Khối câu chuyện thương hiệu cần có tiêu đề và nội dung.");
+    if (draft.values.some((v) => !v.title.trim())) return fail("Mỗi giá trị cốt lõi cần có tiêu đề.");
+    if (draft.stats.some((st) => !st.value.trim() || !st.label.trim())) return fail("Mỗi số liệu cần có con số và nhãn.");
+    if (draft.spacePhotos.some((ph) => !ph.image.trim() && !ph.caption.trim())) {
+      return fail("Mỗi ô không gian cửa hàng cần có ảnh hoặc chú thích (hoặc xóa ô trống đi).");
     }
-    if (draft.values.some((v) => !v.title.trim())) {
-      setError("Mỗi giá trị cốt lõi cần có tiêu đề.");
-      return;
-    }
-    if (draft.faq.some((f) => !f.question.trim() || !f.answer.trim())) {
-      setError("Mỗi câu hỏi thường gặp cần có cả câu hỏi và câu trả lời.");
-      return;
-    }
+    if (draft.faq.some((f) => !f.question.trim() || !f.answer.trim())) return fail("Mỗi câu hỏi thường gặp cần có cả câu hỏi và câu trả lời.");
     setError("");
+    setSaving(true);
     const saveError = await saveAboutContent(draft);
-    if (saveError) return toast(saveError, "error");
+    setSaving(false);
+    if (saveError) return fail(saveError);
     toast("Đã lưu — mở trang Giới thiệu để xem thay đổi");
   };
 
   return (
     <div className="space-y-5 pb-20">
-      <Card title="1. Câu chuyện thương hiệu">
+      <Card title="1. Banner đầu trang">
         <div className="space-y-3">
+          <Field label="Câu chữ lớn" required>
+            <input value={draft.heroTitle} onChange={(e) => set("heroTitle", e.target.value)} className={INPUT} />
+          </Field>
+          <Field label="Dòng phụ bên dưới">
+            <input value={draft.heroSubtitle} onChange={(e) => set("heroSubtitle", e.target.value)} className={INPUT} />
+          </Field>
+          <ImageField
+            label="Ảnh nền (tùy chọn, khuyên dùng 2100 × 700) — bỏ trống để dùng nền màu kem"
+            value={draft.heroImage}
+            onChange={(v) => set("heroImage", v)}
+            maxSize={2400}
+          />
+        </div>
+      </Card>
+
+      <Card title="2. Câu chuyện thương hiệu">
+        <div className="space-y-3">
+          <ImageField
+            label="Ảnh bên trái (khuyên dùng 1200 × 900) — ảnh cửa hàng / người sáng lập"
+            value={draft.storyImage}
+            onChange={(v) => set("storyImage", v)}
+            maxSize={1200}
+          />
           <Field label="Nhãn nhỏ phía trên">
             <input value={draft.storyBadge} onChange={(e) => set("storyBadge", e.target.value)} className={INPUT} />
           </Field>
@@ -66,7 +103,7 @@ function AboutForm({ initial }: { initial: AboutContent }) {
       </Card>
 
       <Card
-        title="2. Giá trị cốt lõi"
+        title="3. Giá trị cốt lõi"
         action={
           <button
             type="button"
@@ -122,7 +159,97 @@ function AboutForm({ initial }: { initial: AboutContent }) {
       </Card>
 
       <Card
-        title="3. Câu hỏi thường gặp (FAQ chính sách)"
+        title="4. Số liệu nổi bật"
+        action={
+          <button type="button" className={BTN_OUTLINE} onClick={() => set("stats", [...draft.stats, { value: "", label: "", desc: "" }])}>
+            <Plus className="h-3.5 w-3.5" />
+            Thêm số liệu
+          </button>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-[11px] text-[#7a7a7a]">Chỉ ghi số liệu thật (vd: 3+ Năm hoạt động). Xóa hết để ẩn khối này.</p>
+          {draft.stats.map((st, i) => {
+            const update = (patch: Partial<typeof st>) => set("stats", draft.stats.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+            return (
+              <div key={i} className="space-y-3 rounded-md border border-[#e3e3e3] bg-[#fafafa] p-3">
+                <div className="flex items-center justify-between">
+                  <strong className="text-xs text-[#2b2b2b]">Số liệu {i + 1}</strong>
+                  <div className="flex gap-1.5">
+                    <button type="button" className={BTN_ICON} aria-label="Đưa lên" disabled={i === 0} onClick={() => set("stats", move(draft.stats, i, -1))}>
+                      <ArrowUp className="h-3 w-3" />
+                    </button>
+                    <button type="button" className={BTN_ICON} aria-label="Đưa xuống" disabled={i === draft.stats.length - 1} onClick={() => set("stats", move(draft.stats, i, 1))}>
+                      <ArrowDown className="h-3 w-3" />
+                    </button>
+                    <button type="button" className={BTN_ICON} aria-label="Xóa" onClick={() => set("stats", draft.stats.filter((_, j) => j !== i))}>
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[140px_1fr]">
+                  <Field label="Con số" required>
+                    <input value={st.value} onChange={(e) => update({ value: e.target.value })} className={INPUT} placeholder="3+" />
+                  </Field>
+                  <Field label="Nhãn" required>
+                    <input value={st.label} onChange={(e) => update({ label: e.target.value })} className={INPUT} placeholder="Năm hoạt động" />
+                  </Field>
+                </div>
+                <Field label="Dòng mô tả nhỏ (tùy chọn)">
+                  <input value={st.desc} onChange={(e) => update({ desc: e.target.value })} className={INPUT} />
+                </Field>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      <Card
+        title="5. Không gian cửa hàng"
+        action={
+          <button type="button" className={BTN_OUTLINE} onClick={() => set("spacePhotos", [...draft.spacePhotos, { image: "", caption: "" }])}>
+            <Plus className="h-3.5 w-3.5" />
+            Thêm ảnh
+          </button>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-[11px] text-[#7a7a7a]">
+            Ảnh khuyên dùng 1200 × 900 (tỉ lệ 4:3). Ô chưa có ảnh sẽ hiện khung chờ kèm chú thích. Xóa hết để ẩn ảnh.
+          </p>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {draft.spacePhotos.map((ph, i) => {
+              const update = (patch: Partial<typeof ph>) =>
+                set("spacePhotos", draft.spacePhotos.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+              return (
+                <div key={i} className="space-y-3 rounded-md border border-[#e3e3e3] bg-[#fafafa] p-3">
+                  <div className="flex items-center justify-between">
+                    <strong className="text-xs text-[#2b2b2b]">Ảnh {i + 1}</strong>
+                    <div className="flex gap-1.5">
+                      <button type="button" className={BTN_ICON} aria-label="Đưa lên" disabled={i === 0} onClick={() => set("spacePhotos", move(draft.spacePhotos, i, -1))}>
+                        <ArrowUp className="h-3 w-3" />
+                      </button>
+                      <button type="button" className={BTN_ICON} aria-label="Đưa xuống" disabled={i === draft.spacePhotos.length - 1} onClick={() => set("spacePhotos", move(draft.spacePhotos, i, 1))}>
+                        <ArrowDown className="h-3 w-3" />
+                      </button>
+                      <button type="button" className={BTN_ICON} aria-label="Xóa" onClick={() => set("spacePhotos", draft.spacePhotos.filter((_, j) => j !== i))}>
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                  <ImageField label="Ảnh" value={ph.image} onChange={(v) => update({ image: v })} maxSize={1200} />
+                  <Field label="Chú thích">
+                    <input value={ph.caption} onChange={(e) => update({ caption: e.target.value })} className={INPUT} />
+                  </Field>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Card>
+
+      <Card
+        title="6. Câu hỏi thường gặp (FAQ chính sách)"
         action={
           <button type="button" className={BTN_OUTLINE} onClick={() => set("faq", [...draft.faq, { question: "", answer: "" }])}>
             <Plus className="h-3.5 w-3.5" />
@@ -164,13 +291,15 @@ function AboutForm({ initial }: { initial: AboutContent }) {
 
       <div className="fixed right-0 bottom-0 left-0 z-30 border-t border-[#d6d6d6] bg-white/95 px-4 py-3 backdrop-blur lg:left-[220px]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <p className={`text-[11px] ${error ? "text-rose-600" : "text-[#7a7a7a]"}`}>{error || "Thay đổi chỉ có hiệu lực sau khi bấm Lưu."}</p>
+          <p className={`text-[11px] ${error ? "font-bold text-rose-600" : dirty ? "font-bold text-amber-700" : "text-[#7a7a7a]"}`}>
+            {error || (dirty ? "Bạn có thay đổi chưa lưu — bấm Lưu để áp dụng lên web." : "Thay đổi chỉ có hiệu lực sau khi bấm Lưu.")}
+          </p>
           <div className="flex gap-2">
             <button type="button" className={BTN_OUTLINE} onClick={() => setDraft(structuredClone(initial))}>
               Hoàn tác
             </button>
-            <button type="button" className={BTN_SOLID} onClick={save}>
-              Lưu nội dung
+            <button type="button" className={`${BTN_SOLID} disabled:opacity-60`} onClick={save} disabled={saving}>
+              {saving ? "Đang lưu..." : "Lưu nội dung"}
             </button>
           </div>
         </div>

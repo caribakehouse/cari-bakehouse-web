@@ -70,11 +70,33 @@ export interface FaqItem {
 }
 
 /** Nội dung trang /gioi-thieu */
+/** Một số liệu nổi bật, vd { value: "3+", label: "Năm hoạt động" } */
+export interface AboutStat {
+  value: string;
+  label: string;
+  desc: string;
+}
+
+/** Một ảnh không gian cửa hàng */
+export interface AboutSpacePhoto {
+  image: string;
+  caption: string;
+}
+
 export interface AboutContent {
+  /** Banner đầu trang */
+  heroTitle: string;
+  heroSubtitle: string;
+  /** Ảnh nền banner (bỏ trống = nền màu kem) */
+  heroImage: string;
   storyBadge: string;
   storyTitle: string;
   storyBody: string;
+  /** Ảnh bên trái khối câu chuyện (bỏ trống = khung chờ ảnh) */
+  storyImage: string;
   values: AboutValue[];
+  stats: AboutStat[];
+  spacePhotos: AboutSpacePhoto[];
   faq: FaqItem[];
 }
 
