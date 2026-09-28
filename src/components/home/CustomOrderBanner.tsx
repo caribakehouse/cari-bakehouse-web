@@ -23,7 +23,7 @@ export default function CustomOrderBanner() {
                 Đặt bánh theo yêu cầu
               </h2>
               <p className="mt-1.5 max-w-md text-sm text-white/70">
-                Sinh nhật, lễ kỷ niệm hay sự kiện đặc biệt — Cari sẽ tạo ra chiếc bánh hoàn toàn là của bạn.
+                Sinh nhật, lễ kỷ niệm hay sự kiện đặc biệt, Cari sẽ tạo ra chiếc bánh hoàn toàn là của bạn.
               </p>
             </div>
           </div>
