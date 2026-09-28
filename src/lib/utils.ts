@@ -57,7 +57,7 @@ export function isHttpUrl(value: string): boolean {
  * Đọc file ảnh, thu nhỏ (cạnh dài nhất ≤ maxSize) và trả về data URL JPEG.
  * Admin: src/lib/storage.ts đẩy ảnh này lên Supabase Storage. Form đặt bánh theo yêu cầu vẫn lưu data URL (phần 3).
  */
-export function readImageFile(file: File, maxSize = 720): Promise<string> {
+export function readImageFile(file: File, maxSize = 720, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
       reject(new Error("Vui lòng chọn file ảnh"));
@@ -78,8 +78,13 @@ export function readImageFile(file: File, maxSize = 720): Promise<string> {
           reject(new Error("Trình duyệt không hỗ trợ xử lý ảnh"));
           return;
         }
+        // Nền trắng cho ảnh PNG trong suốt (JPEG không có kênh alpha → vùng trong suốt sẽ thành đen)
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+        resolve(canvas.toDataURL("image/jpeg", quality));
       };
       img.src = String(reader.result);
     };

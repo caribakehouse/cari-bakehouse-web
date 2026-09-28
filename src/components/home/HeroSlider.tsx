@@ -54,6 +54,7 @@ export default function HeroSlider() {
               alt={s.title || `Banner slide ${s.id}`}
               fill
               priority={i === 0}
+              quality={90}
               className="object-cover"
               sizes="100vw"
             />
