@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { X, Copy, Check, RefreshCw, Sparkles, Heart } from "lucide-react";
+import { X, RefreshCw, Sparkles, Heart } from "lucide-react";
 import { getRandomLetter, Letter } from "@/lib/letters";
 
 interface LetterModalProps {
@@ -14,7 +14,6 @@ type AnimationStep = "closed" | "opening-flap" | "sliding-up" | "revealed";
 export default function LetterModal({ isOpen, onClose }: LetterModalProps) {
   const [currentLetter, setCurrentLetter] = useState<Letter | null>(null);
   const [animStep, setAnimStep] = useState<AnimationStep>("closed");
-  const [copied, setCopied] = useState(false);
 
   // Khởi tạo lá thư mới và chạy chuỗi animation khi modal mở
   useEffect(() => {
@@ -22,7 +21,6 @@ export default function LetterModal({ isOpen, onClose }: LetterModalProps) {
       const letter = getRandomLetter();
       setCurrentLetter(letter);
       setAnimStep("closed");
-      setCopied(false);
 
       // Bước 1: 350ms sau khi mở modal -> Bắt đầu lật nắp phong bì
       const timer1 = setTimeout(() => {
@@ -75,7 +73,6 @@ export default function LetterModal({ isOpen, onClose }: LetterModalProps) {
   // Hàm bốc lá thư ngẫu nhiên khác
   const handlePickAnother = () => {
     setAnimStep("closed");
-    setCopied(false);
     setTimeout(() => {
       if (currentLetter) {
         setCurrentLetter(getRandomLetter(currentLetter.id));
@@ -90,13 +87,6 @@ export default function LetterModal({ isOpen, onClose }: LetterModalProps) {
     setTimeout(() => {
       setAnimStep("revealed");
     }, 1600);
-  };
-
-  // Copy mã giảm giá
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
   };
 
   if (!isOpen || !currentLetter) return null;
@@ -284,39 +274,6 @@ export default function LetterModal({ isOpen, onClose }: LetterModalProps) {
                 ))}
               </div>
 
-              {/* Mã giảm giá hoặc quà tặng (nếu có trong mẫu thư) */}
-              {currentLetter.discount && (
-                <div className="mt-5 rounded-2xl bg-gradient-to-r from-[#FFF1F3] to-[#FFF9EE] p-3.5 sm:p-4 border border-rose-200/80 shadow-inner">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#E11D48]">
-                        <Heart className="h-3.5 w-3.5 fill-[#E11D48]" />
-                        <span>Món quà nhỏ: {currentLetter.discount.discountText}</span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-neutral-600">
-                        {currentLetter.discount.description}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => handleCopyCode(currentLetter.discount!.code)}
-                      className="inline-flex items-center justify-center gap-1.5 self-start sm:self-auto rounded-xl bg-[#1B4B5A] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#123640] active:scale-95"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="h-3.5 w-3.5 text-emerald-300" />
-                          <span>Đã sao chép!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3.5 w-3.5" />
-                          <span>Mã: {currentLetter.discount.code}</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* Lời kết & Chữ ký */}
               <div className="mt-6 flex flex-col items-end text-right">

@@ -5,11 +5,6 @@ export interface Letter {
   paragraphs: string[];
   closing: string;
   signature: string;
-  discount?: {
-    code: string;
-    discountText: string;
-    description: string;
-  };
   tag?: string;
 }
 
@@ -26,11 +21,6 @@ export const LETTERS_DATA: Letter[] = [
     ],
     closing: "Thương mến,",
     signature: "Cari. Bakehouse",
-    discount: {
-      code: "SWEETCARI5",
-      discountText: "GIẢM 5%",
-      description: "Tặng bạn chút ngọt ngào cho đơn hàng kế tiếp",
-    },
   },
   {
     id: "letter-2",
@@ -57,11 +47,6 @@ export const LETTERS_DATA: Letter[] = [
     ],
     closing: "Tự hào về bạn rất nhiều,",
     signature: "Cari. Bakehouse",
-    discount: {
-      code: "CARILOVE10",
-      discountText: "GIẢM 10.000đ",
-      description: "Áp dụng cho mọi đơn bánh ngọt tại tiệm",
-    },
   },
   {
     id: "letter-4",
@@ -100,11 +85,6 @@ export const LETTERS_DATA: Letter[] = [
     ],
     closing: "Chúc bạn ngày mới thơm lành,",
     signature: "Cari. Bakehouse",
-    discount: {
-      code: "FRESHDAY",
-      discountText: "QUÀ TẶNG",
-      description: "Tặng kèm thiệp viết tay xinh xắn theo yêu cầu",
-    },
   },
   {
     id: "letter-7",
