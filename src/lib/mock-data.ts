@@ -825,7 +825,7 @@ export const SEED_HOME_CONTENT: HomeContent = {
     image: "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=900&auto=format&fit=crop&q=80",
     badge: "Tiệm bánh thủ công từ 2024",
     quote:
-      "Cari. bắt đầu từ một tình yêu rất đơn giản: thích làm bánh và thích nhìn mọi người ăn bánh mình làm. Tụi mình làm bánh với mong muốn mang đến những món ngọt thật dễ thương, thật ngon và đủ gần gũi để bạn có thể ghé Cari. bất cứ khi nào muốn tự thưởng cho mình một chút.",
+      "Cari bắt đầu từ một tình yêu rất đơn giản: thích làm bánh và thích nhìn mọi người ăn bánh mình làm. Tụi mình làm bánh với mong muốn mang đến những món ngọt thật dễ thương, thật ngon và đủ gần gũi để bạn có thể ghé Cari bất cứ khi nào muốn tự thưởng cho mình một chút ngọt ngào.",
   },
   featuredReviewIds: reviews.map((r) => r.id),
   reviewsTitle: "Khách hàng nói gì?",
@@ -847,7 +847,7 @@ export const SEED_ABOUT_CONTENT: AboutContent = {
   storyBadge: "Câu chuyện của Cari",
   storyTitle: "Vun vén ngọt ngào từ những điều giản dị",
   storyBody:
-    "Cari. bắt đầu từ một tình yêu rất đơn giản: thích làm bánh và thích nhìn mọi người ăn bánh mình làm. Tụi mình làm bánh với mong muốn mang đến những món ngọt thật dễ thương, thật ngon và đủ gần gũi để bạn có thể ghé Cari. bất cứ khi nào muốn tự thưởng cho mình một chút.",
+    "Cari bắt đầu từ một tình yêu rất đơn giản: thích làm bánh và thích nhìn mọi người ăn bánh mình làm. Tụi mình làm bánh với mong muốn mang đến những món ngọt thật dễ thương, thật ngon và đủ gần gũi để bạn có thể ghé Cari bất cứ khi nào muốn tự thưởng cho mình một chút ngọt ngào.",
   values: [
     { icon: "shield", title: "Nguyên liệu chất lượng", desc: "Ưu tiên nguyên liệu sạch và an toàn cho từng chiếc bánh" },
     { icon: "heart", title: "Chăm chút từng bước nhỏ", desc: "Từ khâu chọn nguyên liệu đến hoàn thiện, đều được làm cẩn thận" },
