@@ -69,7 +69,7 @@ export default function ProductMenu() {
                 {/* Price + Round cart button + "Mua ngay" button */}
                 <div className="mt-auto flex flex-col gap-2.5 pt-3 border-t border-[#F5EFE6]">
                   <div className="flex items-baseline gap-1">
-                    <span className="font-heading text-sm font-black text-[#1B4B5A] sm:text-base">
+                    <span className="text-sm font-black text-[#1B4B5A] sm:text-base">
                       {product.sizes?.length ? "Từ " : ""}
                       {formatPrice(product.price)}
                     </span>

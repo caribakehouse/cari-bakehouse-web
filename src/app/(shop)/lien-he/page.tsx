@@ -118,7 +118,7 @@ export default function LienHePage() {
                   <p>
                     <a
                       href={`tel:${settings.hotline}`}
-                      className="font-heading text-base font-bold text-[#1B4B5A] hover:underline"
+                      className="text-base font-bold text-[#1B4B5A] hover:underline"
                     >
                       {formatHotline(settings.hotline, ".")}
                     </a>
@@ -351,7 +351,7 @@ export default function LienHePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1B4B5A] px-10 py-3 font-heading text-sm font-bold text-white shadow-md hover:bg-[#1B4B5A]/90 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1B4B5A] px-10 py-3 text-sm font-bold text-white shadow-md hover:bg-[#1B4B5A]/90 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   <Send className="h-4 w-4 text-[#F6CE8B]" />
                   {isSubmitting ? "Đang gửi..." : "Gửi liên hệ"}

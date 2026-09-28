@@ -16,7 +16,7 @@ export default function PointCard({ data }: { data: PointCardData }) {
             Cari Member Card
           </div>
           <div>
-            <div className="font-heading text-4xl sm:text-5xl font-black tracking-tight text-[#F6CE8B]">
+            <div className="text-4xl sm:text-5xl font-black tracking-tight text-[#F6CE8B]">
               {data.currentPoints.toLocaleString("vi-VN")}{" "}
               <span className="text-xl sm:text-2xl font-normal text-white/90">điểm</span>
             </div>

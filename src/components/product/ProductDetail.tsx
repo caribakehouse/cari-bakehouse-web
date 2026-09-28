@@ -161,7 +161,7 @@ export default function ProductDetail({ slug }: { slug: string }) {
             <h1 className="mt-1 font-heading text-2xl font-black text-[#1B4B5A] sm:text-3xl">{product.name}</h1>
 
             <div className="mt-3 flex items-baseline gap-3">
-              <span className="font-heading text-3xl font-black text-[#1B4B5A]">{formatVND(unitPrice)}</span>
+              <span className="text-3xl font-black text-[#1B4B5A]">{formatVND(unitPrice)}</span>
               {showOriginal && <span className="text-sm text-text-muted line-through">{formatVND(product.originalPrice!)}</span>}
             </div>
 

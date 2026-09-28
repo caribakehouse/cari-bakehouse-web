@@ -57,7 +57,7 @@ export default function Reviews() {
 
               {/* Author */}
               <div className="flex items-center gap-3 border-t border-[#E5D9C3] pt-4">
-                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F6CE8B] font-heading text-sm font-black text-[#1B4B5A]">
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F6CE8B] text-sm font-black text-[#1B4B5A]">
                   {r.avatar ? (
                     <Image src={r.avatar} alt={r.name} fill className="object-cover" sizes="40px" />
                   ) : (

@@ -289,7 +289,7 @@ export function StatCard({
     <div className="flex items-start justify-between gap-3 rounded-lg border border-[#d6d6d6] bg-white p-4">
       <div>
         <div className="text-[11px] font-bold uppercase tracking-wide text-[#7a7a7a]">{label}</div>
-        <div className="mt-1.5 font-heading text-3xl font-black text-[#2b2b2b]">{value}</div>
+        <div className="mt-1.5 text-3xl font-black text-[#2b2b2b]">{value}</div>
         {hint && <div className="mt-1 text-[11px] text-[#9a9a9a]">{hint}</div>}
       </div>
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f0e6c8] text-[#2b2b2b]">{icon}</div>

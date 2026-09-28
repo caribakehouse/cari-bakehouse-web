@@ -101,11 +101,11 @@ export default function TichDiemPage() {
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-muted">Quy tắc tích điểm</span>
                   <div className="flex items-center justify-center md:justify-start gap-3 mt-1">
-                    <span className="font-heading text-2xl sm:text-3xl font-black text-[#1B4B5A]">
+                    <span className="text-2xl sm:text-3xl font-black text-[#1B4B5A]">
                       {config.pointRateVnd.toLocaleString("vi-VN")}đ
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-muted">=</span>
-                    <span className="font-heading text-2xl sm:text-3xl font-black text-[#1B4B5A] bg-[#FCE9C6]/60 px-3 py-0.5 rounded-lg border border-[#F6CE8B]/50">
+                    <span className="text-2xl sm:text-3xl font-black text-[#1B4B5A] bg-[#FCE9C6]/60 px-3 py-0.5 rounded-lg border border-[#F6CE8B]/50">
                       1 điểm
                     </span>
                   </div>
@@ -166,11 +166,11 @@ export default function TichDiemPage() {
             </div>
             <div className="flex flex-col items-center gap-5 rounded-2xl border border-border/80 bg-white p-6 shadow-xs sm:flex-row sm:p-8">
               <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-2xl border border-[#F6CE8B] bg-[#FCE9C6] text-[#1B4B5A]">
-                <span className="font-heading text-3xl font-black leading-none">{config.redeemPoints}</span>
+                <span className="text-3xl font-black leading-none">{config.redeemPoints}</span>
                 <span className="text-[11px] font-bold">điểm</span>
               </div>
               <div className="flex-1 text-center sm:text-left">
-                <p className="font-heading text-lg font-black text-[#1B4B5A]">
+                <p className="text-lg font-black text-[#1B4B5A]">
                   <Gift className="mr-1.5 inline h-5 w-5 text-[#C97B3D]" />1 bánh {redeemGroup} miễn phí
                 </p>
                 <p className="mt-1 text-xs sm:text-sm text-[#2b2b2b]/75">
@@ -356,7 +356,7 @@ export default function TichDiemPage() {
                 >
                   <button
                     onClick={() => toggleFaq(index)}
-                    className="flex w-full items-center justify-between p-5 text-left font-heading text-base font-bold text-[#1B4B5A] hover:bg-[#FFF8EF]/50 transition-colors"
+                    className="flex w-full items-center justify-between p-5 text-left text-base font-bold text-[#1B4B5A] hover:bg-[#FFF8EF]/50 transition-colors"
                   >
                     <span>{item.question}</span>
                     <ChevronDown
@@ -389,7 +389,7 @@ export default function TichDiemPage() {
             <div className="pt-2">
               <Link
                 href="/san-pham"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#F6CE8B] px-8 py-3 font-heading text-sm font-bold text-[#1B4B5A] shadow-md transition-all hover:bg-white hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#F6CE8B] px-8 py-3 text-sm font-bold text-[#1B4B5A] shadow-md transition-all hover:bg-white hover:scale-105"
               >
                 Đặt bánh ngay
                 <ArrowRight className="h-4 w-4" />

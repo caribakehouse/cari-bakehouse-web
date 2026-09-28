@@ -293,7 +293,7 @@ export default function CheckoutPage() {
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-4">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wider text-text-muted">Mã đơn</div>
-                <div className="font-heading text-2xl font-black text-[#1B4B5A]">{o.id}</div>
+                <div className="text-2xl font-black text-[#1B4B5A]">{o.id}</div>
               </div>
               <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">
                 {o.status}
@@ -332,8 +332,8 @@ export default function CheckoutPage() {
                 </div>
               ))}
               <div className="flex items-center justify-between border-t border-border/60 pt-3">
-                <span className="font-heading text-base font-bold text-[#1B4B5A]">Tổng tiền</span>
-                <span className="font-heading text-xl font-black text-[#1B4B5A]">{formatVND(o.total)}</span>
+                <span className="text-base font-bold text-[#1B4B5A]">Tổng tiền</span>
+                <span className="text-xl font-black text-[#1B4B5A]">{formatVND(o.total)}</span>
               </div>
             </div>
 
@@ -785,8 +785,8 @@ export default function CheckoutPage() {
 
             {/* Tổng tiền cuối cùng */}
             <div className="mt-4 flex items-center justify-between border-t border-border/80 pt-4">
-              <span className="font-heading text-base font-bold text-[#1B4B5A]">Tổng tiền</span>
-              <span className="font-heading text-2xl font-black text-[#1B4B5A]">{formatVND(total)}</span>
+              <span className="text-base font-bold text-[#1B4B5A]">Tổng tiền</span>
+              <span className="text-2xl font-black text-[#1B4B5A]">{formatVND(total)}</span>
             </div>
 
             {submitError && (

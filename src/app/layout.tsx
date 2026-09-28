@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Lato, Nunito_Sans } from "next/font/google";
+import { Nunito_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { unstable_rethrow } from "next/navigation";
 import "./globals.css";
 import { PublicDataProvider } from "@/components/PublicDataProvider";
@@ -15,11 +16,22 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_LOYALTY, fetchPublicData, type PublicData } from "@/lib/supabase/public-data";
 
-const lato = Lato({
-  weight: ["400", "700", "900"],
-  subsets: ["latin"],
-  variable: "--font-heading",
+// Font tiêu đề: Magnolia Script (SIL OFL, xem src/app/fonts/OFL.txt). Bản gốc thiếu nhiều chữ có dấu tiếng Việt
+// (ơ, ư, dấu hỏi, dấu nặng, dấu chồng như ấ/ầ...) nên các chữ đó lấy từ Cari Script VN — ghép từ chính nét/dấu của Magnolia.
+// Không dùng font dự phòng tự động (Arial) để trình duyệt tìm chữ thiếu ở Cari Script VN trước.
+// Font chỉ có 1 độ đậm → khai báo 400–900 để các tiêu đề font-bold/font-black không bị làm đậm giả.
+const magnolia = localFont({
+  src: [{ path: "./fonts/MagnoliaScript.otf", weight: "400 900", style: "normal" }],
+  variable: "--font-heading-main",
   display: "swap",
+  adjustFontFallback: false,
+});
+
+const cariScriptVN = localFont({
+  src: [{ path: "./fonts/CariScriptVN.otf", weight: "400 900", style: "normal" }],
+  variable: "--font-heading-vn",
+  display: "swap",
+  adjustFontFallback: false,
 });
 
 const nunitoSans = Nunito_Sans({
@@ -69,7 +81,7 @@ export default async function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${lato.variable} ${nunitoSans.variable}`}
+      className={`${magnolia.variable} ${cariScriptVN.variable} ${nunitoSans.variable}`}
     >
       <body className="flex min-h-screen flex-col bg-cream text-text-dark antialiased">
         <PublicDataProvider data={data}>{children}</PublicDataProvider>

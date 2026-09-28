@@ -196,8 +196,8 @@ export default function CartPage() {
             </p>
 
             <div className="mt-4 flex items-center justify-between border-t border-border/80 pt-4">
-              <span className="font-heading text-base font-bold text-[#1B4B5A]">Tổng tiền</span>
-              <span className="font-heading text-xl font-black text-[#1B4B5A]">{formatVND(subtotal)}</span>
+              <span className="text-base font-bold text-[#1B4B5A]">Tổng tiền</span>
+              <span className="text-xl font-black text-[#1B4B5A]">{formatVND(subtotal)}</span>
             </div>
 
             <button type="button" onClick={handleCheckout} className={`${PRIMARY_BUTTON_CLASS} mt-5 w-full`}>

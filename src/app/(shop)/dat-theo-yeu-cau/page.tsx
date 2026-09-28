@@ -138,7 +138,7 @@ export default function BanhDatTheoYeuCauPage() {
           <div className="pt-2">
             <button
               onClick={scrollToForm}
-              className="inline-flex items-center gap-2 rounded-full bg-[#1B4B5A] px-8 py-3.5 font-heading text-sm font-bold text-white shadow-md hover:bg-[#1B4B5A]/90 hover:scale-105 active:scale-95 transition-all"
+              className="inline-flex items-center gap-2 rounded-full bg-[#1B4B5A] px-8 py-3.5 text-sm font-bold text-white shadow-md hover:bg-[#1B4B5A]/90 hover:scale-105 active:scale-95 transition-all"
             >
               Gửi yêu cầu ngay
               <ArrowDown className="h-4 w-4 text-[#F6CE8B]" />
@@ -164,7 +164,7 @@ export default function BanhDatTheoYeuCauPage() {
                   key={i}
                   className="relative flex w-full flex-col items-center rounded-2xl border border-border/80 bg-white p-5 text-center shadow-xs transition-all hover:border-[#F6CE8B] hover:shadow-sm sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-4rem)/5)]"
                 >
-                  <div className="mb-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#F6CE8B] bg-[#FCE9C6] font-heading text-sm font-black text-[#1B4B5A]">
+                  <div className="mb-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#F6CE8B] bg-[#FCE9C6] text-sm font-black text-[#1B4B5A]">
                     {i + 1}
                   </div>
                   <h3 className="mb-2 font-heading text-sm font-bold text-[#1B4B5A]">{item.title}</h3>
@@ -301,7 +301,7 @@ export default function BanhDatTheoYeuCauPage() {
                         {tier.prices.map((p) => (
                           <li key={p.label} className="flex items-center justify-between gap-3 text-sm">
                             <span className="text-left text-[#2b2b2b]/80">{p.label}</span>
-                            <span className="shrink-0 font-heading font-black text-[#1B4B5A]">{formatVND(p.price)}</span>
+                            <span className="shrink-0 font-black text-[#1B4B5A]">{formatVND(p.price)}</span>
                           </li>
                         ))}
                       </ul>
@@ -459,7 +459,7 @@ export default function BanhDatTheoYeuCauPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1B4B5A] px-12 py-3.5 font-heading text-sm font-bold text-white shadow-md hover:bg-[#1B4B5A]/90 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#1B4B5A] px-12 py-3.5 text-sm font-bold text-white shadow-md hover:bg-[#1B4B5A]/90 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
               >
                 <Send className="h-4 w-4 text-[#F6CE8B]" />
                 {isSubmitting ? "Đang gửi yêu cầu..." : "Gửi yêu cầu"}
@@ -486,7 +486,7 @@ export default function BanhDatTheoYeuCauPage() {
                   <div key={index} className="rounded-2xl border border-border/80 bg-white shadow-xs transition-all overflow-hidden">
                     <button
                       onClick={() => toggleFaq(index)}
-                      className="flex w-full items-center justify-between p-5 text-left font-heading text-base font-bold text-[#1B4B5A] hover:bg-[#FFF8EF]/50 transition-colors"
+                      className="flex w-full items-center justify-between p-5 text-left text-base font-bold text-[#1B4B5A] hover:bg-[#FFF8EF]/50 transition-colors"
                     >
                       <span>{item.question}</span>
                       <ChevronDown

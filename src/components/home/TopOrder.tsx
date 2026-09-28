@@ -50,7 +50,7 @@ export default function TopOrder() {
               >
                 {/* Rank badge */}
                 <div
-                  className={`absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 font-heading text-sm font-black shadow-md ${rank.bg} ${rank.text} ${rank.border}`}
+                  className={`absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-black shadow-md ${rank.bg} ${rank.text} ${rank.border}`}
                 >
                   {i + 1}
                 </div>
@@ -83,7 +83,7 @@ export default function TopOrder() {
 
                   {/* Price */}
                   <div className="mt-3 flex items-baseline gap-2">
-                    <span className="font-heading text-lg font-black text-[#1B4B5A]">
+                    <span className="text-lg font-black text-[#1B4B5A]">
                       {product.sizes?.length ? "Từ " : ""}
                       {formatPrice(product.price)}
                     </span>

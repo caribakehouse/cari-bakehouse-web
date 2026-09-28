@@ -105,7 +105,7 @@ function SealBadge({ label, active, onClick }: SealBadgeProps) {
           y={cy}
           textAnchor="middle"
           dominantBaseline="central"
-          fontFamily="var(--font-heading), Lato, sans-serif"
+          fontFamily="var(--font-heading), sans-serif"
           fontWeight="900"
           fontSize="20"
           letterSpacing="1.5"
@@ -328,7 +328,7 @@ function ProductsContent() {
 
                     {/* Giá tiền */}
                     <div className="mt-3 flex items-baseline gap-2">
-                      <span className="font-heading text-lg font-black text-[#1B4B5A]">
+                      <span className="text-lg font-black text-[#1B4B5A]">
                         {formatPrice(priceForSize(product, chosenSize(product)))}
                       </span>
                       {product.originalPrice && !product.sizes?.length && (

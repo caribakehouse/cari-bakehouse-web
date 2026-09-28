@@ -91,7 +91,7 @@ function CustomerDetail({ customer }: { customer: Customer }) {
         </div>
         <div className="rounded-lg bg-[#f0e6c8] px-4 py-2 text-center">
           <div className="text-[10px] font-bold uppercase text-[#7a7a7a]">Điểm hiện có</div>
-          <div className="font-heading text-2xl font-black text-[#2b2b2b]">{balance.toLocaleString("vi-VN")}</div>
+          <div className="text-2xl font-black text-[#2b2b2b]">{balance.toLocaleString("vi-VN")}</div>
         </div>
       </div>
 

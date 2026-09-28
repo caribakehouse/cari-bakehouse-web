@@ -248,7 +248,7 @@ export default function PackingAnimation({
             fontSize={21}
             fontWeight={900}
             fill={TEAL}
-            fontFamily="var(--font-heading), Lato, sans-serif"
+            fontFamily="var(--font-heading), sans-serif"
           >
             Cari
           </text>

@@ -64,7 +64,7 @@ export default function GioiThieuPage() {
           </h1>
           <div className="mx-auto mt-4 h-1 w-16 rounded-full bg-[#1B4B5A]/20" />
           {heroSubtitle && (
-            <p className="mt-3 font-heading text-sm sm:text-base font-bold text-[#1B4B5A]/80 tracking-wide uppercase">
+            <p className="mt-3 text-sm sm:text-base font-bold text-[#1B4B5A]/80 tracking-wide uppercase">
               {heroSubtitle}
             </p>
           )}
@@ -91,7 +91,7 @@ export default function GioiThieuPage() {
               <div className="h-16 w-16 rounded-full bg-[#FCE9C6] flex items-center justify-center text-[#1B4B5A] mb-3 shadow-inner">
                 <Store className="h-8 w-8 text-[#1B4B5A]" />
               </div>
-              <span className="font-heading text-sm sm:text-base font-bold text-[#1B4B5A]">
+              <span className="text-sm sm:text-base font-bold text-[#1B4B5A]">
                 Ảnh cửa hàng / Người sáng lập
               </span>
               <span className="mt-1 text-xs text-[#7A7A7A]">
@@ -172,7 +172,7 @@ export default function GioiThieuPage() {
             <div className="flex flex-wrap items-start justify-center gap-x-8 gap-y-10 text-center">
               {stats.map((st, i) => (
                 <div key={i} className="flex w-[calc(50%-1rem)] flex-col items-center lg:w-[calc(25%-1.5rem)]">
-                  <span className="font-heading text-4xl sm:text-6xl font-black text-[#1B4B5A] tracking-tight">{st.value}</span>
+                  <span className="text-4xl sm:text-6xl font-black text-[#1B4B5A] tracking-tight">{st.value}</span>
                   <span className="mt-2 text-sm sm:text-base font-bold uppercase tracking-wider text-[#C97B3D]">{st.label}</span>
                   {st.desc && <span className="mt-1 text-xs text-[#7A7A7A]">{st.desc}</span>}
                 </div>
@@ -284,7 +284,7 @@ export default function GioiThieuPage() {
                     aria-expanded={isOpen}
                     className="flex w-full items-center justify-between gap-4 p-5 sm:p-6 text-left cursor-pointer transition-colors"
                   >
-                    <span className="font-heading text-sm sm:text-base font-bold text-[#1B4B5A] leading-snug">
+                    <span className="text-sm sm:text-base font-bold text-[#1B4B5A] leading-snug">
                       {item.question}
                     </span>
                     <div
