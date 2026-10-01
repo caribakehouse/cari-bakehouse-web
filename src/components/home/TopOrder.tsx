@@ -38,19 +38,19 @@ export default function TopOrder() {
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        {/* Grid: điện thoại — món #1 to cả hàng, #2 và #3 xếp 2 cột bên dưới; máy tính — 3 cột */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6">
           {topProducts.map((product, i) => {
             const rank = rankColors[Math.min(i, rankColors.length - 1)];
             const soldOut = getProductStatus(product) === "soldout";
             return (
               <div
                 key={product.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className={`group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${i === 0 ? "col-span-2 sm:col-span-1" : ""}`}
               >
                 {/* Rank badge */}
                 <div
-                  className={`absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-black shadow-md ${rank.bg} ${rank.text} ${rank.border}`}
+                  className={`absolute left-2 top-2 sm:left-3 sm:top-3 z-10 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border-2 text-sm font-black shadow-md ${rank.bg} ${rank.text} ${rank.border}`}
                 >
                   {i + 1}
                 </div>
@@ -58,32 +58,32 @@ export default function TopOrder() {
                 {/* Product image link */}
                 <Link
                   href={`/san-pham/${product.slug}`}
-                  className="relative aspect-square w-full overflow-hidden bg-[#FCE9C6]"
+                  className={`relative w-full overflow-hidden bg-[#FCE9C6] ${i === 0 ? "aspect-[4/3] sm:aspect-square" : "aspect-square"}`}
                 >
                   <Image
                     src={product.image}
                     alt={product.name}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, 33vw"
+                    sizes={i === 0 ? "(max-width: 640px) 100vw, 33vw" : "(max-width: 640px) 50vw, 33vw"}
                     priority={i === 0}
                   />
                 </Link>
 
                 {/* Info */}
-                <div className="flex flex-1 flex-col p-4">
-                  <p className="text-xs font-semibold text-[#C97B3D] uppercase tracking-wide">
+                <div className="flex flex-1 flex-col p-3 sm:p-4">
+                  <p className="text-[10px] sm:text-xs font-semibold text-[#C97B3D] uppercase tracking-wide">
                     {product.category}
                   </p>
                   <Link href={`/san-pham/${product.slug}`}>
-                    <h3 className="font-heading mt-1 text-base font-bold text-[#2B2B2B] line-clamp-2 hover:text-[#1B4B5A] transition-colors">
+                    <h3 className="font-heading mt-1 text-sm sm:text-base font-bold text-[#2B2B2B] line-clamp-2 hover:text-[#1B4B5A] transition-colors">
                       {product.name}
                     </h3>
                   </Link>
 
                   {/* Price */}
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="text-lg font-black text-[#1B4B5A]">
+                  <div className="mt-auto pt-3 flex items-baseline gap-2">
+                    <span className="text-base sm:text-lg font-black text-[#1B4B5A]">
                       {product.sizes?.length ? "Từ " : ""}
                       {formatPrice(product.price)}
                     </span>
@@ -95,16 +95,16 @@ export default function TopOrder() {
                   </div>
 
                   {/* 2 Buttons side-by-side: "Giỏ hàng" and "Mua ngay" */}
-                  <div className="mt-4 flex items-center gap-2 pt-3 border-t border-[#F5EFE6]">
+                  <div className="mt-3 sm:mt-4 flex items-center gap-2 pt-3 border-t border-[#F5EFE6]">
                     <button
                       type="button"
                       onClick={() => addToCart(product)}
                       disabled={soldOut}
                       aria-label={`Thêm ${product.name} vào giỏ hàng`}
-                      className="flex items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-3.5 py-2 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-2.5 sm:px-3.5 py-2 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ShoppingBag className="h-4 w-4" />
-                      <span>Giỏ hàng</span>
+                      <span className={i === 0 ? "" : "hidden sm:inline"}>Giỏ hàng</span>
                     </button>
                     <button
                       type="button"
@@ -113,7 +113,7 @@ export default function TopOrder() {
                         router.push("/gio-hang");
                       }}
                       disabled={soldOut}
-                      className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#123640] hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-3 sm:px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-[#123640] hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <span>{soldOut ? "Hết hàng" : "Mua ngay"}</span>
                     </button>

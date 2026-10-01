@@ -250,25 +250,28 @@ function ProductsContent() {
               )}
             </div>
 
-            {/* Lưới sản phẩm: 3 cột desktop, 2 cột tablet, 1 cột mobile — căn giữa khi nhóm ít món / hàng cuối chưa đủ */}
-            <div className="flex flex-wrap justify-center gap-5 sm:gap-6">
-              {group.products.map((product) => (
+            {/* Lưới sản phẩm: 3 cột desktop, 2 cột tablet và điện thoại — căn giữa khi nhóm ít món / hàng cuối chưa đủ */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-6">
+              {group.products.map((product, productIdx) => {
+                // Điện thoại / máy tính bảng (2 cột): món lẻ cuối nhóm giãn hết chiều ngang thay vì đứng một mình nửa khung
+                const solo = productIdx === group.products.length - 1 && group.products.length % 2 === 1;
+                return (
                 <div
                   key={product.id}
-                  className="group relative flex w-full flex-col overflow-hidden rounded-3xl bg-white border sm:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-3rem)/3)] border-[#E5D9C3]/70 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-[#1B4B5A]/20"
+                  className={`group relative flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-white border ${solo ? "w-full" : "w-[calc((100%-0.75rem)/2)] sm:w-[calc((100%-1.5rem)/2)]"} lg:w-[calc((100%-3rem)/3)] border-[#E5D9C3]/70 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-[#1B4B5A]/20`}
                 >
                   {/* Ảnh sản phẩm + Badge */}
                   <Link
                     href={`/san-pham/${product.slug}`}
-                    className="relative aspect-4/3 sm:aspect-square w-full overflow-hidden bg-[#FCE9C6] block"
+                    className={`relative w-full overflow-hidden bg-[#FCE9C6] block ${solo ? "aspect-[4/3] sm:aspect-[16/9] lg:aspect-square" : "aspect-square"}`}
                   >
                     {getProductStatus(product) === "soldout" && (
-                      <span className="absolute right-3 top-3 z-10 rounded-full bg-rose-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                      <span className="absolute right-2 top-2 sm:right-3 sm:top-3 z-10 rounded-full bg-rose-600 px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
                         Hết hàng
                       </span>
                     )}
                     {product.badge && (
-                      <span className="absolute left-3 top-3 z-10 rounded-full bg-[#1B4B5A] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#F6CE8B] shadow-sm">
+                      <span className="absolute left-2 top-2 sm:left-3 sm:top-3 z-10 rounded-full bg-[#1B4B5A] px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-[#F6CE8B] shadow-sm">
                         {product.badge}
                       </span>
                     )}
@@ -278,24 +281,24 @@ function ProductsContent() {
                       alt={product.name}
                       fill
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      sizes={solo ? "(max-width: 1024px) 100vw, 33vw" : "(max-width: 1024px) 50vw, 33vw"}
                     />
                   </Link>
 
                   {/* Thông tin sản phẩm */}
-                  <div className="flex flex-1 flex-col p-4 sm:p-5">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#C97B3D]">
+                  <div className="flex flex-1 flex-col p-3 sm:p-5">
+                    <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#C97B3D]">
                       {group.title}
                     </p>
 
                     <Link href={`/san-pham/${product.slug}`} className="mt-1">
-                      <h3 className="font-heading text-base sm:text-lg font-bold text-[#2B2B2B] line-clamp-1 transition-colors group-hover:text-[#1B4B5A]">
+                      <h3 className="font-heading text-sm sm:text-lg font-bold text-[#2B2B2B] line-clamp-2 sm:line-clamp-1 transition-colors group-hover:text-[#1B4B5A]">
                         {product.name}
                       </h3>
                     </Link>
 
                     {product.description && (
-                      <p className="mt-1 text-xs text-[#7A7A7A] line-clamp-2 leading-relaxed min-h-[32px]">
+                      <p className="mt-1 text-[11px] sm:text-xs text-[#7A7A7A] line-clamp-2 leading-relaxed sm:min-h-[32px]">
                         {product.description}
                       </p>
                     )}
@@ -313,7 +316,7 @@ function ProductsContent() {
                               aria-checked={active}
                               title={size.dimension}
                               onClick={() => setSizeChoice((prev) => ({ ...prev, [product.slug]: size.label }))}
-                              className={`cursor-pointer rounded-full border px-3 py-1 text-[11px] font-bold transition-colors ${
+                              className={`cursor-pointer rounded-full border px-2.5 py-1 sm:px-3 text-[10px] sm:text-[11px] font-bold transition-colors ${
                                 active
                                   ? "border-[#1B4B5A] bg-[#1B4B5A] text-white"
                                   : "border-[#E5D9C3] bg-white text-[#1B4B5A] hover:border-[#1B4B5A]/50"
@@ -327,8 +330,8 @@ function ProductsContent() {
                     )}
 
                     {/* Giá tiền */}
-                    <div className="mt-3 flex items-baseline gap-2">
-                      <span className="text-lg font-black text-[#1B4B5A]">
+                    <div className="mt-auto pt-3 flex items-baseline gap-2">
+                      <span className="text-base sm:text-lg font-black text-[#1B4B5A]">
                         {formatPrice(priceForSize(product, chosenSize(product)))}
                       </span>
                       {product.originalPrice && !product.sizes?.length && (
@@ -339,13 +342,13 @@ function ProductsContent() {
                     </div>
 
                     {/* 2 Nút: "Đặt ngay" (solid) và "Thêm vào giỏ" (outline) */}
-                    <div className="mt-4 flex items-center gap-2 pt-3 border-t border-[#F5EFE6]">
+                    <div className="mt-3 flex items-center gap-2 pt-3 border-t border-[#F5EFE6]">
                       {/* Nút Đặt ngay */}
                       <button
                         type="button"
                         onClick={(e) => handleBuyNow(e, product)}
                         disabled={getProductStatus(product) === "soldout"}
-                        className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#123640] hover:shadow-md active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex-1 flex items-center justify-center rounded-full bg-[#1B4B5A] px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#123640] hover:shadow-md active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <span>Đặt ngay</span>
                       </button>
@@ -356,16 +359,16 @@ function ProductsContent() {
                         onClick={(e) => handleAddToCart(e, product)}
                         disabled={getProductStatus(product) === "soldout"}
                         aria-label={`Thêm ${product.name} vào giỏ`}
-                        className="flex items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-3.5 py-2.5 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#1B4B5A] px-2.5 sm:px-3.5 py-2 sm:py-2.5 text-xs font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A]/10 active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <ShoppingBag className="h-4 w-4 shrink-0" />
-                        <span className="hidden sm:inline">Thêm vào giỏ</span>
-                        <span className="sm:hidden">Giỏ</span>
+                        <span className={solo ? "" : "hidden sm:inline"}>Thêm vào giỏ</span>
                       </button>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         ))}

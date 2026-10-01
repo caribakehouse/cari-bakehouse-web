@@ -14,7 +14,7 @@ export default function ShopLayout({
     <>
       <Topbar />
       <Header />
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      <main className="flex-1">{children}</main>
       <Footer />
       <BottomNav />
       <FloatingContact />

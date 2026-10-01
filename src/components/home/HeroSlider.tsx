@@ -36,7 +36,7 @@ export default function HeroSlider() {
   const activeIndex = current % heroSlides.length;
 
   return (
-    <section className="relative w-full overflow-hidden bg-[#1B4B5A] aspect-[16/8] sm:aspect-[21/8] min-h-[260px] sm:min-h-[420px] lg:min-h-[520px]">
+    <section className="relative w-full overflow-hidden bg-[#1B4B5A] aspect-[21/8] sm:min-h-[420px] lg:min-h-[520px]">
       {/* Slides (Carousel images only, no text overlay) */}
       {heroSlides.map((s, i) => (
         <div

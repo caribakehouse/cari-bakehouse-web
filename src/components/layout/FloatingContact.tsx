@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, Mail, Heart } from "lucide-react";
+import { Phone, Mail, Heart, MessageCircle, X } from "lucide-react";
 import LetterModal from "@/components/ui/LetterModal";
 import { useSiteSettings } from "@/lib/db";
 import { formatHotline } from "@/lib/utils";
@@ -21,6 +21,8 @@ interface FloatingAction {
 
 export default function FloatingContact() {
   const [isOpenLetter, setIsOpenLetter] = useState(false);
+  // Điện thoại: các nút gom vào 1 nút "Liên hệ", bấm mới bung ra (máy tính luôn hiện đủ)
+  const [expanded, setExpanded] = useState(false);
   const settings = useSiteSettings();
 
   const actions: FloatingAction[] = [
@@ -82,6 +84,11 @@ export default function FloatingContact() {
         aria-label="Liên hệ và quà tặng nhanh"
         className="fixed right-3.5 sm:right-5 bottom-20 md:bottom-6 z-40 flex flex-col items-center gap-2.5 sm:gap-3"
       >
+        <div
+          id="floating-contact-list"
+          className={`${expanded ? "flex" : "hidden"} flex-col items-center gap-2.5 sm:gap-3 md:flex`}
+          onClick={() => setExpanded(false)}
+        >
         {/* Nút mới: Lá thư ngẫu nhiên */}
         <div className="group relative flex items-center">
           {/* Tooltip hiển thị khi hover trên desktop */}
@@ -140,6 +147,24 @@ export default function FloatingContact() {
             </a>
           </div>
         ))}
+        </div>
+
+        {/* Nút gom (chỉ điện thoại) */}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-controls="floating-contact-list"
+          aria-label={expanded ? "Đóng các nút liên hệ" : "Mở các nút liên hệ"}
+          className="relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-[#1B4B5A] text-[#F6CE8B] shadow-lg ring-2 ring-cream/80 transition-all duration-300 active:scale-95 md:hidden"
+        >
+          {expanded ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+          {!expanded && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-white shadow-sm ring-1 ring-white">
+              <Heart className="h-2.5 w-2.5 fill-current" />
+            </span>
+          )}
+        </button>
       </aside>
 
       {/* Modal lá thư ngẫu nhiên */}

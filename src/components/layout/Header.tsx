@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -67,8 +68,8 @@ export default function Header() {
     <header className="sticky top-0 z-30 w-full border-b border-border/80 bg-cream/95 backdrop-blur-md transition-all">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* ================= 1. Bên trái: Logo ================= */}
-        <Link href="/" className="group flex items-center gap-3">
-          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-accent bg-accent/20 shadow-xs transition-transform duration-300 group-hover:scale-105 group-hover:border-primary">
+        <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="relative flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-accent bg-accent/20 shadow-xs transition-transform duration-300 group-hover:scale-105 group-hover:border-primary">
             <Image
               src="/images/logo.jpg"
               alt="Cari Bakehouse Logo"
@@ -80,10 +81,10 @@ export default function Header() {
           </div>
 
           <div className="flex flex-col">
-            <span className="font-heading text-xl font-bold tracking-tight text-primary transition-colors group-hover:text-primary-dark sm:text-2xl">
+            <span className="whitespace-nowrap font-heading text-lg min-[380px]:text-xl font-bold tracking-tight text-primary transition-colors group-hover:text-primary-dark sm:text-2xl">
               Cari Bakehouse
             </span>
-            <span className="text-[10px] font-semibold tracking-wider text-text-muted uppercase">
+            <span className="whitespace-nowrap text-[9px] min-[380px]:text-[10px] font-semibold tracking-wide sm:tracking-wider text-text-muted uppercase">
               Indulgence in every bite
             </span>
           </div>
@@ -182,7 +183,8 @@ export default function Header() {
       )}
 
       {/* ================= Mobile Navigation Drawer & Overlay ================= */}
-      {isMobileMenuOpen && (
+      {/* Gắn thẳng vào <body>: header có backdrop-blur nên phần tử fixed bên trong bị giới hạn trong chiều cao header */}
+      {isMobileMenuOpen && createPortal(
         <div className="fixed inset-0 z-50 lg:hidden">
           {/* Backdrop mờ */}
           <div
@@ -317,7 +319,8 @@ export default function Header() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </header>
   );

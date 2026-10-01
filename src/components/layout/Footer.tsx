@@ -37,8 +37,9 @@ export default function Footer() {
     setNotice({ ok: true, text: "Cảm ơn bạn! Cari sẽ gửi ưu đãi ngọt ngào qua email này." });
   };
 
+  // pb-16: chừa chỗ cho thanh menu dưới cùng trên điện thoại (BottomNav) để không che dòng cuối footer
   return (
-    <footer className="border-t border-primary-dark/20 bg-primary text-cream">
+    <footer className="border-t border-primary-dark/20 bg-primary pb-16 text-cream md:pb-0">
       {/* Khối chính 4 cột */}
       <div className="mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
@@ -83,8 +84,8 @@ export default function Footer() {
 
           {/* ================= Cột 2: Điều hướng ================= */}
           <div>
-            <h3 className="font-heading text-base font-bold tracking-wide text-accent uppercase">
-              Điều Hướng
+            <h3 className="font-heading text-lg font-bold text-accent">
+              Điều hướng
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm">
               <li>
@@ -140,8 +141,8 @@ export default function Footer() {
 
           {/* ================= Cột 3: Chính sách ================= */}
           <div>
-            <h3 className="font-heading text-base font-bold tracking-wide text-accent uppercase">
-              Chính Sách
+            <h3 className="font-heading text-lg font-bold text-accent">
+              Chính sách
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm">
               <li>
@@ -189,8 +190,8 @@ export default function Footer() {
 
           {/* ================= Cột 4: Liên hệ & Mạng xã hội ================= */}
           <div className="space-y-4">
-            <h3 className="font-heading text-base font-bold tracking-wide text-accent uppercase">
-              Liên Hệ & Kết Nối
+            <h3 className="font-heading text-lg font-bold text-accent">
+              Liên hệ & kết nối
             </h3>
 
             <div className="space-y-2.5 text-sm text-cream/90">

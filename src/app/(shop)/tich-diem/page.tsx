@@ -100,12 +100,12 @@ export default function TichDiemPage() {
                 </div>
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-muted">Quy tắc tích điểm</span>
-                  <div className="flex items-center justify-center md:justify-start gap-3 mt-1">
-                    <span className="text-2xl sm:text-3xl font-black text-[#1B4B5A]">
+                  <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-3 mt-1 whitespace-nowrap">
+                    <span className="text-xl sm:text-3xl font-black text-[#1B4B5A]">
                       {config.pointRateVnd.toLocaleString("vi-VN")}đ
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-muted">=</span>
-                    <span className="text-2xl sm:text-3xl font-black text-[#1B4B5A] bg-[#FCE9C6]/60 px-3 py-0.5 rounded-lg border border-[#F6CE8B]/50">
+                    <span className="text-xl sm:text-3xl font-black text-[#1B4B5A] bg-[#FCE9C6]/60 px-2.5 sm:px-3 py-0.5 rounded-lg border border-[#F6CE8B]/50">
                       1 điểm
                     </span>
                   </div>
