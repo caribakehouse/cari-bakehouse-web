@@ -14,25 +14,35 @@ const OVERLAYS: Record<Exclude<BannerOverlay, "none">, string> = {
 
 export default function DualBanner() {
   // Banner đôi Bánh / Đồ uống do admin chỉnh ở /admin/noi-dung-trang-chu.
-  // Khung luôn giữ tỉ lệ 1200 × 440 nên ảnh admin tự thiết kế hiện trọn vẹn, không bị cắt mép trên mọi màn hình.
+  // Khung vừa đúng ảnh nên không cắt mất chữ: ảnh ngang 1200 × 440. Điện thoại chỉ chuyển sang khung vuông
+  // khi admin đã tải ảnh vuông riêng (imageMobile).
   const { banners } = useHomeContent();
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-10 pb-4 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 pt-3 pb-0 sm:px-6 sm:pt-10 sm:pb-4 lg:px-8">
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         {banners.map((b, i) => (
           <Link
             key={`${b.label}-${i}`}
             href={b.href}
             aria-label={b.label}
-            className="group relative flex aspect-[30/11] items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl border border-[#E5D9C3] shadow-md transition-all duration-300 hover:shadow-xl active:scale-[0.98]"
+            className={`group relative flex ${b.imageMobile ? "aspect-square sm:aspect-[30/11]" : "aspect-[30/11]"} items-center justify-center overflow-hidden rounded-xl sm:rounded-2xl border border-[#E5D9C3] shadow-md transition-all duration-300 hover:shadow-xl active:scale-[0.98]`}
           >
             <div className="absolute inset-0 overflow-hidden">
+              {b.imageMobile && (
+                <Image
+                  src={b.imageMobile}
+                  alt={b.label}
+                  fill
+                  className="object-cover sm:hidden"
+                  sizes="50vw"
+                />
+              )}
               <Image
                 src={b.image}
                 alt={b.label}
                 fill
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                className={`object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] ${b.imageMobile ? "hidden sm:block" : ""}`}
                 sizes="50vw"
               />
             </div>

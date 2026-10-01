@@ -25,7 +25,7 @@ export default function TopOrder() {
   if (topProducts.length === 0) return null;
 
   return (
-    <section className="bg-[#FFF8EF] py-14">
+    <section className="bg-[#FFF8EF] pt-8 pb-14 sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <div className="mb-8 flex items-center gap-3">

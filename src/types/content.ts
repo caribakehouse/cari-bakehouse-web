@@ -20,6 +20,8 @@ export interface BannerItem {
   label: string;
   href: string;
   image: string;
+  /** Ảnh vuông riêng cho điện thoại. Bỏ trống = cắt phần giữa ảnh ngang. */
+  imageMobile?: string;
   /** Hiện chữ (tiêu đề) đè lên ảnh. Mặc định tắt: chỉ hiện ảnh admin tự thiết kế. */
   showText?: boolean;
   /** Lớp phủ trắng mờ trên ảnh. Bỏ trống = "none". */

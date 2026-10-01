@@ -198,6 +198,12 @@ function HomeContentForm({ initial, initialReviews }: { initial: HomeContent; in
                   onChange={(v) => update({ image: v })}
                   maxSize={1200}
                 />
+                <ImageField
+                  label="Ảnh cho điện thoại (vuông, khuyên dùng 800 × 800 — bỏ trống thì điện thoại hiện ảnh ngang ở trên)"
+                  value={b.imageMobile ?? ""}
+                  onChange={(v) => update({ imageMobile: v || undefined })}
+                  maxSize={1000}
+                />
                 <label className="flex cursor-pointer items-center gap-2 text-[11px] text-[#5b5b5b]">
                   <input
                     type="checkbox"
