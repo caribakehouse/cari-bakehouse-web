@@ -77,7 +77,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2.5">
                 <Clock className="h-4 w-4 shrink-0 text-accent" />
-                <span>Mở cửa: 10:00 a.m - 12:00 p.m</span>
+                <span>Mở cửa: 10:00 – 24:00</span>
               </div>
             </div>
           </div>

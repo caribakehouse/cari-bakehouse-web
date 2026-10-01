@@ -154,7 +154,7 @@ export default function LienHePage() {
                 <div className="space-y-1 text-sm">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted">Giờ mở cửa / nhận đơn</span>
                   <p className="font-semibold text-[#1B4B5A]">
-                    Từ 10:00
+                    10:00 – 24:00
                   </p>
                 </div>
               </div>
