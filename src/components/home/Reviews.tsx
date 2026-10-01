@@ -25,10 +25,10 @@ export default function Reviews() {
   if (reviews.length === 0) return null;
 
   return (
-    <section className="border-t border-[#E5D9C3] bg-white py-14">
+    <section className="border-t border-[#E5D9C3] bg-white py-8 sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Heading */}
-        <div className="mb-8 text-center">
+        <div className="mb-5 text-center sm:mb-8">
           <h2 className="font-heading text-2xl font-black text-[#1B4B5A] sm:text-3xl">{reviewsTitle}</h2>
           {reviewsSubtitle && <p className="mt-2 text-sm text-[#7A7A7A]">{reviewsSubtitle}</p>}
         </div>

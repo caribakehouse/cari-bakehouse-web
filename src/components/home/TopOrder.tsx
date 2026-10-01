@@ -25,10 +25,10 @@ export default function TopOrder() {
   if (topProducts.length === 0) return null;
 
   return (
-    <section className="bg-[#FFF8EF] pt-8 pb-14 sm:py-14">
+    <section className="bg-[#FFF8EF] py-6 sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Heading */}
-        <div className="mb-8 flex items-center gap-3">
+        <div className="mb-5 flex items-center gap-3 sm:mb-8">
           <Trophy className="h-6 w-6 text-[#C97B3D]" />
           <div>
             <h2 className="font-heading text-2xl font-black text-[#1B4B5A] sm:text-3xl">

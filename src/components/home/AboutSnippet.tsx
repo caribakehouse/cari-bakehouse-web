@@ -10,7 +10,7 @@ export default function AboutSnippet() {
   const { about } = useHomeContent();
 
   return (
-    <section className="py-16 sm:py-20">
+    <section className="py-8 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* 2 columns layout: Left is Image, Right is Text */}
         <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-14">

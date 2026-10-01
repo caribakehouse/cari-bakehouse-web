@@ -7,12 +7,14 @@ export default function Gallery() {
   // Ảnh gallery do admin chỉnh ở /admin/noi-dung-trang-chu
   const { gallery: galleryItems } = useHomeContent();
   if (galleryItems.length === 0) return null;
+  // Điện thoại (2 cột): ảnh đầu chỉ to cả hàng khi số ảnh lẻ, để các hàng còn lại luôn đủ 2 ảnh
+  const featureFirst = galleryItems.length % 2 === 1;
 
   return (
-    <section className="bg-[#FFF8EF] py-14">
+    <section className="bg-[#FFF8EF] py-6 sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Heading */}
-        <div className="mb-8 text-center">
+        <div className="mb-5 text-center sm:mb-8">
           <h2 className="font-heading text-2xl font-black text-[#1B4B5A] sm:text-3xl">
             Góc ảnh Cari
           </h2>
@@ -27,8 +29,7 @@ export default function Gallery() {
             <div
               key={item.id}
               className={`group relative overflow-hidden rounded-xl bg-[#E5D9C3] shadow-sm transition-all duration-300 hover:shadow-md ${
-                // Make first item span 2 cols on sm+
-                i === 0 ? "col-span-2 sm:col-span-1 aspect-square" : "aspect-square"
+                i === 0 && featureFirst ? "col-span-2 sm:col-span-1 aspect-square" : "aspect-square"
               }`}
             >
               <Image

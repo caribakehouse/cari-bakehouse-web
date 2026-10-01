@@ -3,7 +3,7 @@ import { ChevronRight, CakeSlice } from "lucide-react";
 
 export default function CustomOrderBanner() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-6 lg:px-8">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1B4B5A] via-[#1B4B5A] to-[#123640] px-8 py-10 shadow-lg sm:px-12 sm:py-14">
         {/* Decorative */}
         <div className="absolute right-[-40px] top-[-40px] h-64 w-64 rounded-full bg-white/5" />

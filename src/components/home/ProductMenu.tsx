@@ -18,10 +18,10 @@ export default function ProductMenu() {
   const menuProducts = useProductsBySlugs(menuSlugs, 8);
 
   return (
-    <section className="py-14">
+    <section className="py-6 sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Heading (Only title, no subtitle, no top-right link) */}
-        <div className="mb-8">
+        <div className="mb-5 sm:mb-8">
           <h2 className="font-heading text-2xl font-black text-[#1B4B5A] sm:text-3xl">
             Thực đơn của Cari
           </h2>
@@ -113,7 +113,7 @@ export default function ProductMenu() {
         </div>
 
         {/* Centered button "Xem tất cả" at the bottom of the section */}
-        <div className="mt-10 flex justify-center">
+        <div className="mt-6 flex justify-center sm:mt-10">
           <Link
             href="/san-pham"
             className="inline-flex items-center gap-2 rounded-full bg-[#1B4B5A] px-8 py-3.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:bg-[#123640] hover:shadow-xl hover:scale-105"
