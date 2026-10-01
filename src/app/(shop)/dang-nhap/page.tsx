@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import AuthShell from "@/components/account/AuthShell";
+import GoogleSignInButton from "@/components/account/GoogleSignInButton";
 import {
   INPUT_CLASS,
   INPUT_ERROR_CLASS,
@@ -78,66 +79,69 @@ export default function LoginPage() {
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <div className="space-y-1.5">
-            <label htmlFor="login-email" className={LABEL_CLASS}>
-              Email
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              autoComplete="email"
-              placeholder="ban@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={!!errors.email}
-              className={`${INPUT_CLASS} ${errors.email ? INPUT_ERROR_CLASS : ""}`}
-            />
-            {errors.email && <p className="text-xs text-rose-600">{errors.email}</p>}
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="login-password" className={LABEL_CLASS}>
-              Mật khẩu
-            </label>
-            <div className="relative">
+        <>
+          <GoogleSignInButton />
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="login-email" className={LABEL_CLASS}>
+                Email
+              </label>
               <input
-                id="login-password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="Nhập mật khẩu"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                aria-invalid={!!errors.password}
-                className={`${INPUT_CLASS} pr-11 ${errors.password ? INPUT_ERROR_CLASS : ""}`}
+                id="login-email"
+                type="email"
+                autoComplete="email"
+                placeholder="ban@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={!!errors.email}
+                className={`${INPUT_CLASS} ${errors.email ? INPUT_ERROR_CLASS : ""}`}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-text-muted hover:text-[#1B4B5A]"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+              {errors.email && <p className="text-xs text-rose-600">{errors.email}</p>}
             </div>
-            {errors.password && <p className="text-xs text-rose-600">{errors.password}</p>}
-          </div>
 
-          {errors.form && (
-            <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
-              {errors.form}
-            </p>
-          )}
+            <div className="space-y-1.5">
+              <label htmlFor="login-password" className={LABEL_CLASS}>
+                Mật khẩu
+              </label>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="Nhập mật khẩu"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  aria-invalid={!!errors.password}
+                  className={`${INPUT_CLASS} pr-11 ${errors.password ? INPUT_ERROR_CLASS : ""}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-text-muted hover:text-[#1B4B5A]"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-xs text-rose-600">{errors.password}</p>}
+            </div>
 
-          <button
-            type="submit"
-            disabled={submitting || redirecting}
-            className={`${PRIMARY_BUTTON_CLASS} w-full disabled:cursor-wait disabled:opacity-70`}
-          >
-            <LogIn className="h-4 w-4 text-[#F6CE8B]" />
-            {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
-          </button>
-        </form>
+            {errors.form && (
+              <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {errors.form}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting || redirecting}
+              className={`${PRIMARY_BUTTON_CLASS} w-full disabled:cursor-wait disabled:opacity-70`}
+            >
+              <LogIn className="h-4 w-4 text-[#F6CE8B]" />
+              {submitting ? "Đang đăng nhập..." : "Đăng nhập"}
+            </button>
+          </form>
+        </>
       )}
     </AuthShell>
   );

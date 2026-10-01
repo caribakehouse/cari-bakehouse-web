@@ -118,6 +118,19 @@ export async function signIn(email: string, password: string): Promise<{ user: A
 }
 
 /**
+ * Đăng nhập bằng Google: chuyển sang trang Google, xong quay về /auth/callback rồi tới `next`.
+ * Lần đầu đăng nhập, trigger trong database tự tạo hồ sơ khách (tên lấy từ tài khoản Google).
+ * Trả về thông báo lỗi nếu không mở được trang Google.
+ */
+export async function signInWithGoogle(next: string): Promise<string | null> {
+  const { error } = await client().auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+  });
+  return error ? translateError(error) : null;
+}
+
+/**
  * Tạo tài khoản. Hồ sơ khách (profiles + customers) do trigger trong database tự tạo.
  * Nếu Supabase đang bật "Confirm email" thì chưa đăng nhập ngay: needsConfirmation = true.
  */

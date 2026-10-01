@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
 import AuthShell from "@/components/account/AuthShell";
+import GoogleSignInButton from "@/components/account/GoogleSignInButton";
 import {
   INPUT_CLASS,
   INPUT_ERROR_CLASS,
@@ -149,41 +150,44 @@ export default function RegisterPage() {
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          {fields.map((field) => (
-            <div key={field.key} className="space-y-1.5">
-              <label htmlFor={`register-${field.key}`} className={LABEL_CLASS}>
-                {field.label}
-              </label>
-              <input
-                id={`register-${field.key}`}
-                type={field.type}
-                autoComplete={field.autoComplete}
-                placeholder={field.placeholder}
-                value={values[field.key]}
-                onChange={setField(field.key)}
-                aria-invalid={!!errors[field.key]}
-                className={`${INPUT_CLASS} ${errors[field.key] ? INPUT_ERROR_CLASS : ""}`}
-              />
-              {errors[field.key] && <p className="text-xs text-rose-600">{errors[field.key]}</p>}
-            </div>
-          ))}
+        <>
+          <GoogleSignInButton />
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            {fields.map((field) => (
+              <div key={field.key} className="space-y-1.5">
+                <label htmlFor={`register-${field.key}`} className={LABEL_CLASS}>
+                  {field.label}
+                </label>
+                <input
+                  id={`register-${field.key}`}
+                  type={field.type}
+                  autoComplete={field.autoComplete}
+                  placeholder={field.placeholder}
+                  value={values[field.key]}
+                  onChange={setField(field.key)}
+                  aria-invalid={!!errors[field.key]}
+                  className={`${INPUT_CLASS} ${errors[field.key] ? INPUT_ERROR_CLASS : ""}`}
+                />
+                {errors[field.key] && <p className="text-xs text-rose-600">{errors[field.key]}</p>}
+              </div>
+            ))}
 
-          {errors.form && (
-            <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
-              {errors.form}
-            </p>
-          )}
+            {errors.form && (
+              <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {errors.form}
+              </p>
+            )}
 
-          <button
-            type="submit"
-            disabled={submitting || redirecting}
-            className={`${PRIMARY_BUTTON_CLASS} w-full disabled:cursor-wait disabled:opacity-70`}
-          >
-            <UserPlus className="h-4 w-4 text-[#F6CE8B]" />
-            {submitting ? "Đang tạo tài khoản..." : "Đăng ký"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={submitting || redirecting}
+              className={`${PRIMARY_BUTTON_CLASS} w-full disabled:cursor-wait disabled:opacity-70`}
+            >
+              <UserPlus className="h-4 w-4 text-[#F6CE8B]" />
+              {submitting ? "Đang tạo tài khoản..." : "Đăng ký"}
+            </button>
+          </form>
+        </>
       )}
     </AuthShell>
   );
