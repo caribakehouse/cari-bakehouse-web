@@ -249,7 +249,7 @@ export default function GioiThieuPage() {
       {/* ============================================================
           8. CHÍNH SÁCH & CÂU HỎI THƯỜNG GẶP (ACCORDION)
           ============================================================ */}
-      <section className="py-14 sm:py-20 bg-white/70 border-t border-[#E5D9C3]/70">
+      <section id="chinh-sach" className="scroll-mt-24 py-14 sm:py-20 bg-white/70 border-t border-[#E5D9C3]/70">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 sm:mb-14">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FCE9C6] px-3.5 py-1 text-xs font-bold text-[#1B4B5A] uppercase tracking-wider mb-2">

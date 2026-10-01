@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   LayoutDashboard,
   LayoutTemplate,
+  Mail,
   Menu,
   Package,
   Search,
@@ -43,6 +44,7 @@ const MENU: MenuItem[] = [
   { href: "/admin/khach-hang", label: "Khách hàng", title: "Khách hàng & điểm", icon: Users },
   { href: "/admin/dat-theo-yeu-cau", label: "Bánh đặt theo yêu cầu", title: "Bánh đặt theo yêu cầu", icon: Cake },
   { href: "/admin/tich-diem", label: "Tích điểm", title: "Tích điểm", icon: Award },
+  { href: "/admin/email-uu-dai", label: "Email nhận ưu đãi", title: "Email nhận ưu đãi", icon: Mail },
   {
     href: "/admin/noi-dung-trang-chu",
     label: "Nội dung trang",

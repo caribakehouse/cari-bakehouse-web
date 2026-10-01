@@ -294,6 +294,24 @@ const requestsQuery = createQuery(async () => {
   );
 }, EMPTY_REQUESTS);
 
+export interface NewsletterSubscriber {
+  email: string;
+  createdAt: string;
+}
+const EMPTY_SUBSCRIBERS: NewsletterSubscriber[] = [];
+
+// Chỉ admin đọc được (RLS) — khách đăng nhập thường nhận danh sách rỗng
+const subscribersQuery = createQuery(async () => {
+  const { data, error } = await sb()
+    .from("newsletter_subscribers")
+    .select("email, created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as { email: string; created_at: string }[]).map(
+    (r): NewsletterSubscriber => ({ email: r.email, createdAt: r.created_at }),
+  );
+}, EMPTY_SUBSCRIBERS);
+
 const emailKey = (email: string | undefined) => (email ?? "").trim().toLowerCase();
 
 // ═════════════════════════ SẢN PHẨM ═════════════════════════
@@ -747,6 +765,27 @@ export async function updateCustomRequest(
 }
 
 export type { CustomOrderStatus };
+
+// ═════════════════════════ EMAIL NHẬN ƯU ĐÃI ═════════════════════════
+
+/** Ô "Nhận ưu đãi ngọt ngào" ở footer — ai cũng gửi được; email đã đăng ký rồi thì database bỏ qua. */
+export async function subscribeNewsletter(email: string): Promise<SaveResult> {
+  const { error } = await sb().rpc("subscribe_newsletter", { p_email: email.trim() });
+  if (error) return saveError(error);
+  void subscribersQuery.reload();
+  return null;
+}
+
+export function useNewsletterSubscribers(): NewsletterSubscriber[] {
+  return subscribersQuery.use();
+}
+
+export async function deleteNewsletterSubscriber(email: string): Promise<SaveResult> {
+  const { error } = await sb().from("newsletter_subscribers").delete().eq("email", email);
+  if (error) return saveError(error);
+  await subscribersQuery.reload();
+  return null;
+}
 
 // ═════════════════════════ NỘI DUNG & CÀI ĐẶT ═════════════════════════
 

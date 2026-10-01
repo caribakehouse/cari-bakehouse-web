@@ -10,11 +10,32 @@ import {
   Heart,
   Send,
 } from "lucide-react";
-import { useSiteSettings } from "@/lib/db";
+import { useState, type FormEvent } from "react";
+import { subscribeNewsletter, useSiteSettings } from "@/lib/db";
 import { formatHotline } from "@/lib/utils";
+
+// Chưa có trang riêng cho từng chính sách → dẫn tới mục "Chính sách & câu hỏi thường gặp" ở trang Giới thiệu
+const POLICY_HREF = "/gioi-thieu#chinh-sach";
 
 export default function Footer() {
   const settings = useSiteSettings();
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const subscribe = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (sending) return;
+    setSending(true);
+    const error = await subscribeNewsletter(email);
+    setSending(false);
+    if (error) {
+      setNotice({ ok: false, text: error });
+      return;
+    }
+    setEmail("");
+    setNotice({ ok: true, text: "Cảm ơn bạn! Cari sẽ gửi ưu đãi ngọt ngào qua email này." });
+  };
 
   return (
     <footer className="border-t border-primary-dark/20 bg-primary text-cream">
@@ -125,7 +146,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-2.5 text-sm">
               <li>
                 <Link
-                  href="/chinh-sach-giao-hang"
+                  href={POLICY_HREF}
                   className="text-cream/80 transition-colors hover:text-accent"
                 >
                   Chính sách giao hàng
@@ -133,7 +154,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/chinh-sach-doi-tra"
+                  href={POLICY_HREF}
                   className="text-cream/80 transition-colors hover:text-accent"
                 >
                   Chính sách đổi trả & hoàn tiền
@@ -141,7 +162,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/huong-dan-bao-quan"
+                  href={POLICY_HREF}
                   className="text-cream/80 transition-colors hover:text-accent"
                 >
                   Hướng dẫn bảo quản bánh
@@ -149,7 +170,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/chinh-sach-bao-mat"
+                  href={POLICY_HREF}
                   className="text-cream/80 transition-colors hover:text-accent"
                 >
                   Chính sách bảo mật
@@ -157,7 +178,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/dieu-khoan-dich-vu"
+                  href={POLICY_HREF}
                   className="text-cream/80 transition-colors hover:text-accent"
                 >
                   Điều khoản dịch vụ
@@ -254,20 +275,33 @@ export default function Footer() {
             {/* Form nhận ưu đãi */}
             <div className="pt-2">
               <span className="text-xs text-cream/70">Nhận ưu đãi ngọt ngào:</span>
-              <div className="mt-2 flex items-center">
+              <form onSubmit={subscribe} className="mt-2 flex items-center">
                 <input
                   type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setNotice(null);
+                  }}
                   placeholder="Email của bạn..."
+                  aria-label="Email nhận ưu đãi"
                   className="w-full rounded-l-md border-0 bg-cream/15 px-3 py-2 text-xs text-cream placeholder-cream/50 focus:bg-cream/25 focus:outline-hidden focus:ring-1 focus:ring-accent"
                 />
                 <button
-                  type="button"
+                  type="submit"
+                  disabled={sending}
                   aria-label="Gửi email nhận ưu đãi"
-                  className="flex items-center justify-center rounded-r-md bg-accent px-3 py-2 text-xs font-semibold text-primary-dark transition-colors hover:bg-accent-light"
+                  className="flex items-center justify-center rounded-r-md bg-accent px-3 py-2 text-xs font-semibold text-primary-dark transition-colors hover:bg-accent-light disabled:opacity-60"
                 >
                   <Send className="h-3.5 w-3.5" />
                 </button>
-              </div>
+              </form>
+              {notice && (
+                <p role="status" className={`mt-2 text-xs ${notice.ok ? "text-accent" : "text-rose-300"}`}>
+                  {notice.text}
+                </p>
+              )}
             </div>
           </div>
         </div>
