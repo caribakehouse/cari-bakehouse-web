@@ -9,7 +9,7 @@ import AboutSnippet from "@/components/home/AboutSnippet";
 import Reviews from "@/components/home/Reviews";
 
 export const metadata = {
-  title: "Trang chủ — Cari Bakehouse",
+  title: "Trang chủ · Cari Bakehouse",
   description:
     "Cari Bakehouse — Tiệm bánh thủ công Hà Nội. Bánh tươi làm theo đơn, nguyên liệu nhập khẩu, không chất bảo quản. Đặt bánh sinh nhật, bánh theo yêu cầu.",
 };

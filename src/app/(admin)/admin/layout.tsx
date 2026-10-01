@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import AdminShell from "@/components/admin/AdminShell";
 
 export const metadata: Metadata = {
-  title: "Quản trị — Cari Bakehouse",
+  title: "Quản trị · Cari Bakehouse",
   robots: { index: false, follow: false },
 };
 

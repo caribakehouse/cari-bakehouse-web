@@ -42,7 +42,7 @@ const nunitoSans = Nunito_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Cari Bakehouse — Indulgence In Every Bite",
+  title: "Cari Bakehouse · Indulgence In Every Bite",
   description:
     "Cari Bakehouse — Tiệm bánh thủ công tại Hà Nội với những chiếc bánh tươi ngon, làm từ nguyên liệu tự nhiên mỗi ngày.",
 };

@@ -13,9 +13,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .select("name, description, image")
     .eq("slug", decodeURIComponent(slug))
     .maybeSingle();
-  if (!data) return { title: "Không tìm thấy sản phẩm — Cari Bakehouse" };
+  if (!data) return { title: "Không tìm thấy sản phẩm · Cari Bakehouse" };
   return {
-    title: `${data.name} — Cari Bakehouse`,
+    title: `${data.name} · Cari Bakehouse`,
     description: data.description ?? undefined,
     openGraph: { title: data.name, description: data.description ?? undefined, images: data.image ? [data.image] : undefined },
   };
