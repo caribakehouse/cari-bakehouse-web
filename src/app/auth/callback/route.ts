@@ -9,13 +9,22 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = safeInternalPath(searchParams.get("next"), "/tai-khoan");
 
+  // Supabase báo lỗi (khách bấm hủy, lỗi tạo tài khoản...) bằng ?error_description=... thay cho code
+  let reason = searchParams.get("error_description") ?? searchParams.get("error") ?? "";
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(`${origin}${next}`);
     console.error(error);
+    reason = error.message;
+  } else if (reason) {
+    console.error("Google OAuth:", reason);
   }
 
-  // Khách bấm hủy ở trang Google hoặc có lỗi → về trang đăng nhập kèm thông báo
-  return NextResponse.redirect(`${origin}/dang-nhap?loi=google`);
+  // Về trang đăng nhập kèm thông báo (lý do kỹ thuật để dễ tìm lỗi)
+  const back = new URL("/dang-nhap", origin);
+  back.searchParams.set("loi", "google");
+  if (reason) back.searchParams.set("ly_do", reason.slice(0, 200));
+  return NextResponse.redirect(back);
 }

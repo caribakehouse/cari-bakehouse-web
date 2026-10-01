@@ -20,7 +20,12 @@ function GoogleSignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   // /auth/callback trả về ?loi=google khi khách hủy ở trang Google hoặc đăng nhập lỗi
-  const shownError = error || (searchParams.get("loi") === "google" ? "Đăng nhập Google chưa thành công, vui lòng thử lại" : "");
+  const reason = searchParams.get("ly_do");
+  const shownError =
+    error ||
+    (searchParams.get("loi") === "google"
+      ? `Đăng nhập Google chưa thành công, vui lòng thử lại${reason ? ` (${reason})` : ""}`
+      : "");
 
   const start = async () => {
     setLoading(true);
