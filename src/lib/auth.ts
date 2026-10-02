@@ -31,16 +31,29 @@ function client() {
   return supabase;
 }
 
+/**
+ * Phiên hiện tại có đăng nhập bằng mật khẩu không (mục "amr" trong JWT).
+ * Quyền admin chỉ có hiệu lực khi đăng nhập bằng mật khẩu — database cũng kiểm tra y hệt
+ * trong is_admin() (supabase/migrations/0008_admin_password_only.sql).
+ */
+export async function signedInWithPassword(): Promise<boolean> {
+  const { data } = await client().auth.getClaims();
+  const amr = data?.claims.amr ?? [];
+  return amr.some((entry) => (typeof entry === "string" ? entry : entry.method) === "password");
+}
+
 /** Ghép thông tin đăng nhập với hồ sơ (tên, sđt, vai trò) trong bảng profiles */
 async function loadUser(user: User | null): Promise<AuthUser | null> {
   if (!user) return null;
   const { data } = await client().from("profiles").select("full_name, phone, role, birthday").eq("id", user.id).maybeSingle();
   const meta = user.user_metadata ?? {};
+  // Tài khoản admin đăng nhập bằng Google → chỉ là khách thường trong phiên này
+  const isAdmin = data?.role === "admin" && (await signedInWithPassword());
   return {
     fullName: data?.full_name || meta.full_name || user.email?.split("@")[0] || "Khách",
     email: user.email ?? "",
     phone: data?.phone || meta.phone || "",
-    role: data?.role === "admin" ? "admin" : undefined,
+    role: isAdmin ? "admin" : undefined,
     birthday: data?.birthday ?? undefined,
   };
 }

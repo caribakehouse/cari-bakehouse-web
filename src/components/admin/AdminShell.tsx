@@ -134,13 +134,21 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
         <h1 className="font-heading text-2xl font-black text-[#2b2b2b]">Bạn không có quyền truy cập khu quản trị</h1>
         <p className="max-w-md text-sm text-[#7a7a7a]">
-          Tài khoản <strong className="text-[#2b2b2b]">{auth.user.email}</strong> là tài khoản khách hàng. Đăng nhập bằng tài
-          khoản quản trị để vào khu này.
+          Bạn đang đăng nhập với <strong className="text-[#2b2b2b]">{auth.user.email}</strong>. Khu quản trị chỉ vào được khi
+          đăng nhập bằng <strong className="text-[#2b2b2b]">email và mật khẩu</strong> của tài khoản quản trị — đăng nhập
+          bằng Google không được dùng cho khu này.
         </p>
         <div className="mt-2 flex flex-wrap justify-center gap-3">
-          <Link href="/tai-khoan" className="rounded-md bg-[#2b2b2b] px-5 py-2.5 text-sm font-bold text-white">
-            Về trang tài khoản
-          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              router.replace("/dang-nhap?next=/admin");
+            }}
+            className="cursor-pointer rounded-md bg-[#2b2b2b] px-5 py-2.5 text-sm font-bold text-white"
+          >
+            Đăng nhập lại bằng mật khẩu
+          </button>
           <Link href="/" className="rounded-md border border-[#4a4a4a] px-5 py-2.5 text-sm font-bold text-[#2b2b2b]">
             Về cửa hàng
           </Link>
