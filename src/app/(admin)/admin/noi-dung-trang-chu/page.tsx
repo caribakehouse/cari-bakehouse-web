@@ -9,7 +9,7 @@ import { useAdmin } from "@/components/admin/AdminContext";
 import { BTN_ICON, BTN_OUTLINE, BTN_SOLID, Card, Field, INPUT } from "@/components/admin/ui";
 import { saveHomeContent, saveReviews, useHomeContent, useProducts, useReviews } from "@/lib/db";
 import type { Review } from "@/lib/mock-data";
-import type { BannerOverlay, HomeContent } from "@/types/content";
+import { FEATURE_DEFAULT_HREFS, type BannerOverlay, type HomeContent } from "@/types/content";
 
 function sortForAdmin(list: Review[], featuredIds: number[]): Review[] {
   const rank = (r: Review) => {
@@ -165,13 +165,25 @@ function HomeContentForm({ initial, initialReviews }: { initial: HomeContent; in
       <Card title="2. Dải tính năng (3 ô)">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {draft.features.map((f, i) => (
-            <Field key={f.id} label={`Ô ${i + 1}`} required>
-              <input
-                value={f.title}
-                onChange={(e) => set("features", draft.features.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
-                className={INPUT}
-              />
-            </Field>
+            <div key={f.id} className="space-y-2">
+              <Field label={`Ô ${i + 1}`} required>
+                <input
+                  value={f.title}
+                  onChange={(e) => set("features", draft.features.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
+                  className={INPUT}
+                />
+              </Field>
+              <Field label="Link khi bấm">
+                <input
+                  value={f.href ?? ""}
+                  placeholder={FEATURE_DEFAULT_HREFS[i] ?? "/"}
+                  onChange={(e) =>
+                    set("features", draft.features.map((x, j) => (j === i ? { ...x, href: e.target.value.trim() || undefined } : x)))
+                  }
+                  className={INPUT}
+                />
+              </Field>
+            </div>
           ))}
         </div>
       </Card>

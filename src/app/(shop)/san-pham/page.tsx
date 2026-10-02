@@ -204,6 +204,8 @@ function ProductsContent() {
           ============================================================ */}
       <section className="pt-8 pb-10 sm:pt-10 sm:pb-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Tiêu đề chính cho Google / trình đọc màn hình (trang thể hiện bằng hình nên ẩn chữ) */}
+          <h1 className="sr-only">Thực đơn bánh và đồ uống Cari Bakehouse</h1>
           {/* Nhãn hướng dẫn nhỏ phía trên */}
           <p className="text-center text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-[#C97B3D]/80 mb-5">
             {categoryPickerLabel}

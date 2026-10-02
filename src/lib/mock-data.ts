@@ -793,9 +793,9 @@ export const SEED_HOME_CONTENT: HomeContent = {
     showText: false,
   })),
   features: [
-    { id: "points", title: "Chương trình tích điểm" },
-    { id: "delivery", title: "Giao hàng tận nơi" },
-    { id: "preorder", title: "Đặt trước" },
+    { id: "points", title: "Chương trình tích điểm", href: "/tich-diem" },
+    { id: "delivery", title: "Giao hàng tận nơi", href: "/gioi-thieu" },
+    { id: "preorder", title: "Đặt trước", href: "/dat-theo-yeu-cau" },
   ],
   banners: [
     {

@@ -13,7 +13,12 @@ export interface HeroSlideContent {
 export interface FeatureItem {
   id: string;
   title: string;
+  /** Trang mở khi bấm vào ô. Bỏ trống = link mặc định theo vị trí (FEATURE_DEFAULT_HREFS). */
+  href?: string;
 }
+
+/** Link mặc định của 3 ô tính năng: Tích điểm · Giới thiệu · Đặt theo yêu cầu */
+export const FEATURE_DEFAULT_HREFS = ["/tich-diem", "/gioi-thieu", "/dat-theo-yeu-cau"];
 
 export interface BannerItem {
   /** Tên banner — luôn dùng làm mô tả ảnh (alt); chỉ hiện chữ trên ảnh khi bật showText */

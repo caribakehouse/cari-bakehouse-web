@@ -15,6 +15,8 @@ import {
 } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_LOYALTY, fetchPublicData, type PublicData } from "@/lib/supabase/public-data";
+import { BusinessJsonLd } from "@/components/seo/JsonLd";
+import { BUSINESS, SITE_NAME, SITE_URL } from "@/lib/site";
 
 // Font tiêu đề: Magnolia Script (SIL OFL, xem src/app/fonts/OFL.txt). Bản gốc thiếu nhiều chữ có dấu tiếng Việt
 // (ơ, ư, dấu hỏi, dấu nặng, dấu chồng như ấ/ầ...) nên các chữ đó lấy từ Cari Script VN — ghép từ chính nét/dấu của Magnolia.
@@ -41,10 +43,21 @@ const nunitoSans = Nunito_Sans({
   display: "swap",
 });
 
+// Tiêu đề trang con tự thêm đuôi " · Cari Bakehouse" (title.template). Link tương đối (canonical, ảnh) tính theo SITE_URL.
 export const metadata: Metadata = {
-  title: "Cari Bakehouse · Indulgence In Every Bite",
-  description:
-    "Cari Bakehouse — Tiệm bánh thủ công tại Hà Nội với những chiếc bánh tươi ngon, làm từ nguyên liệu tự nhiên mỗi ngày.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Cari Bakehouse · Tiệm bánh thủ công tại Hà Nội",
+    template: "%s · Cari Bakehouse",
+  },
+  description: BUSINESS.description,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    locale: "vi_VN",
+    siteName: SITE_NAME,
+    images: [{ url: BUSINESS.logo, alt: SITE_NAME }],
+  },
 };
 
 /** Tải dữ liệu công khai từ Supabase mỗi lần mở trang; lỗi kết nối thì tạm dùng dữ liệu mẫu để web không trắng trang. */
@@ -84,6 +97,7 @@ export default async function RootLayout({
       className={`${magnolia.variable} ${cariScriptVN.variable} ${nunitoSans.variable}`}
     >
       <body className="flex min-h-screen flex-col bg-cream text-text-dark antialiased">
+        <BusinessJsonLd settings={data.settings} />
         <PublicDataProvider data={data}>{children}</PublicDataProvider>
       </body>
     </html>
