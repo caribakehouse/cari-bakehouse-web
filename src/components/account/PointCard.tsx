@@ -31,7 +31,7 @@ export default function PointCard({ data }: { data: PointCardData }) {
                   Hạng hiện tại: <strong className="text-white">{data.tier}</strong>
                 </span>
                 <span>
-                  Tích thêm <strong className="text-[#F6CE8B]">{data.pointsNeeded} điểm</strong>
+                  Tích thêm <strong className="text-[#F6CE8B]">{data.pointsNeeded.toLocaleString("vi-VN")} điểm</strong>
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/25">
@@ -41,7 +41,7 @@ export default function PointCard({ data }: { data: PointCardData }) {
                 />
               </div>
               <p className="text-[11px] text-white/60">
-                Tích thêm {data.pointsNeeded} điểm nữa để lên hạng {data.nextTier}
+                Tích thêm {data.pointsNeeded.toLocaleString("vi-VN")} điểm nữa để lên hạng {data.nextTier}
               </p>
             </div>
           )}

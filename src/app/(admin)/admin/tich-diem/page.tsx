@@ -26,6 +26,7 @@ import {
 import {
   lifetimePoints,
   pointBalance,
+  roundPoints,
   saveLoyaltyConfig,
   tierFor,
   useCustomers,
@@ -171,7 +172,7 @@ export default function AdminPointsPage() {
         .sort((a, b) => b.points - a.points),
     [customers, logs, loyalty],
   );
-  const totalPoints = ranking.reduce((s, r) => s + r.points, 0);
+  const totalPoints = roundPoints(ranking.reduce((s, r) => s + r.points, 0));
   const withPoints = ranking.filter((r) => r.points > 0).length;
 
   const nameOf = (email: string) => customers.find((c) => c.email.toLowerCase() === email.toLowerCase())?.fullName ?? email;

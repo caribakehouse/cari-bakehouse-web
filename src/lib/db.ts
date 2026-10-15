@@ -246,7 +246,8 @@ const pointLogsQuery = createQuery(async () => {
       email: r.email,
       date: r.date,
       title: r.title,
-      points: r.points,
+      // Cột numeric: Supabase có thể trả về chuỗi "7.25" → đổi sang số
+      points: Number(r.points),
       kind: r.kind,
       orderId: r.order_id ?? undefined,
       reason: r.reason ?? undefined,
@@ -537,9 +538,12 @@ export function usePointLogs(): PointTransaction[] {
   return pointLogsQuery.use();
 }
 
+/** Điểm có thể lẻ (vd 7,25) — làm tròn 2 chữ số để cộng dồn không bị sai số kiểu 7.250000001 */
+export const roundPoints = (n: number) => Math.round(n * 100) / 100;
+
 export function pointBalance(logs: PointTransaction[], email: string | undefined): number {
   const key = emailKey(email);
-  return logs.filter((l) => emailKey(l.email) === key).reduce((sum, l) => sum + l.points, 0);
+  return roundPoints(logs.filter((l) => emailKey(l.email) === key).reduce((sum, l) => sum + l.points, 0));
 }
 
 export type PointHistoryEntry = PointTransaction & { balance: number };
@@ -553,7 +557,7 @@ export function pointHistory(logs: PointTransaction[], email: string | undefined
   const result: PointHistoryEntry[] = [];
   let running = 0;
   for (const l of mine) {
-    running += l.points;
+    running = roundPoints(running + l.points);
     result.push({ ...l, balance: running });
   }
   return result.reverse();
@@ -578,16 +582,16 @@ export async function saveLoyaltyConfig(config: LoyaltyConfig): Promise<SaveResu
   return error;
 }
 
-/** Số điểm nhận được cho một đơn (database cộng đúng theo công thức này khi đơn "Đã giao") */
+/** Số điểm nhận được cho một đơn, tính cả phần lẻ (72.500đ → 7,25 điểm) — database cộng đúng theo công thức này khi đơn "Đã giao" */
 export const pointsForOrder = (total: number, config: Pick<LoyaltyConfig, "pointRateVnd">) =>
-  Math.floor(total / Math.max(1, config.pointRateVnd));
+  roundPoints(total / Math.max(1, config.pointRateVnd));
 
 /** Tổng điểm đã tích (xét hạng) — không trừ điểm đã đổi quà, không tính điểm hoàn lại */
 export function lifetimePoints(logs: PointTransaction[], email: string | undefined): number {
   const key = emailKey(email);
   return logs
     .filter((l) => emailKey(l.email) === key && l.points > 0 && l.kind !== "redeem")
-    .reduce((sum, l) => sum + l.points, 0);
+    .reduce((sum, l) => roundPoints(sum + l.points), 0);
 }
 
 export type TierKey = "new" | "loyal" | "vip";
@@ -602,7 +606,7 @@ export function tierFor(lifetime: number, config: LoyaltyConfig) {
     key,
     name: TIER_NAMES[key],
     nextTier: key === "new" ? TIER_NAMES.loyal : key === "loyal" ? TIER_NAMES.vip : undefined,
-    pointsNeeded: nextMin !== undefined ? Math.max(0, nextMin - lifetime) : undefined,
+    pointsNeeded: nextMin !== undefined ? Math.max(0, roundPoints(nextMin - lifetime)) : undefined,
     progressPercentage:
       nextMin !== undefined ? Math.min(100, Math.round(((lifetime - prevMin) / Math.max(1, nextMin - prevMin)) * 100)) : undefined,
   };
@@ -718,7 +722,7 @@ export async function setOrderStatus(
       .eq("order_id", orderId)
       .eq("kind", "order")
       .maybeSingle();
-    pointsAwarded = log?.points ?? 0;
+    pointsAwarded = Number(log?.points ?? 0);
   }
   return { ok: true, pointsAwarded };
 }

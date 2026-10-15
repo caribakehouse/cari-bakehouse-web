@@ -715,7 +715,7 @@ export default function CheckoutPage() {
                 <p className="text-xs text-text-muted">
                   {membership.balance >= loyalty.redeemPoints
                     ? "Thêm bánh thuộc nhóm được đổi điểm vào giỏ để dùng điểm đổi 1 cái miễn phí."
-                    : `Đủ ${loyalty.redeemPoints} điểm là đổi được 1 bánh miễn phí (bạn đang có ${membership.balance} điểm).`}
+                    : `Đủ ${loyalty.redeemPoints} điểm là đổi được 1 bánh miễn phí (bạn đang có ${membership.balance.toLocaleString("vi-VN")} điểm).`}
                 </p>
               )}
 
