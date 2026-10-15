@@ -12,6 +12,7 @@ import {
   Landmark,
   MapPin,
   MessageCircle,
+  Phone,
   ShoppingBag,
   Store,
   Tag,
@@ -26,7 +27,7 @@ import {
   SECONDARY_BUTTON_CLASS,
 } from "@/components/ui/form-styles";
 import { PageSpinner, SignedOutNotice } from "@/components/account/PageSpinner";
-import { useRequireAuth } from "@/lib/auth";
+import { savePhone, useRequireAuth } from "@/lib/auth";
 import { cartLineKey, clearCart, useCart } from "@/lib/cart";
 import PackingAnimation, { type PackingItemKind } from "@/components/order/PackingAnimation";
 import { checkVoucher, placeOrder, priceForSize, useMembership, useProducts, useSiteSettings } from "@/lib/db";
@@ -45,7 +46,10 @@ import { formatDateVN, formatVND, todayISO } from "@/lib/utils";
 import type { FulfillmentMethod, Order, PaymentMethod, Voucher } from "@/types/order";
 
 type CopyStatus = "idle" | "copied" | "failed";
-type FormErrors = { address?: string; receiveDate?: string; receiveTime?: string };
+type FormErrors = { phone?: string; address?: string; receiveDate?: string; receiveTime?: string };
+
+const PHONE_PATTERN = /^(0|\+84)\d{9}$/;
+const normalizePhone = (v: string) => v.replace(/[\s.-]/g, "");
 
 // ─── Ô chọn dạng thẻ (radio) ─────────────────────────────────
 function OptionCard({
@@ -100,6 +104,9 @@ export default function CheckoutPage() {
   const settings = useSiteSettings();
 
   const [fulfillment, setFulfillment] = useState<FulfillmentMethod>("delivery");
+  // null = khách chưa sửa → dùng số đã lưu trong tài khoản
+  const [phoneInput, setPhoneInput] = useState<string | null>(null);
+  const phone = phoneInput ?? user?.phone ?? "";
   const [address, setAddress] = useState("");
   const [receiveDate, setReceiveDate] = useState("");
   const [receiveTime, setReceiveTime] = useState("");
@@ -192,6 +199,9 @@ export default function CheckoutPage() {
     if (!user || items.length === 0 || submitting) return;
 
     const nextErrors: FormErrors = {};
+    if (!PHONE_PATTERN.test(normalizePhone(phone))) {
+      nextErrors.phone = phone.trim() ? "Số điện thoại chưa hợp lệ (ví dụ: 0901234567)" : "Vui lòng nhập số điện thoại";
+    }
     if (fulfillment === "delivery" && !address.trim()) {
       nextErrors.address = "Vui lòng nhập địa chỉ giao hàng";
     }
@@ -218,6 +228,16 @@ export default function CheckoutPage() {
     // từ bảng sản phẩm (khách không sửa được). Đơn tạo ra ở trạng thái "Chờ xử lý".
     setSubmitting(true);
     setSubmitError("");
+    // Đơn hàng lấy số điện thoại từ hồ sơ tài khoản → lưu số mới (nếu khác) trước khi đặt
+    const phoneValue = normalizePhone(phone);
+    if (phoneValue !== user.phone) {
+      const phoneError = await savePhone(phoneValue);
+      if (phoneError) {
+        setSubmitting(false);
+        setSubmitError(phoneError);
+        return;
+      }
+    }
     const result = await placeOrder({
       items: items.map(({ slug, size, quantity, options }) => ({ slug, size, quantity, options })),
       voucherCode: appliedVoucher?.code,
@@ -512,6 +532,34 @@ export default function CheckoutPage() {
                   {errors.address && <p className="text-xs text-rose-600">{errors.address}</p>}
                 </div>
               )}
+
+              <div className="mt-4 space-y-1.5">
+                <label htmlFor="checkout-phone" className={LABEL_CLASS}>
+                  Số điện thoại nhận hàng <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-text-muted" />
+                  <input
+                    id="checkout-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="0901234567"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhoneInput(e.target.value);
+                      setErrors((prev) => ({ ...prev, phone: undefined }));
+                    }}
+                    aria-invalid={!!errors.phone}
+                    className={`${INPUT_CLASS} pl-10 ${errors.phone ? INPUT_ERROR_CLASS : ""}`}
+                  />
+                </div>
+                {errors.phone ? (
+                  <p className="text-xs text-rose-600">{errors.phone}</p>
+                ) : (
+                  <p className="text-xs text-text-muted">Tiệm gọi số này để xác nhận đơn và khi giao bánh.</p>
+                )}
+              </div>
             </SectionCard>
 
             <SectionCard step={2} title="Ngày giờ nhận mong muốn">

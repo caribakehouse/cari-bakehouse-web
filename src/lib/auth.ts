@@ -189,6 +189,20 @@ export async function saveBirthday(birthday: string): Promise<string | null> {
   return null;
 }
 
+/** Lưu số điện thoại vào hồ sơ (khách được tự sửa tên + sđt). Đơn hàng lấy sđt từ hồ sơ này. */
+export async function savePhone(phone: string): Promise<string | null> {
+  const sb = client();
+  const { data: auth } = await sb.auth.getUser();
+  if (!auth.user) return "Vui lòng đăng nhập lại";
+  const { error } = await sb.from("profiles").update({ phone }).eq("id", auth.user.id);
+  if (error) {
+    console.error(error);
+    return "Lưu số điện thoại thất bại, vui lòng thử lại";
+  }
+  await refresh(auth.user);
+  return null;
+}
+
 export function logout() {
   loadSeq++;
   setState({ user: null, ready: true });

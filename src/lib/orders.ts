@@ -49,12 +49,10 @@ export function useMyOrders(email: string | undefined): Order[] {
 // ─── Nội dung gửi Zalo ───────────────────────────────────────
 export function buildOrderMessage(order: Order): string {
   const lines: string[] = [];
-  lines.push("ĐƠN HÀNG CARI BAKEHOUSE");
+  lines.push("ĐƠN HÀNG TỪ WEB CARI BAKEHOUSE");
   lines.push(`Mã đơn: ${order.id}`);
-  if (order.customerName) {
-    const phone = order.customerPhone ? ` - ${order.customerPhone}` : "";
-    lines.push(`Khách hàng: ${order.customerName}${phone}`);
-  }
+  if (order.customerName) lines.push(`Khách hàng: ${order.customerName}`);
+  if (order.customerPhone) lines.push(`Số điện thoại: ${order.customerPhone}`);
   lines.push("");
   lines.push("Sản phẩm:");
   order.items.forEach((item, idx) => {
