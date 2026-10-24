@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Award, Cake, LogOut, Mail, Phone, Receipt, User } from "lucide-react";
+import { Award, Cake, KeyRound, LogOut, Mail, Phone, Receipt, User } from "lucide-react";
 import PointCard from "@/components/account/PointCard";
 import { PageSpinner, SignedOutNotice } from "@/components/account/PageSpinner";
 import { logout, saveBirthday, useRequireAuth } from "@/lib/auth";
@@ -100,14 +100,23 @@ export default function AccountPage() {
               Xin chào, <strong className="text-[#1B4B5A]">{user.fullName}</strong>
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#1B4B5A] px-5 py-2 text-sm font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A] hover:text-white active:scale-95"
-          >
-            <LogOut className="h-4 w-4" />
-            Đăng xuất
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/doi-mat-khau"
+              className="inline-flex items-center gap-2 rounded-full border border-[#E5D9C3] bg-white px-5 py-2 text-sm font-semibold text-[#1B4B5A] transition-all hover:border-[#1B4B5A] active:scale-95"
+            >
+              <KeyRound className="h-4 w-4" />
+              Đổi mật khẩu
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#1B4B5A] px-5 py-2 text-sm font-semibold text-[#1B4B5A] transition-all hover:bg-[#1B4B5A] hover:text-white active:scale-95"
+            >
+              <LogOut className="h-4 w-4" />
+              Đăng xuất
+            </button>
+          </div>
         </div>
 
         {/* Thông tin cá nhân */}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import AuthShell from "@/components/account/AuthShell";
 import GoogleSignInButton from "@/components/account/GoogleSignInButton";
@@ -14,6 +14,17 @@ import {
 } from "@/components/ui/form-styles";
 import { signIn, useAuth } from "@/lib/auth";
 import { safeInternalPath } from "@/lib/utils";
+
+/** Vừa đặt mật khẩu mới xong (trang /doi-mat-khau chuyển về đây kèm ?doi_mk=1) */
+function PasswordChangedNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("doi_mk") !== "1") return null;
+  return (
+    <p role="status" className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+      Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.
+    </p>
+  );
+}
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -80,6 +91,9 @@ export default function LoginPage() {
         </div>
       ) : (
         <>
+          <Suspense fallback={null}>
+            <PasswordChangedNotice />
+          </Suspense>
           <GoogleSignInButton />
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div className="space-y-1.5">
@@ -100,9 +114,14 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="login-password" className={LABEL_CLASS}>
-                Mật khẩu
-              </label>
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="login-password" className={LABEL_CLASS}>
+                  Mật khẩu
+                </label>
+                <Link href="/quen-mat-khau" className="text-xs font-semibold text-[#1B4B5A] underline-offset-4 hover:underline">
+                  Quên mật khẩu?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   id="login-password"

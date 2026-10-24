@@ -160,7 +160,8 @@ export async function signUp(info: {
     password: info.password,
     options: {
       data: { full_name: info.fullName.trim(), phone: info.phone.trim(), birthday: info.birthday || undefined },
-      emailRedirectTo: `${window.location.origin}/tai-khoan`,
+      // Link xác nhận trong email mở /auth/callback (đổi mã lấy phiên đăng nhập) rồi vào trang tài khoản
+      emailRedirectTo: `${window.location.origin}/auth/callback?next=/tai-khoan`,
     },
   });
   if (error) return { error: translateError(error) };
@@ -186,6 +187,39 @@ export async function saveBirthday(birthday: string): Promise<string | null> {
     return "Lưu ngày sinh thất bại, vui lòng thử lại";
   }
   await refresh(auth.user);
+  return null;
+}
+
+/**
+ * Quên mật khẩu: gửi email có link đặt lại. Link mở /auth/callback → đăng nhập tạm → trang /doi-mat-khau.
+ * Luôn báo "đã gửi" kể cả khi email chưa đăng ký, để không lộ email nào có tài khoản.
+ */
+export async function requestPasswordReset(email: string): Promise<string | null> {
+  const { error } = await client().auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: `${window.location.origin}/auth/callback?next=/doi-mat-khau`,
+  });
+  if (error && (error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit")) {
+    return translateError(error);
+  }
+  if (error) console.error(error);
+  return null;
+}
+
+/**
+ * Đặt mật khẩu mới cho tài khoản đang đăng nhập (sau khi bấm link trong email, hoặc tự đổi ở trang tài khoản).
+ * Xong thì đăng xuất: lần đăng nhập lại bằng mật khẩu mới mới có quyền quản trị (admin chỉ nhận đăng nhập bằng mật khẩu).
+ */
+export async function updatePassword(password: string): Promise<string | null> {
+  const { error } = await client().auth.updateUser({ password });
+  if (error) {
+    console.error(error);
+    if (error.code === "same_password") return "Mật khẩu mới phải khác mật khẩu cũ";
+    if (error.code === "session_not_found" || error.code === "no_authorization") {
+      return "Link đã hết hạn — vui lòng gửi lại yêu cầu quên mật khẩu";
+    }
+    return translateError(error);
+  }
+  logout();
   return null;
 }
 
