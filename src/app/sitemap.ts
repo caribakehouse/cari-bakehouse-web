@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { unstable_rethrow } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/site";
 
@@ -16,6 +17,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const { data } = await supabase.from("products").select("slug").neq("status", "hidden").order("id");
     for (const p of data ?? []) entries.push({ url: `${SITE_URL}/san-pham/${encodeURIComponent(p.slug)}` });
   } catch (error) {
+    // Tín hiệu nội bộ của Next ("trang phải chạy động vì đọc cookies") phải ném tiếp, không phải lỗi thật
+    unstable_rethrow(error);
     console.error("sitemap: không tải được sản phẩm", error);
   }
 
