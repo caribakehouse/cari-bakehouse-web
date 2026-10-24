@@ -169,6 +169,8 @@ export async function signUp(info: {
   if (data.user && data.user.identities?.length === 0) return { error: "Email này đã được đăng ký — vui lòng đăng nhập" };
   if (!data.session) return { needsConfirmation: true };
   await refresh(data.user);
+  // Gửi email chào mừng (server gửi qua Resend; lỗi gửi mail không ảnh hưởng việc đăng ký)
+  void fetch("/api/chao-mung", { method: "POST" }).catch(() => {});
   return { needsConfirmation: false };
 }
 
