@@ -15,36 +15,40 @@ export default function LetterModal({ isOpen, onClose }: LetterModalProps) {
   const [currentLetter, setCurrentLetter] = useState<Letter | null>(null);
   const [animStep, setAnimStep] = useState<AnimationStep>("closed");
 
-  // Khởi tạo lá thư mới và chạy chuỗi animation khi modal mở
-  useEffect(() => {
+  // Khởi tạo lá thư mới và reset bước animation ngay khi trạng thái mở thay đổi
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
-      const letter = getRandomLetter();
-      setCurrentLetter(letter);
-      setAnimStep("closed");
-
-      // Bước 1: 350ms sau khi mở modal -> Bắt đầu lật nắp phong bì
-      const timer1 = setTimeout(() => {
-        setAnimStep("opening-flap");
-      }, 400);
-
-      // Bước 2: 1100ms -> Thư bắt đầu trượt từ trong phong bì ra
-      const timer2 = setTimeout(() => {
-        setAnimStep("sliding-up");
-      }, 1050);
-
-      // Bước 3: 1750ms -> Phóng to hiện rõ toàn bộ nội dung lá thư
-      const timer3 = setTimeout(() => {
-        setAnimStep("revealed");
-      }, 1800);
-
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-      };
-    } else {
-      setAnimStep("closed");
+      setCurrentLetter(getRandomLetter());
     }
+    setAnimStep("closed");
+  }
+
+  // Chạy chuỗi animation khi modal mở
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Bước 1: 350ms sau khi mở modal -> Bắt đầu lật nắp phong bì
+    const timer1 = setTimeout(() => {
+      setAnimStep("opening-flap");
+    }, 400);
+
+    // Bước 2: 1100ms -> Thư bắt đầu trượt từ trong phong bì ra
+    const timer2 = setTimeout(() => {
+      setAnimStep("sliding-up");
+    }, 1050);
+
+    // Bước 3: 1750ms -> Phóng to hiện rõ toàn bộ nội dung lá thư
+    const timer3 = setTimeout(() => {
+      setAnimStep("revealed");
+    }, 1800);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
   }, [isOpen]);
 
   // Đóng bằng phím Escape

@@ -47,10 +47,12 @@ export default function Header() {
   const navItems: NavItem[] =
     user?.role === "admin" ? [...NAV_ITEMS, { label: "Quản trị", href: "/admin" }] : NAV_ITEMS;
 
-  // Đóng menu khi chuyển trang
-  useEffect(() => {
+  // Đóng menu khi chuyển trang (điều chỉnh state ngay khi pathname đổi để tránh render tầng)
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   // Khóa cuộn trang khi drawer đang mở
   useEffect(() => {

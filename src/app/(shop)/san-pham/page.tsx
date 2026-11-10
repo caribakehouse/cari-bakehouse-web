@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Image from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -136,27 +136,20 @@ function ProductsContent() {
 
   // Đọc query param ?danh-muc=banh hoặc ?danh-muc=do-uong từ URL
   const paramCategory = searchParams.get("danh-muc");
-  const initialCategory: MainCategory =
+  const urlCategory: MainCategory | null =
     paramCategory === "do-uong" || paramCategory === "douong"
       ? "Đồ uống"
-      : "Bánh";
+      : paramCategory === "banh"
+      ? "Bánh"
+      : null;
 
-  const [activeTab, setActiveTab] = useState<MainCategory>(initialCategory);
+  const [selectedTab, setSelectedTab] = useState<MainCategory>("Bánh");
+  const activeTab = urlCategory ?? selectedTab;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Đồng bộ khi query param thay đổi (khi bấm link từ trang khác điều hướng sang)
-  useEffect(() => {
-    const currentParam = searchParams.get("danh-muc");
-    if (currentParam === "do-uong" || currentParam === "douong") {
-      setActiveTab("Đồ uống");
-    } else if (currentParam === "banh") {
-      setActiveTab("Bánh");
-    }
-  }, [searchParams]);
 
   // Xử lý chuyển tab & cập nhật URL query param
   const handleTabChange = (tab: MainCategory) => {
-    setActiveTab(tab);
+    setSelectedTab(tab);
     const slug = tab === "Bánh" ? "banh" : "do-uong";
     router.replace(`/san-pham?danh-muc=${slug}`, { scroll: false });
   };
