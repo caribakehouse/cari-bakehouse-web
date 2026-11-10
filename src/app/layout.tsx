@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Nunito_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import { unstable_rethrow } from "next/navigation";
@@ -97,6 +98,19 @@ export default async function RootLayout({
       className={`${magnolia.variable} ${cariScriptVN.variable} ${nunitoSans.variable}`}
     >
       <body className="flex min-h-screen flex-col bg-cream text-text-dark antialiased">
+        {/* Google Analytics (GA4) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-SK0FFGRRX0"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-SK0FFGRRX0');
+          `}
+        </Script>
         <BusinessJsonLd settings={data.settings} />
         <PublicDataProvider data={data}>{children}</PublicDataProvider>
       </body>
