@@ -683,7 +683,19 @@ export async function placeOrder(input: PlaceOrderInput): Promise<{ order: Order
   if (error) return { error: saveError(error) ?? "Đặt hàng thất bại, vui lòng thử lại" };
   void ordersQuery.reload();
   if (input.redeemIndex !== undefined) void pointLogsQuery.reload();
-  return { order: orderFromRow(data as OrderRow) };
+  const order = orderFromRow(data as OrderRow);
+  notifyOrderEmail(order.id, "placed");
+  return { order };
+}
+
+/** Nhờ server gửi email thông báo đơn hàng (Resend). Lỗi gửi mail không ảnh hưởng thao tác chính. */
+function notifyOrderEmail(orderId: string, kind: "placed" | "Đã giao" | "Đã hủy") {
+  void fetch("/api/don-hang/thong-bao", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderId, kind }),
+    keepalive: true,
+  }).catch(() => {});
 }
 
 /** Số tiền giảm của một mã voucher đang hoạt động, hoặc null nếu mã không hợp lệ */
@@ -713,6 +725,7 @@ export async function setOrderStatus(
     .maybeSingle();
   if (error) return { ok: false, error: saveError(error) ?? "Lưu thất bại" };
   if (!data) return { ok: false, error: "Không tìm thấy đơn hàng" };
+  notifyOrderEmail(orderId, next);
   await Promise.all([ordersQuery.reload(), pointLogsQuery.reload(), customersQuery.reload()]);
   let pointsAwarded = 0;
   if (next === "Đã giao") {
