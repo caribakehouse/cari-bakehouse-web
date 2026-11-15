@@ -7,8 +7,10 @@ import { useCustomRequests, useOrders } from "@/lib/db";
 import { formatVND, todayISO } from "@/lib/utils";
 
 // ─── Doanh thu ───────────────────────────────────────────────
-// Doanh thu = đơn online "Đã giao" (tổng tiền sau giảm giá, tính theo ngày nhận bánh)
-//           + bánh theo yêu cầu "Hoàn tất" có giá đã báo (tính theo ngày cần bánh).
+// Doanh thu = đơn online "Đã giao" (tổng tiền sau giảm giá) + bánh theo yêu cầu "Hoàn tất" có giá đã báo,
+// tính theo NGÀY GIAO: ngày admin bấm "Đã giao" / "Hoàn tất" (database tự ghi, migration 0011).
+// Dữ liệu cũ chưa có ngày giao → dùng ngày nhận bánh / ngày cần bánh.
+// Biểu đồ trạng thái + số đơn hủy tính theo NGÀY ĐẶT (đơn đặt trong khoảng đó giờ ra sao).
 // Màu: 2 loại đơn dùng 2 màu phân loại đã kiểm tra cho người mù màu; trạng thái đơn dùng màu trạng thái
 // (xanh lá / vàng / đỏ) luôn kèm chữ — không bao giờ chỉ dựa vào màu.
 
@@ -300,14 +302,19 @@ export default function AdminRevenuePage() {
     const index = new Map(buckets.map((b, i) => [b.key, i]));
     const inRange = (iso: string) => index.has(keyOf(iso));
 
-    // Doanh thu
+    // Doanh thu theo ngày giao
+    let soldCount = 0;
     for (const o of orders) {
-      if (o.status !== "Đã giao" || !inRange(o.receiveDate)) continue;
-      buckets[index.get(keyOf(o.receiveDate))!].online += o.total;
+      const day = o.deliveredAt ?? o.receiveDate;
+      if (o.status !== "Đã giao" || !inRange(day)) continue;
+      buckets[index.get(keyOf(day))!].online += o.total;
+      soldCount++;
     }
     for (const r of requests) {
-      if (r.status !== "Hoàn tất" || !r.quotedPrice || !inRange(r.deliveryDate)) continue;
-      buckets[index.get(keyOf(r.deliveryDate))!].custom += r.quotedPrice;
+      const day = r.doneAt ?? r.deliveryDate;
+      if (r.status !== "Hoàn tất" || !r.quotedPrice || !inRange(day)) continue;
+      buckets[index.get(keyOf(day))!].custom += r.quotedPrice;
+      soldCount++;
     }
 
     // Số đơn trong khoảng (theo ngày đặt / ngày gửi yêu cầu)
@@ -320,9 +327,6 @@ export default function AdminRevenuePage() {
 
     const revenueOnline = buckets.reduce((s, b) => s + b.online, 0);
     const revenueCustom = buckets.reduce((s, b) => s + b.custom, 0);
-    const soldCount =
-      orders.filter((o) => o.status === "Đã giao" && inRange(o.receiveDate)).length +
-      requests.filter((r) => r.status === "Hoàn tất" && r.quotedPrice && inRange(r.deliveryDate)).length;
 
     return {
       buckets,
@@ -355,7 +359,7 @@ export default function AdminRevenuePage() {
           </Chip>
         </ChipRow>
         <p className="text-[11px] text-[#7a7a7a]">
-          Doanh thu = đơn online đã giao + bánh theo yêu cầu hoàn tất (theo giá đã báo).
+          Doanh thu = đơn online đã giao + bánh theo yêu cầu hoàn tất (theo giá đã báo), tính theo ngày bấm “Đã giao” / “Hoàn tất”.
         </p>
       </Toolbar>
 
@@ -376,7 +380,7 @@ export default function AdminRevenuePage() {
         <StatCard
           label="Đơn đã hủy"
           value={data.cancelled.toLocaleString("vi-VN")}
-          hint={data.cancelled > 0 ? `Mất ${formatVND(data.cancelledAmount)}` : rangeText}
+          hint={data.cancelled > 0 ? `${formatVND(data.cancelledAmount)} · theo ngày đặt` : "Theo ngày đặt"}
           icon={<Ban className="h-5 w-5" />}
         />
       </div>
@@ -422,7 +426,7 @@ export default function AdminRevenuePage() {
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card title={`Trạng thái đơn online · ${rangeText}`}>
+        <Card title={`Trạng thái đơn online đặt trong ${rangeText}`}>
           <Donut
             centerLabel="đơn online"
             slices={[
@@ -443,7 +447,7 @@ export default function AdminRevenuePage() {
           />
         </Card>
 
-        <Card title={`Loại đơn · ${rangeText}`}>
+        <Card title={`Loại đơn đặt trong ${rangeText}`}>
           <Donut
             centerLabel="tổng đơn"
             slices={[
@@ -451,7 +455,7 @@ export default function AdminRevenuePage() {
                 label: "Đơn online (mặc định)",
                 value: data.onlineCount,
                 color: COLOR_ONLINE,
-                note: `Doanh thu ${formatVND(data.revenueOnline)}`,
+                note: `Doanh thu đã giao ${formatVND(data.revenueOnline)}`,
               },
               {
                 label: "Bánh theo yêu cầu",

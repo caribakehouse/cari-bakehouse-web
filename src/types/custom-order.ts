@@ -25,4 +25,6 @@ export interface CustomOrderRequest {
   status: CustomOrderStatus;
   /** Giá tiệm đã báo (đồng) */
   quotedPrice?: number;
+  /** Ngày chuyển sang "Hoàn tất", yyyy-mm-dd (database tự ghi) */
+  doneAt?: string;
 }

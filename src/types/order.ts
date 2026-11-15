@@ -48,6 +48,8 @@ export interface Order {
   discountDetails?: OrderDiscount[];
   /** Số điểm khách đã đổi trong đơn này (hoàn lại nếu đơn bị hủy) */
   pointsRedeemed?: number;
+  /** Ngày admin chuyển đơn sang "Đã giao", yyyy-mm-dd (database tự ghi) */
+  deliveredAt?: string;
 }
 
 export interface OrderDiscount {

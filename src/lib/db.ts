@@ -73,6 +73,24 @@ function useRemote<T>(store: RemoteStore<T>, pick: (data: PublicData) => T): T {
 let supabase: ReturnType<typeof createClient> | null = null;
 const sb = () => (supabase ??= createClient());
 
+/**
+ * Tải hết các dòng của một truy vấn. Supabase trả tối đa 1.000 dòng mỗi lần
+ * → tải từng trang 1.000 dòng cho tới khi hết (không thì đơn / điểm cũ bị bỏ sót khi dữ liệu lớn).
+ * Truy vấn phải có order() theo cột không trùng (vd id) để các trang không lặp / sót dòng.
+ */
+async function selectAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>,
+): Promise<T[]> {
+  const PAGE = 1000;
+  const all: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await page(from, from + PAGE - 1);
+    if (error) throw error;
+    all.push(...((data ?? []) as T[]));
+    if (!data || data.length < PAGE) return all;
+  }
+}
+
 /** Kết quả ghi dữ liệu: null = thành công, chuỗi = thông báo lỗi để hiện cho admin */
 export type SaveResult = string | null;
 
@@ -186,6 +204,8 @@ interface OrderRow {
   customer_email: string | null;
   discount_details: OrderDiscount[] | null;
   points_redeemed: number | null;
+  /** Có từ migration 0011 */
+  delivered_at?: string | null;
 }
 
 function orderFromRow(r: OrderRow): Order {
@@ -209,26 +229,28 @@ function orderFromRow(r: OrderRow): Order {
     customerEmail: r.customer_email ?? undefined,
     discountDetails: r.discount_details && r.discount_details.length > 0 ? r.discount_details : undefined,
     pointsRedeemed: r.points_redeemed ?? undefined,
+    deliveredAt: r.delivered_at ?? undefined,
   };
 }
 
 const ordersQuery = createQuery(async () => {
-  const { data, error } = await sb().from("orders").select("*").order("placed_at", { ascending: false });
-  if (error) throw error;
-  return (data as OrderRow[]).map(orderFromRow);
+  const data = await selectAll<OrderRow>((from, to) =>
+    sb().from("orders").select("*").order("placed_at", { ascending: false }).order("id").range(from, to),
+  );
+  return data.map(orderFromRow);
 }, EMPTY_ORDERS);
 
 const customersQuery = createQuery(async () => {
-  const { data, error } = await sb().from("customers").select("id, full_name, email, phone, created_at").order("id");
-  if (error) throw error;
-  return (data as { id: string; full_name: string; email: string; phone: string; created_at: string }[]).map(
+  const data = await selectAll<{ id: string; full_name: string; email: string; phone: string; created_at: string }>(
+    (from, to) => sb().from("customers").select("id, full_name, email, phone, created_at").order("id").range(from, to),
+  );
+  return data.map(
     (r): Customer => ({ id: r.id, fullName: r.full_name, email: r.email, phone: r.phone, createdAt: r.created_at }),
   );
 }, EMPTY_CUSTOMERS);
 
 const pointLogsQuery = createQuery(async () => {
-  const { data, error } = await sb().from("point_logs").select("*").order("date").order("id");
-  if (error) throw error;
+  const data = await selectAll((from, to) => sb().from("point_logs").select("*").order("date").order("id").range(from, to));
   return (
     data as {
       id: string;
@@ -256,8 +278,9 @@ const pointLogsQuery = createQuery(async () => {
 }, EMPTY_POINT_LOGS);
 
 const requestsQuery = createQuery(async () => {
-  const { data, error } = await sb().from("custom_requests").select("*").order("placed_at", { ascending: false });
-  if (error) throw error;
+  const data = await selectAll((from, to) =>
+    sb().from("custom_requests").select("*").order("placed_at", { ascending: false }).order("id").range(from, to),
+  );
   return (
     data as {
       id: string;
@@ -274,6 +297,7 @@ const requestsQuery = createQuery(async () => {
       reference_image: string | null;
       status: CustomOrderStatus;
       quoted_price: number | null;
+      done_at?: string | null;
     }[]
   ).map(
     (r): CustomOrderRequest => ({
@@ -291,6 +315,7 @@ const requestsQuery = createQuery(async () => {
       referenceImage: r.reference_image ?? undefined,
       status: r.status,
       quotedPrice: r.quoted_price ?? undefined,
+      doneAt: r.done_at ?? undefined,
     }),
   );
 }, EMPTY_REQUESTS);
