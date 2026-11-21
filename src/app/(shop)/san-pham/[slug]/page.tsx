@@ -12,6 +12,7 @@ type Props = { params: Promise<{ slug: string }> };
 interface ProductSeoRow {
   slug: string;
   name: string;
+  category: string;
   description: string | null;
   image: string;
   price: number;
@@ -24,7 +25,7 @@ const getProduct = cache(async (slug: string): Promise<ProductSeoRow | null> => 
   const supabase = await createClient();
   const { data } = await supabase
     .from("products")
-    .select("slug, name, description, image, price, sizes, status")
+    .select("slug, name, category, description, image, price, sizes, status")
     .eq("slug", slug)
     .maybeSingle();
   return (data as ProductSeoRow | null) ?? null;
@@ -79,6 +80,23 @@ function productJsonLd(p: ProductSeoRow) {
   };
 }
 
+/**
+ * Đường dẫn phân cấp cho Google (Trang chủ › Bánh / Đồ uống › Tên sản phẩm) — khớp dòng đường dẫn
+ * hiện trên trang (ProductDetail). Google hiện dòng này thay cho URL trong kết quả tìm kiếm.
+ */
+function breadcrumbJsonLd(p: ProductSeoRow) {
+  const categorySlug = p.category === "Đồ uống" ? "do-uong" : "banh";
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Trang chủ", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: p.category, item: `${SITE_URL}/san-pham?danh-muc=${categorySlug}` },
+      { "@type": "ListItem", position: 3, name: p.name, item: `${SITE_URL}${productPath(p.slug)}` },
+    ],
+  };
+}
+
 // Trang chi tiết sản phẩm: dữ liệu sản phẩm lấy từ dữ liệu công khai layout đã tải sẵn (ProductDetail)
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params;
@@ -88,7 +106,12 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product) notFound();
   return (
     <>
-      {product.status !== "hidden" && <JsonLd data={productJsonLd(product)} />}
+      {product.status !== "hidden" && (
+        <>
+          <JsonLd data={productJsonLd(product)} />
+          <JsonLd data={breadcrumbJsonLd(product)} />
+        </>
+      )}
       <ProductDetail slug={decoded} />
     </>
   );
