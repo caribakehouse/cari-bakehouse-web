@@ -45,12 +45,12 @@ const nunitoSans = Nunito_Sans({
   display: "swap",
 });
 
-// Tiêu đề trang con tự thêm đuôi " · Cari Bakehouse" (title.template). Link tương đối (canonical, ảnh) tính theo SITE_URL.
+// Tiêu đề trang con tự thêm đuôi " - Cari Bakehouse" (title.template). Link tương đối (canonical, ảnh) tính theo SITE_URL.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Cari Bakehouse · Tiệm bánh thủ công tại Hà Nội",
-    template: "%s · Cari Bakehouse",
+    default: "Cari Bakehouse - Tiệm bánh thủ công tại Hà Nội",
+    template: "%s - Cari Bakehouse",
   },
   description: BUSINESS.description,
   applicationName: SITE_NAME,

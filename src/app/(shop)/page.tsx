@@ -10,7 +10,7 @@ import Reviews from "@/components/home/Reviews";
 import { pageMetadata } from "@/lib/site";
 
 export const metadata = pageMetadata({
-  title: "Cari Bakehouse · Tiệm bánh thủ công tại Hà Nội",
+  title: "Cari Bakehouse - Tiệm bánh thủ công tại Hà Nội",
   description:
     "Tiệm bánh thủ công ở Tô Vĩnh Diện, Hà Nội: cheesecake, brownies, bánh sinh nhật theo yêu cầu và đồ uống. Bánh làm theo đơn từ nguyên liệu nhập khẩu, không chất bảo quản.",
   path: "/",

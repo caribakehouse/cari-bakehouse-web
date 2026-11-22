@@ -23,7 +23,7 @@ export const BUSINESS = {
 } as const;
 
 /**
- * Metadata cho 1 trang: tiêu đề (tự thêm " · Cari Bakehouse"), mô tả, đường dẫn chuẩn (canonical),
+ * Metadata cho 1 trang: tiêu đề (tự thêm " - Cari Bakehouse"), mô tả, đường dẫn chuẩn (canonical),
  * ảnh xem trước khi chia sẻ link. noindex = không cho hiện trên Google (giỏ hàng, tài khoản...).
  * Next.js thay nguyên khối openGraph của layout cha nên phải ghi lại siteName / ảnh ở đây.
  */
@@ -36,7 +36,7 @@ export function pageMetadata(opts: {
   image?: string;
   noindex?: boolean;
 }): Metadata {
-  const ogTitle = opts.absoluteTitle ? opts.title : `${opts.title} · ${SITE_NAME}`;
+  const ogTitle = opts.absoluteTitle ? opts.title : `${opts.title} - ${SITE_NAME}`;
   return {
     title: opts.absoluteTitle ? { absolute: opts.title } : opts.title,
     description: opts.description,

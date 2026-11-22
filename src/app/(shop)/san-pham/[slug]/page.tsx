@@ -37,10 +37,10 @@ const productPath = (slug: string) => `/san-pham/${encodeURIComponent(slug)}`;
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await getProduct(decodeURIComponent(slug));
-  if (!data) return { title: { absolute: `Không tìm thấy sản phẩm · ${SITE_NAME}` }, robots: { index: false } };
-  // Ghi đủ đuôi tên tiệm: layout /san-pham đặt tiêu đề riêng nên mẫu " · Cari Bakehouse" không tự áp xuống đây
+  if (!data) return { title: { absolute: `Không tìm thấy sản phẩm - ${SITE_NAME}` }, robots: { index: false } };
+  // Ghi đủ đuôi tên tiệm: layout /san-pham đặt tiêu đề riêng nên mẫu " - Cari Bakehouse" không tự áp xuống đây
   return pageMetadata({
-    title: `${data.name} · ${SITE_NAME}`,
+    title: `${data.name} - ${SITE_NAME}`,
     absoluteTitle: true,
     description: data.description || `${data.name}: bánh làm thủ công tại ${BUSINESS.name}, Hà Nội. Đặt online, giao tận nơi.`,
     path: productPath(data.slug),
