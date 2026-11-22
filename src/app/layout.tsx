@@ -5,6 +5,7 @@ import localFont from "next/font/local";
 import { unstable_rethrow } from "next/navigation";
 import "./globals.css";
 import { PublicDataProvider } from "@/components/PublicDataProvider";
+import ChatWidget from "@/components/ChatWidget";
 import {
   SEED_ABOUT_CONTENT,
   SEED_CUSTOM_ORDER_CONTENT,
@@ -113,6 +114,8 @@ export default async function RootLayout({
         </Script>
         <BusinessJsonLd settings={data.settings} />
         <PublicDataProvider data={data}>{children}</PublicDataProvider>
+        {/* Khung chat tư vấn n8n (tự ẩn ở /admin) */}
+        <ChatWidget />
       </body>
     </html>
   );
