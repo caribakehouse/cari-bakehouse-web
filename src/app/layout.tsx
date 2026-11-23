@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_LOYALTY, fetchPublicData, type PublicData } from "@/lib/supabase/public-data";
 import { BusinessJsonLd } from "@/components/seo/JsonLd";
 import { BUSINESS, SITE_NAME, SITE_URL } from "@/lib/site";
+import { Analytics } from '@vercel/analytics/next';
 
 // Font tiêu đề: Magnolia Script (SIL OFL, xem src/app/fonts/OFL.txt). Bản gốc thiếu nhiều chữ có dấu tiếng Việt
 // (ơ, ư, dấu hỏi, dấu nặng, dấu chồng như ấ/ầ...) nên các chữ đó lấy từ Cari Script VN — ghép từ chính nét/dấu của Magnolia.
@@ -116,6 +117,7 @@ export default async function RootLayout({
         <PublicDataProvider data={data}>{children}</PublicDataProvider>
         {/* Khung chat tư vấn n8n (tự ẩn ở /admin) */}
         <ChatWidget />
+        <Analytics />
       </body>
     </html>
   );
